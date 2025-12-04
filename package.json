@@ -1,0 +1,46 @@
+{
+  "name": "ffo-auto-script",
+  "productName": "ffo-auto-script",
+  "version": "1.0.0",
+  "description": "My Electron application description",
+  "main": ".webpack/main",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "eslint . --ext .js,.jsx",
+    "lint:fix": "eslint . --ext .js,.jsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [],
+  "author": {
+    "name": "月牙魔法师",
+    "email": "617938514@qq.com"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.10.2",
+    "@electron-forge/maker-deb": "^7.10.2",
+    "@electron-forge/maker-rpm": "^7.10.2",
+    "@electron-forge/maker-squirrel": "^7.10.2",
+    "@electron-forge/maker-zip": "^7.10.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
+    "@electron-forge/plugin-fuses": "^7.10.2",
+    "@electron-forge/plugin-webpack": "^7.10.2",
+    "@electron/fuses": "^1.8.0",
+    "@vercel/webpack-asset-relocator-loader": "^1.7.3",
+    "css-loader": "^6.11.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "node-loader": "^2.1.0",
+    "prettier": "^3.7.4",
+    "style-loader": "^3.3.4"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1"
+  }
+}
