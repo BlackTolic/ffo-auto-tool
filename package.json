@@ -9,8 +9,8 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "eslint . --ext .js,.jsx",
-    "lint:fix": "eslint . --ext .js,.jsx --fix",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -30,6 +30,9 @@
     "@electron-forge/plugin-fuses": "^7.10.2",
     "@electron-forge/plugin-webpack": "^7.10.2",
     "@electron/fuses": "^1.8.0",
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",
     "css-loader": "^6.11.0",
     "eslint": "^9.39.1",
@@ -38,7 +41,9 @@
     "eslint-plugin-prettier": "^5.5.4",
     "node-loader": "^2.1.0",
     "prettier": "^3.7.4",
-    "style-loader": "^3.3.4"
+    "style-loader": "^3.3.4",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1"

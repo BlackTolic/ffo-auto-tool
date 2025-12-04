@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ESNext",
+    "lib": ["ES2021", "DOM"],
+    "moduleResolution": "Node",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "typeRoots": ["./src/types", "./node_modules/@types"]
+  },
+  "include": ["src/**/*", "webpack.*.config.js", "forge.config.js", "eslint.config.js"],
+  "exclude": ["node_modules", "out", "dist", ".webpack"]
+}
