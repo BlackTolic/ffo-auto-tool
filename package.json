@@ -47,6 +47,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.1"
+    "electron-squirrel-startup": "^1.0.1",
+    "winax": "^3.6.2"
   }
 }

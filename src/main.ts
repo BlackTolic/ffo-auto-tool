@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { Damo } from './damo';
+import { Damo } from './damo/damo';
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({

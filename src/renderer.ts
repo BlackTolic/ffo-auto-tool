@@ -29,6 +29,7 @@
 import './index.css';
 
 // Demo: query Damo version from main (will error if winax/DM 未安装)
+
 window.damo
   .ver()
   .then((v) => console.log('[Damo] Ver:', v))
