@@ -28,4 +28,10 @@
 
 import './index.css';
 
+// Demo: query Damo version from main (will error if winax/DM 未安装)
+window.damo
+  .ver()
+  .then((v) => console.log('[Damo] Ver:', v))
+  .catch((e) => console.warn('[Damo] 不可用:', e?.message || e));
+
 console.log('👋 This message is being logged by "renderer.ts", included via webpack');

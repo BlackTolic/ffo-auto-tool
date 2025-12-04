@@ -1,4 +1,5 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
+import { Damo } from './damo';
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -12,6 +13,41 @@ const createWindow = () => {
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   mainWindow.webContents.openDevTools();
 };
+
+// Initialize Damo wrapper safely
+let damo: Damo | null = null;
+function ensureDamo(): Damo {
+  if (!damo) {
+    try {
+      damo = new Damo();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[Damo] 初始化失败:', msg);
+      throw e;
+    }
+  }
+  return damo;
+}
+
+// IPC handlers to access Damo from renderer via preload
+ipcMain.handle('damo:ver', () => {
+  return ensureDamo().ver();
+});
+
+ipcMain.handle('damo:getForegroundWindow', () => {
+  return ensureDamo().getForegroundWindow();
+});
+
+ipcMain.handle(
+  'damo:bindWindow',
+  (_event, hwnd: number, display: string, mouse: string, keypad: string, mode: number) => {
+    return ensureDamo().bindWindow(hwnd, display, mouse, keypad, mode);
+  }
+);
+
+ipcMain.handle('damo:unbindWindow', () => {
+  return ensureDamo().unbindWindow();
+});
 
 app.whenReady().then(() => {
   createWindow();

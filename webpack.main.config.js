@@ -8,4 +8,8 @@ module.exports = {
   module: {
     rules: require('./webpack.rules'),
   },
+  // Avoid bundling native COM bridge; load at runtime from node_modules
+  externals: {
+    winax: 'commonjs winax',
+  },
 };
