@@ -11,7 +11,7 @@
     "publish": "electron-forge publish",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "format": "prettier --write .",
+    "format": "prettier --write /.",
     "format:check": "prettier --check ."
   },
   "keywords": [],
@@ -35,7 +35,8 @@
     "@typescript-eslint/parser": "^8.48.1",
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",
     "css-loader": "^6.11.0",
-    "electron": "^39.2.5",
+    "electron": "^13.6.9",
+    "electron-rebuild": "^3.2.9",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
