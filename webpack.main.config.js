@@ -8,6 +8,10 @@ module.exports = {
   module: {
     rules: require('./webpack.rules'),
   },
+  // Ensure TypeScript imports resolve correctly in main process bundle
+  resolve: {
+    extensions: ['.ts', '.tsx', '.js', '.json'],
+  },
   // Avoid bundling native COM bridge; load at runtime from node_modules
   externals: {
     winax: 'commonjs winax',
