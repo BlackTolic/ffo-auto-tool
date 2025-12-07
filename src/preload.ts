@@ -13,7 +13,13 @@ const damo = {
   unbindWindow: (): Promise<number> => ipcRenderer.invoke('damo:unbindWindow'),
 };
 
+// 新增：环境校验 API，渲染进程可调用展示结果
+const env = {
+  check: (): Promise<any> => ipcRenderer.invoke('env:check'),
+};
+
 contextBridge.exposeInMainWorld('damo', damo);
+contextBridge.exposeInMainWorld('env', env);
 
 
 
