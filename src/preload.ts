@@ -27,6 +27,17 @@ const damo = {
     => ipcRenderer.invoke('damo:clientCssToScreenPx', hwnd, xCss, yCss),
   screenPxToClientCss: (hwnd: number, xScreenPx: number, yScreenPx: number): Promise<{ x: number; y: number }>
     => ipcRenderer.invoke('damo:screenPxToClientCss', hwnd, xScreenPx, yScreenPx),
+  // 中文注释：新增字库信息查询接口（支持可选窗口句柄）
+  getDictInfo: (hwnd?: number): Promise<{ activeIndex: number | null; source: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null }>
+    => ipcRenderer.invoke('damo:getDictInfo', hwnd),
+  // 中文注释：新增字库信息更新事件监听接口（主进程广播时自动触发）
+  onDictInfoUpdated: (callback: (payload: { hwnd: number; info: { activeIndex: number | null; source: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null } | null }) => void): void => {
+    ipcRenderer.on('damo:dictInfoUpdated', (_e, payload) => callback(payload));
+  },
+  // 中文注释：新增取消字库信息更新监听的方法（退出或卸载时调用）
+  offDictInfoUpdated: (): void => {
+    ipcRenderer.removeAllListeners('damo:dictInfoUpdated');
+  },
 };
 
 // 新增：环境校验 API，渲染进程可调用展示结果

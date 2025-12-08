@@ -151,6 +151,22 @@ ipcMain.handle('damo:screenPxToClientCss', async (_event, hwnd: number, xScreenP
   const clientPx = await dm.screenToClient(hwnd, xScreenPx, yScreenPx);
   return { x: clientPx.x / sf, y: clientPx.y / sf };
 });
+ipcMain.handle('damo:getDictInfo', (_event, hwnd?: number) => {
+  // 中文注释：查询当前 OCR 使用的字库信息；优先按窗口句柄查询对应实例
+  if (typeof hwnd === 'number' && hwnd > 0) {
+    const rec = damoBindingManager.get(hwnd);
+    if (rec && typeof rec.ffoClient.getCurrentDictInfo === 'function') {
+      return rec.ffoClient.getCurrentDictInfo();
+    }
+    return { activeIndex: null, source: { type: 'unknown' } };
+  }
+  // 中文注释：否则返回主进程默认实例的字库信息（若存在）
+  const dm = ensureDamo();
+  if (typeof (dm as any).getCurrentDictInfo === 'function') {
+    return (dm as any).getCurrentDictInfo();
+  }
+  return { activeIndex: null, source: { type: 'unknown' } };
+});
 app.whenReady().then(() => {
   // 中文注释：启动前进行环境版本与架构校验（在创建窗口与扫描进程之前执行）
   const env = validateEnvironment();
@@ -215,22 +231,40 @@ app.whenReady().then(() => {
     const rec = damoBindingManager.get(hwnd);
     if (!rec) return;
     try {
-      // 中文注释：优先从项目根目录加载 ocr.dict，如不存在则启用默认字典索引 0
-      const dictPath = path.join(process.cwd(), 'ocr.dict');
+      // 中文注释：优先从候选路径加载字典，按顺序尝试；成功后启用索引 0
       const dm = rec?.ffoClient?.dm; // 中文注释：底层大漠 COM 对象
-      if (fs.existsSync(dictPath)) {
-        // 中文注释：异步读取文件，随后同步 SetDict；检查返回值
-        const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, dictPath);
-        if (ret === 1) {
-          dm?.UseDict(0); // 中文注释：设置成功后启用字典索引 0
-          console.log('[OCR字典] 已异步加载 ocr.dict 并启用索引 0');
-        } else {
-          console.warn(`[OCR字典] SetDict 返回非 1（失败），ret=${ret}`);
-          dm?.UseDict(0); // 中文注释：仍启用默认索引，避免无字典导致识别失败
+      const dictCandidates = [
+        // path.join(process.cwd(), 'ocr.dict'),
+        // path.join(process.cwd(), 'src', 'lib', 'test.dict.txt'),
+         path.join(process.cwd(), 'src', 'lib', 'test.dict.txt'),
+      ];
+      let dictLoaded = false;
+      for (const p of dictCandidates) {
+        if (fs.existsSync(p)) {
+          try {
+            const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, p);
+            if (ret === 1) {
+              dm?.UseDict(0);
+              console.log(`[OCR字典] 已加载 ${path.basename(p)} 并启用索引 0`);
+              dictLoaded = true;
+              // 中文注释：字库加载成功后，向渲染进程广播当前字库信息
+              const info = rec?.ffoClient?.getCurrentDictInfo?.();
+              BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('damo:dictInfoUpdated', { hwnd, info }));
+              break;
+            } else {
+              console.warn(`[OCR字典] SetDict 返回值=${ret} | 路径=${p}`);
+            }
+          } catch (err) {
+            console.warn(`[OCR字典] 加载失败: ${p} | ${String((err as any)?.message || err)}`);
+          }
         }
-      } else {
+      }
+      if (!dictLoaded) {
         dm?.UseDict(0);
-        console.log('[OCR字典] 使用默认字典索引 0（未找到 ocr.dict）');
+        console.log('[OCR字典] 使用默认字典索引 0（未找到或加载失败）');
+        // 中文注释：即便未加载成功，也广播当前字库信息（通常为默认索引）
+        const info = rec?.ffoClient?.getCurrentDictInfo?.();
+        BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('damo:dictInfoUpdated', { hwnd, info }));
       }
 
       // 中文注释：示例移动窗口
@@ -299,7 +333,8 @@ app.whenReady().then(() => {
 
       console.log('[左上角文字识别]', ocrResult);
     } catch (e) {
-      console.warn('绑定后 OCR/示例操作失败: ', (e as any)?.message || e);
+      // 中文注释：忽略单次错误，继续
+      console.warn('[OCR识别错误]', String((e as any)?.message || e));
     }
   });
   ffoEvents.on('error', (payload: any) => {
@@ -314,5 +349,46 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+});
+
+// 中文注释：在应用退出前（before-quit）执行清理，解绑窗口、移除 IPC 与事件
+app.on('before-quit', () => {
+  try {
+    // 中文注释：解绑所有已绑定的大漠窗口（防止残留绑定）
+    damoBindingManager.unbindAll();
+  } catch (e) {
+    console.warn('[退出清理] 解绑所有窗口失败:', String((e as any)?.message || e));
+  }
+
+  try {
+    // 中文注释：移除所有事件总线监听器，防止内存泄漏
+    ffoEvents.removeAllListeners();
+  } catch (e) {
+    console.warn('[退出清理] 移除事件监听失败:', String((e as any)?.message || e));
+  }
+
+  try {
+    // 中文注释：移除主进程的 IPC handler，避免多次注册或残留
+    const channels = [
+      'env:check',
+      'damo:ver',
+      'damo:getForegroundWindow',
+      'damo:bindWindow',
+      'damo:unbindWindow',
+      'damo:getClientRect',
+      'damo:clientToScreen',
+      'damo:screenToClient',
+      'damo:getWindowRect',
+      'damo:getWindowInfo',
+      'damo:clientCssToScreenPx',
+      'damo:screenPxToClientCss',
+      'damo:getDictInfo',
+    ];
+    channels.forEach((ch) => {
+      try { ipcMain.removeHandler(ch); } catch {}
+    });
+  } catch (e) {
+    console.warn('[退出清理] 移除 IPC handler 失败:', String((e as any)?.message || e));
   }
 });

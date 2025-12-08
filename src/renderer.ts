@@ -28,6 +28,95 @@
 
 import './index.css';
 
+// 中文注释：渲染首页的环境状态
+const renderEnvStatus = async () => {
+  const envStatusEl = document.getElementById('env-status');
+  if (!envStatusEl) return;
+  try {
+    const status = await window.env.check(); // 中文注释：调用预加载中的环境校验
+    const pre = document.createElement('pre');
+    pre.textContent = JSON.stringify(status, null, 2);
+    envStatusEl.appendChild(pre);
+  } catch (err) {
+    const pre = document.createElement('pre');
+    pre.textContent = `环境校验失败: ${String(err)}`;
+    envStatusEl.appendChild(pre);
+  }
+};
+
+// 中文注释：渲染首页的当前 OCR 字库信息
+const renderDictInfo = async () => {
+  const container = document.getElementById('dict-info-content');
+  if (!container) return;
+  try {
+    // 中文注释：不带 hwnd，查询默认大漠实例当前字库信息
+    const info = await window.damo.getDictInfo();
+    const lines: string[] = [];
+    if (!info) {
+      lines.push('未获取到字库信息（插件未初始化或未绑定窗口）');
+    } else {
+      const idx = info.activeIndex ?? null;
+      const src = info.source ?? null;
+      lines.push(`当前字库索引: ${idx === null ? '未知' : idx}`);
+      if (src) {
+        lines.push(`字库来源类型: ${src.type}`);
+        if (src.path) lines.push(`字库文件: ${src.path}`);
+        if (typeof src.length === 'number') lines.push(`字库长度: ${src.length} 字节`);
+      } else {
+        lines.push('字库来源: 未知');
+      }
+    }
+    container.textContent = lines.join('\n');
+  } catch (err) {
+    container.textContent = `查询字库信息失败: ${String(err)}`;
+  }
+};
+
+// 中文注释：订阅主进程广播的字库信息更新事件，自动刷新显示
+const subscribeDictInfoUpdates = () => {
+  const container = document.getElementById('dict-info-content');
+  if (!container) return;
+  window.damo.onDictInfoUpdated(({ hwnd, info }) => {
+    try {
+      const lines: string[] = [];
+      lines.push(`窗口句柄: ${hwnd}`);
+      if (!info) {
+        lines.push('未获取到字库信息（插件未初始化或未绑定窗口）');
+      } else {
+        const idx = info.activeIndex ?? null;
+        const src = info.source ?? null;
+        lines.push(`当前字库索引: ${idx === null ? '未知' : idx}`);
+        if (src) {
+          lines.push(`字库来源类型: ${src.type}`);
+          if (src.path) lines.push(`字库文件: ${src.path}`);
+          if (typeof src.length === 'number') lines.push(`字库长度: ${src.length} 字节`);
+        } else {
+          lines.push('字库来源: 未知');
+        }
+      }
+      container.textContent = lines.join('\n');
+    } catch (e) {
+      container.textContent = `刷新字库信息失败: ${String(e)}`;
+    }
+  });
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  // 中文注释：页面加载后渲染环境状态与字库信息，并订阅更新
+  renderEnvStatus();
+  renderDictInfo();
+  subscribeDictInfoUpdates();
+});
+
+// 中文注释：在页面卸载/关闭前执行清理（取消 IPC 事件订阅）
+window.addEventListener('beforeunload', () => {
+  try {
+    window.damo.offDictInfoUpdated();
+  } catch (e) {
+    console.warn('[渲染清理] 取消字库更新订阅失败:', String((e as any)?.message || e));
+  }
+});
+
 // Demo: query Damo version from main (will error if winax/DM 未安装)
 
 window.damo

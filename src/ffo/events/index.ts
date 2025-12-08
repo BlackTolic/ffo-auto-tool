@@ -101,6 +101,20 @@ export class DamoBindingManager {
     return true;
   }
 
+  // 中文注释：一次性解绑所有已绑定窗口（退出前调用）
+  unbindAll(): void {
+    for (const [hwnd, rec] of this.clientsByHwnd.entries()) {
+      try {
+        rec.ffoClient.unbindWindow(); // 中文注释：逐个调用插件解绑
+      } catch (err) {
+        ffoEvents.emit('error', { hwnd, error: err } as ErrorPayload);
+      }
+      // 中文注释：删除记录并广播解绑事件
+      this.clientsByHwnd.delete(hwnd);
+      ffoEvents.emit('unbind', { hwnd } as UnbindPayload);
+    }
+  }
+
   // 中文注释：按 PID 枚举候选窗口句柄（优先可见顶级，回退顶级所有）
   private enumerateWindowsByPid(dmRaw: any, pid: number): number[] {
     const results: number[] = [];

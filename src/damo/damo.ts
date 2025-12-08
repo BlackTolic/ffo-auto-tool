@@ -18,6 +18,10 @@ function isElevated(): boolean {
 
 export class Damo {
   dm: any;
+  // 中文注释：当前字库索引（UseDict 设置的活动索引）；未设置为 null
+  private activeDictIndex: number | null = null;
+  // 中文注释：最近一次 SetDict 的来源信息（inline=内存字符串，file=文件）
+  private dictSource: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null = null;
 
   constructor() {
     if (!winax) {
@@ -185,31 +189,67 @@ export class Damo {
   }
   // 中文注释：选择当前字典索引（0=默认字典）；用于 OCR 涂色/文字识别
   useDict(index: number): number {
-    return this.dm.UseDict(index);
+    const ret = this.dm.UseDict(index);
+    if (ret === 1) {
+      this.activeDictIndex = index; // 中文注释：记录当前活动字库索引
+    }
+    return ret;
   }
   // 中文注释：设置字典内容（传入字库字符串）；字典格式参考大漠文档
   setDict(index: number, content: string): number {
-    return this.dm.SetDict(index, content);
+    const ret = this.dm.SetDict(index, content);
+    if (ret === 1) {
+      this.dictSource = { type: 'inline', length: content?.length || 0 };
+    }
+    return ret;
   }
   // 中文注释：从文件加载字典内容并设置到指定索引；支持相对/绝对路径
   loadDictFromFile(index: number, filePath: string): number {
     try {
       const absPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-      const dictContent = fs.readFileSync(absPath, 'utf8');
-      return this.dm.SetDict(index, dictContent);
+      const raw = fs.readFileSync(absPath, 'utf8');
+      const content = this.sanitizeDictContent(raw); // 中文注释：统一处理 BOM 和换行
+      const ret = this.dm.SetDict(index, content);
+      if (ret === 1) {
+        this.dictSource = { type: 'file', path: absPath, length: content.length };
+      }
+      return ret;
     } catch (e) {
       // 中文注释：读取失败抛出错误，便于上层捕获
       throw new Error(`加载字典文件失败: ${filePath} | ${String((e as any)?.message || e)}`);
     }
   }
-  // 中文注释：异步方式读取字典文件（不阻塞主线程），随后同步调用 SetDict（COM 调用本身仍同步）
+  // 中文注释：字典内容预处理（移除 BOM、统一换行为 CRLF），避免解析失败
+  private sanitizeDictContent(content: string): string {
+    let s = content || '';
+    // 中文注释：移除 UTF-8/UTF-16 BOM
+    if (s.charCodeAt(0) === 0xFEFF) {
+      s = s.slice(1);
+    }
+    // 中文注释：统一换行，某些版本要求 CRLF，否则可能触发“打开字库失败”
+    s = s.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
+    return s;
+  }
+  // 中文注释：异步读取字典文件并调用 SetDict（COM 调用本身仍同步）
   async loadDictFromFileAsync(index: number, filePath: string): Promise<number> {
-    const absPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-    // 中文注释：使用 fs.promises 异步读取，避免阻塞
-    const dictContent = await fs.promises.readFile(absPath, 'utf8');
-    console.log(`加载字典文件成功: ${filePath} | 内容长度: ${dictContent.length}`);
-    // 中文注释：SetDict 仍是同步 COM 调用，返回状态码（1 成功，非 1 失败）
-    const ret = this.dm.SetDict(index, dictContent);
-    return ret;
+    try {
+      const absPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
+      const raw = await fs.promises.readFile(absPath, 'utf8');
+      const content = this.sanitizeDictContent(raw);
+      const ret = this.dm.SetDict(index, content);
+      if (ret === 1) {
+        this.dictSource = { type: 'file', path: absPath, length: content.length };
+      }
+      return ret;
+    } catch (e) {
+      throw new Error(`异步加载字典文件失败: ${filePath} | ${String((e as any)?.message || e)}`);
+    }
+  }
+  // 中文注释：查询当前 OCR 使用的字库信息（活动索引 + 最近加载来源）
+  getCurrentDictInfo(): { activeIndex: number | null; source: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null } {
+    return {
+      activeIndex: this.activeDictIndex,
+      source: this.dictSource || { type: 'unknown' },
+    };
   }
 }

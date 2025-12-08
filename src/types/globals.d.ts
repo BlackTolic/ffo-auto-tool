@@ -21,6 +21,10 @@ type DamoAPI = {
   getWindowInfo: (hwnd: number) => Promise<{ windowRect: { x: number; y: number; width: number; height: number }; clientRect: { x: number; y: number; width: number; height: number }; scaleFactor: number }>; // 中文注释：聚合窗口信息与显示器缩放
   clientCssToScreenPx: (hwnd: number, xCss: number, yCss: number) => Promise<{ x: number; y: number }>; // 中文注释：客户区 CSS(DIP) -> 屏幕像素
   screenPxToClientCss: (hwnd: number, xScreenPx: number, yScreenPx: number) => Promise<{ x: number; y: number }>; // 中文注释：屏幕像素 -> 客户区 CSS(DIP)
+  // 中文注释：新增字库信息查询接口（支持可选窗口句柄）
+  getDictInfo: (hwnd?: number) => Promise<{ activeIndex: number | null; source: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null }>;
+  // 中文注释：新增字库信息更新事件监听接口
+  onDictInfoUpdated: (callback: (payload: { hwnd: number; info: { activeIndex: number | null; source: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null } | null }) => void) => void;
 };
 
 // 新增：环境 API 类型（简化为 any 以避免与 TS 模块类型耦合）

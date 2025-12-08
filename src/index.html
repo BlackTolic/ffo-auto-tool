@@ -1,14 +1,24 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>环境校验与大漠插件演示</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>FFO Auto Script</title>
   </head>
   <body>
-    <h1>💖 大漠插件 Electron 应用</h1>
-    <p>欢迎使用，本页面将展示运行时环境校验结果。</p>
+    <h1>FFO Auto Script</h1>
+    <!-- 中文注释：首页新增OCR字库信息展示区块 -->
+    <section id="dict-info" style="margin-bottom: 16px; padding: 8px; border: 1px solid #ddd;">
+      <h2 style="margin: 0 0 8px; font-size: 16px;">当前 OCR 字库信息</h2>
+      <div id="dict-info-content">加载中…</div>
+    </section>
 
-    <!-- 新增：环境校验结果容器（中文注释） -->
-    <section id="env-status" style="border:1px solid #ddd;padding:12px;border-radius:6px;background:#fafafa;"></section>
+    <article>
+      <p>👋 Hello World!</p>
+      <section id="env-status">
+        <h2>Env status</h2>
+      </section>
+    </article>
   </body>
 </html>
