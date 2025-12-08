@@ -14,6 +14,13 @@ type DamoAPI = {
     mode: number
   ) => Promise<number>;
   unbindWindow: () => Promise<number>;
+  getWindowRect: (hwnd: number) => Promise<{ x: number; y: number; width: number; height: number }>; // 中文注释：根据句柄返回窗口矩形
+  getClientRect: (hwnd: number) => Promise<{ x: number; y: number; width: number; height: number }>; // 中文注释：根据句柄返回客户区矩形
+  clientToScreen: (hwnd: number, x: number, y: number) => Promise<{ x: number; y: number }>; // 中文注释：客户区坐标 -> 屏幕坐标
+  screenToClient: (hwnd: number, x: number, y: number) => Promise<{ x: number; y: number }>; // 中文注释：屏幕坐标 -> 客户区坐标
+  getWindowInfo: (hwnd: number) => Promise<{ windowRect: { x: number; y: number; width: number; height: number }; clientRect: { x: number; y: number; width: number; height: number }; scaleFactor: number }>; // 中文注释：聚合窗口信息与显示器缩放
+  clientCssToScreenPx: (hwnd: number, xCss: number, yCss: number) => Promise<{ x: number; y: number }>; // 中文注释：客户区 CSS(DIP) -> 屏幕像素
+  screenPxToClientCss: (hwnd: number, xScreenPx: number, yScreenPx: number) => Promise<{ x: number; y: number }>; // 中文注释：屏幕像素 -> 客户区 CSS(DIP)
 };
 
 // 新增：环境 API 类型（简化为 any 以避免与 TS 模块类型耦合）

@@ -1,8 +1,23 @@
 /* Minimal Damo (大漠插件) wrapper using COM via winax */
 const winax = require('winax');
+// 新增：导入 child_process 用于判断管理员权限（中文注释）
+import cp from 'child_process';
+import fs from 'fs'; // 中文注释：用于从文件系统读取字典内容
+import path from 'path'; // 中文注释：用于处理字典文件路径
+
+// 新增：判断当前进程是否以管理员运行（中文注释）
+function isElevated(): boolean {
+  try {
+    // fltmc 命令需要管理员权限，成功说明当前进程已提升（UAC 通过）
+    cp.execSync('fltmc', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export class Damo {
-  private dm: any;
+  dm: any;
 
   constructor() {
     if (!winax) {
@@ -14,15 +29,14 @@ export class Damo {
     try {
       // 使用 COM ProgID 创建大漠对象，要求已正确注册 dm.dll（位数需匹配）
       this.dm = new winax.Object('dm.dmsoft');
-      this.reg()
+      // 中文注释：创建对象后尝试进行收费注册（需管理员权限），否则可能返回 -2
+      this.reg();
     } catch (err: any) {
       // -2147221005 = REGDB_E_CLASSNOTREG（类未注册），常见于未注册或位数不匹配
       const errno = err && typeof err.errno === 'number' ? err.errno : null;
-      // console.error('[Damo] COM creation failed:', errno, msg);
       const archHint = `Current process architecture: ${process.arch} (Please ensure using the same bitness dm.dll and register as Administrator)`;
       const msg = String(err?.message || '');
       if (errno === -2147221005 || msg.includes('CreateInstance')) {
-        // throw new Error(`创建 COM 对象失败：dm.dmsoft 类未注册或位数不匹配。${archHint}`);
         throw new Error(`Failed to create COM object: dm.dmsoft class not registered or bitness mismatch. ${archHint}`);
       }
       // 其他错误原样抛出，便于定位具体问题
@@ -31,15 +45,60 @@ export class Damo {
   }
 
     reg() {
-        // 注册大漠插件（主要是大漠插件收费的校验）
-        const regResult = this.dm.Reg("yonghufd83601c96660b0709d34423d3bad506", "yk3112313")
-        console.log('大漠插件注册: ', regResult)
-        console.log('大漠插件版本：', this.dm.Ver())
-        console.log('大漠插件路径：', this.dm.GetBasePath())
-        // 这里是字库的文件，我们后面说到
-        // const textPath = `${libDir}\\text\\ocr.txt`
-        // console.log('字库设置：', this.dll.SetDict(0, textPath))
+      // 中文注释：大漠收费注册（Reg/RegEx）需管理员权限，否则返回 -2
+      const elevated = isElevated();
+      if (!elevated) {
+        // 非管理员时，不强制抛错，返回 -2 并给出中文提示，避免影响免费功能
+        const code = -2;
+        console.warn('大漠收费注册未执行：当前进程非管理员(-2)。请以管理员运行或关闭UAC后重试。');
+        console.warn('提示：右键以管理员身份运行终端，再执行 npm run start:utf8');
+        return code;
+      }
+      // 执行收费注册（示例：使用你的用户名与附加码）
+      const regCode = this.dm.Reg('yonghufd83601c96660b0709d34423d3bad506', 'yk3112313');
+      console.log('大漠插件注册返回值: ', regCode, this.describeRegResult(regCode));
+      console.log('大漠插件版本：', this.dm.Ver());
+      console.log('大漠插件路径：', this.dm.GetBasePath());
+      return regCode;
     }
+
+  // 新增：返回码中文含义（汇总常见结果，便于快速定位问题）
+  private describeRegResult(code: number): string {
+    switch (code) {
+      case 1:
+        return '成功';
+      case 0:
+        return '失败(未知错误)';
+      case -1:
+        return '无法连接网络/可能防火墙拦截或IP暂封';
+      case -2:
+        return '进程未以管理员运行(UAC 导致)';
+      case 2:
+        return '余额不足';
+      case 3:
+        return '绑定了本机器，但账户余额不足50元';
+      case 4:
+        return '注册码错误';
+      case 5:
+        return '机器或IP在黑名单/不在白名单';
+      case 6:
+        return '非法使用插件/系统语言非中文简体可能触发';
+      case 7:
+        return '帐号因非法使用被封禁';
+      case 8:
+        return '附加码不在白名单中';
+      case 77:
+        return '机器码或IP因非法使用被封禁(全局封禁)';
+      case 777:
+        return '同一机器码注册次数超限，暂时封禁';
+      case -8:
+        return '版本附加信息长度超过20';
+      case -9:
+        return '版本附加信息包含非法字符';
+      default:
+        return '未知返回码';
+    }
+  }
 
   // 获取版本号
   ver(): string {
@@ -59,5 +118,98 @@ export class Damo {
   // 解绑窗口
   unbindWindow(): number {
     return this.dm.UnBindWindow();
+  }
+  // 根据窗口句柄获取窗口矩形（屏幕坐标）
+  getWindowRect(hwnd: number): { x: number; y: number; width: number; height: number } {
+    // 中文注释：使用按引用参数承接返回的左上/右下坐标（winax 通过 Variant byref 实现）
+    const x1 = new winax.Variant(0, 'byref');
+    const y1 = new winax.Variant(0, 'byref');
+    const x2 = new winax.Variant(0, 'byref');
+    const y2 = new winax.Variant(0, 'byref');
+    const ok = this.dm.GetWindowRect(hwnd, x1, y1, x2, y2);
+    if (!ok) {
+      // 中文注释：当返回 0 表示失败，抛出错误便于上层处理
+      throw new Error(`GetWindowRect 失败，hwnd=${hwnd}`);
+    }
+    // 中文注释：转换为数值并计算宽高（确保非负）
+    const left = Number(x1.value) || 0;
+    const top = Number(y1.value) || 0;
+    const right = Number(x2.value) || 0;
+    const bottom = Number(y2.value) || 0;
+    const width = Math.max(0, right - left);
+    const height = Math.max(0, bottom - top);
+    return { x: left, y: top, width, height };
+  }
+
+  // 根据窗口句柄获取客户区矩形（屏幕坐标）
+  getClientRect(hwnd: number): { x: number; y: number; width: number; height: number } {
+    // 中文注释：按引用参数承接返回坐标
+    const x1 = new winax.Variant(0, 'byref');
+    const y1 = new winax.Variant(0, 'byref');
+    const x2 = new winax.Variant(0, 'byref');
+    const y2 = new winax.Variant(0, 'byref');
+    const ok = this.dm.GetClientRect(hwnd, x1, y1, x2, y2);
+    if (!ok) {
+      throw new Error(`GetClientRect 失败，hwnd=${hwnd}`);
+    }
+    const left = Number(x1.value) || 0;
+    const top = Number(y1.value) || 0;
+    const right = Number(x2.value) || 0;
+    const bottom = Number(y2.value) || 0;
+    const width = Math.max(0, right - left);
+    const height = Math.max(0, bottom - top);
+    return { x: left, y: top, width, height };
+  }
+
+  // 客户区坐标转换为屏幕坐标（点坐标）
+  clientToScreen(hwnd: number, x: number, y: number): { x: number; y: number } {
+    // 中文注释：将传入的 x/y 包装为按引用参数，调用后读取转换结果
+    const xr = new winax.Variant(x, 'byref');
+    const yr = new winax.Variant(y, 'byref');
+    const ok = this.dm.ClientToScreen(hwnd, xr, yr);
+    if (!ok) {
+      throw new Error(`ClientToScreen 失败，hwnd=${hwnd}`);
+    }
+    return { x: Number(xr.value) || 0, y: Number(yr.value) || 0 };
+  }
+
+  // 屏幕坐标转换为客户区坐标（点坐标）
+  screenToClient(hwnd: number, x: number, y: number): { x: number; y: number } {
+    const xr = new winax.Variant(x, 'byref');
+    const yr = new winax.Variant(y, 'byref');
+    const ok = this.dm.ScreenToClient(hwnd, xr, yr);
+    if (!ok) {
+      throw new Error(`ScreenToClient 失败，hwnd=${hwnd}`);
+    }
+    return { x: Number(xr.value) || 0, y: Number(yr.value) || 0 };
+  }
+  // 中文注释：选择当前字典索引（0=默认字典）；用于 OCR 涂色/文字识别
+  useDict(index: number): number {
+    return this.dm.UseDict(index);
+  }
+  // 中文注释：设置字典内容（传入字库字符串）；字典格式参考大漠文档
+  setDict(index: number, content: string): number {
+    return this.dm.SetDict(index, content);
+  }
+  // 中文注释：从文件加载字典内容并设置到指定索引；支持相对/绝对路径
+  loadDictFromFile(index: number, filePath: string): number {
+    try {
+      const absPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
+      const dictContent = fs.readFileSync(absPath, 'utf8');
+      return this.dm.SetDict(index, dictContent);
+    } catch (e) {
+      // 中文注释：读取失败抛出错误，便于上层捕获
+      throw new Error(`加载字典文件失败: ${filePath} | ${String((e as any)?.message || e)}`);
+    }
+  }
+  // 中文注释：异步方式读取字典文件（不阻塞主线程），随后同步调用 SetDict（COM 调用本身仍同步）
+  async loadDictFromFileAsync(index: number, filePath: string): Promise<number> {
+    const absPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
+    // 中文注释：使用 fs.promises 异步读取，避免阻塞
+    const dictContent = await fs.promises.readFile(absPath, 'utf8');
+    console.log(`加载字典文件成功: ${filePath} | 内容长度: ${dictContent.length}`);
+    // 中文注释：SetDict 仍是同步 COM 调用，返回状态码（1 成功，非 1 失败）
+    const ret = this.dm.SetDict(index, dictContent);
+    return ret;
   }
 }

@@ -2,7 +2,48 @@ import { app, BrowserWindow, ipcMain, Notification } from 'electron';
 import { Damo } from './damo/damo';
 import cp from 'child_process'
 import { validateEnvironment } from './envCheck'; // 中文注释：引入运行时环境校验
+import { screen } from 'electron'; // 中文注释：用于获取显示器 DPI 缩放因子
+import { ffoEvents, damoBindingManager } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
+import fs from 'fs'; // 中文注释：读取字典文件
+import path from 'path'; // 中文注释：拼接字典路径
 
+// 中文注释：按 PID 查找顶层可见窗口句柄，带重试与枚举回退
+async function findHandleByPidWithRetry(dm: any, pid: number, attempts = 5, delayMs = 500): Promise<number> {
+  // 中文注释：循环尝试，优先使用 FindWindowByProcessId（可见顶层窗口），失败则使用枚举接口回退
+  for (let i = 0; i < attempts; i++) {
+    try {
+      // 中文注释：首先尝试直接查找顶层可见窗口
+      const hwnd = dm.FindWindowByProcessId(pid, '', '');
+      if (hwnd && hwnd > 0) {
+        return hwnd;
+      }
+      // 中文注释：回退到枚举（过滤 8=顶级窗口，16=可见窗口），拿到第一个候选
+      const listStr: string = dm.EnumWindowByProcessId(pid, '', '', 8 + 16);
+      const candidates = String(listStr || '')
+        .split(',')
+        .map(s => parseInt(s))
+        .filter(n => Number.isFinite(n) && n > 0);
+      if (candidates.length > 0) {
+        return candidates[0];
+      }
+      // 中文注释：再回退一次，仅匹配顶级窗口（可能目标窗口当前不可见）
+      const listTopOnly: string = dm.EnumWindowByProcessId(pid, '', '', 8);
+      const topOnly = String(listTopOnly || '')
+        .split(',')
+        .map(s => parseInt(s))
+        .filter(n => Number.isFinite(n) && n > 0);
+      if (topOnly.length > 0) {
+        return topOnly[0];
+      }
+    } catch (e) {
+      // 中文注释：忽略单次错误，继续重试
+      console.warn(`[FindWindowByPID] 尝试 ${i + 1}/${attempts} 失败: ${String((e as any)?.message || e)}`);
+    }
+    // 中文注释：等待后再次尝试，给窗口创建与显示留时间
+    await new Promise(resolve => setTimeout(resolve, delayMs));
+  }
+  return 0;
+}
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -58,6 +99,58 @@ ipcMain.handle('damo:unbindWindow', () => {
   return ensureDamo().unbindWindow();
 });
 
+ipcMain.handle('damo:getClientRect', (_event, hwnd: number) => {
+  // 中文注释：通过 IPC 暴露客户区矩形查询
+  return ensureDamo().getClientRect(hwnd);
+});
+
+ipcMain.handle('damo:clientToScreen', (_event, hwnd: number, x: number, y: number) => {
+  // 中文注释：客户区坐标 -> 屏幕坐标
+  return ensureDamo().clientToScreen(hwnd, x, y);
+});
+
+ipcMain.handle('damo:screenToClient', (_event, hwnd: number, x: number, y: number) => {
+  // 中文注释：屏幕坐标 -> 客户区坐标
+  return ensureDamo().screenToClient(hwnd, x, y);
+});
+ipcMain.handle('damo:getWindowRect', (_event, hwnd: number) => {
+  // 中文注释：通过 IPC 暴露窗口矩形查询，返回 x/y/width/height
+  return ensureDamo().getWindowRect(hwnd);
+});
+
+ipcMain.handle('damo:getWindowInfo', async (_event, hwnd: number) => {
+  // 中文注释：聚合返回窗口矩形、客户区矩形和所在显示器的缩放因子
+  const dm = ensureDamo();
+  const windowRect = await dm.getWindowRect(hwnd);
+  const clientRect = await dm.getClientRect(hwnd);
+  // 根据窗口左上角找到最近的显示器，获取其 DPI 缩放因子
+  const display = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
+  const scaleFactor = display.scaleFactor; // 例如 1.25、1.5 等
+  return { windowRect, clientRect, scaleFactor };
+});
+
+ipcMain.handle('damo:clientCssToScreenPx', async (_event, hwnd: number, xCss: number, yCss: number) => {
+  // 中文注释：把客户区 CSS(DIP) 坐标转换为屏幕像素坐标
+  const dm = ensureDamo();
+  const windowRect = await dm.getWindowRect(hwnd);
+  const display = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
+  const sf = display.scaleFactor;
+  // 先把 CSS(DIP) 转为客户区像素坐标，再用插件转换为屏幕像素坐标
+  const xClientPx = Math.round(xCss * sf);
+  const yClientPx = Math.round(yCss * sf);
+  return dm.clientToScreen(hwnd, xClientPx, yClientPx);
+});
+
+ipcMain.handle('damo:screenPxToClientCss', async (_event, hwnd: number, xScreenPx: number, yScreenPx: number) => {
+  // 中文注释：把屏幕像素坐标转换为客户区 CSS(DIP) 坐标
+  const dm = ensureDamo();
+  const windowRect = await dm.getWindowRect(hwnd);
+  const display = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
+  const sf = display.scaleFactor;
+  // 先用插件把屏幕像素转换为客户区像素，再除以缩放因子得到 CSS(DIP)
+  const clientPx = await dm.screenToClient(hwnd, xScreenPx, yScreenPx);
+  return { x: clientPx.x / sf, y: clientPx.y / sf };
+});
 app.whenReady().then(() => {
   // 中文注释：启动前进行环境版本与架构校验（在创建窗口与扫描进程之前执行）
   const env = validateEnvironment();
@@ -92,36 +185,20 @@ app.whenReady().then(() => {
       console.log(error)
       return
     }
+    // console.log('进程列表:', stdout)
     if (!stdout) return
     const list = stdout.split('\n')
     for (const line of list) {
       const processMessage = line.trim().split(/\s+/)
-      const processName = processMessage[0] // processMessage[0]进程名称 ， processMessage[1]进程id
-      if (processName === 'QQSG.exe') {
-      	// 判断进程位QQSG.exe 拿到进程id
+      const processName = processMessage[0] // 中文注释：processMessage[0]进程名称 ， processMessage[1]进程id
+      // if (processName === 'qqfo.exe') {
+        if (processName === 'Notepad.exe') {
+        // 中文注释：判断进程为 wegame.exe，拿到进程 id（注意可能存在多个 wegame 实例，可按需扩展条件）
         const pid = parseInt(processMessage[1])
-        // Electron的系统通知功能
-        new Notification({ title: '注入QQ三国进程', body: pid.toString() }).show()
-        // 一个进程新建一个大漠对象
-        const clientDm = new Damo()
-        // 通过大漠的api：根据pid获取窗口句柄
-        const handle = clientDm.getDamo().FindWindowByProcessId(pid, '', '')
-        console.log('句柄: ', handle)
-        if (!handle) {
-          console.log('pid: ', pid, ' 找不到窗口句柄')
-          continue
-        }
-        // 大漠插件后台绑定窗口 参数详情可以看大漠插件文档 如果是模拟器或者其他游戏，所需的参数不尽相同
-        const bindResult = clientDm.getDamo().BindWindowEx(handle, 'gdi', 'windows', 'windows', 'dx.public.active.api', 0)
-        console.log('后台绑定：', bindResult)
-        if (!bindResult) {
-          console.log('句柄', handle, ' 后台绑定失败')
-          continue
-        }
-        // 绑定成功之后，我们可以利用global对象，把所有的客户端保存到一个map方便调用，用句柄作为key
-        global.clients[handle] = { pid, dm: clientDm }
-        // 测试移动窗口
-        // clientDm.dll.MoveWindow(handle, 0, 0)
+        // Electron 的系统通知功能
+        new Notification({ title: '注入幻想进程', body: pid.toString() }).show()
+        // 中文注释：通过事件总线触发按 PID 的多窗口绑定（每个窗口独立实例化大漠对象）
+        ffoEvents.emit('bind:pid', { pid });
       }
     }
   })
@@ -130,6 +207,107 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
+  });
+  // 中文注释：注册事件监听，便于观察绑定成功与错误
+  ffoEvents.on('bound', async ({ pid, hwnd }) => {
+    // 中文注释：绑定成功通知并做一个简单示例：移动窗口到(0,0)
+    new Notification({ title: '绑定成功', body: `PID=${pid} HWND=${hwnd}` }).show();
+    const rec = damoBindingManager.get(hwnd);
+    if (!rec) return;
+    try {
+      // 中文注释：优先从项目根目录加载 ocr.dict，如不存在则启用默认字典索引 0
+      const dictPath = path.join(process.cwd(), 'ocr.dict');
+      const dm = rec?.ffoClient?.dm; // 中文注释：底层大漠 COM 对象
+      if (fs.existsSync(dictPath)) {
+        // 中文注释：异步读取文件，随后同步 SetDict；检查返回值
+        const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, dictPath);
+        if (ret === 1) {
+          dm?.UseDict(0); // 中文注释：设置成功后启用字典索引 0
+          console.log('[OCR字典] 已异步加载 ocr.dict 并启用索引 0');
+        } else {
+          console.warn(`[OCR字典] SetDict 返回非 1（失败），ret=${ret}`);
+          dm?.UseDict(0); // 中文注释：仍启用默认索引，避免无字典导致识别失败
+        }
+      } else {
+        dm?.UseDict(0);
+        console.log('[OCR字典] 使用默认字典索引 0（未找到 ocr.dict）');
+      }
+
+      // 中文注释：示例移动窗口
+      rec?.ffoClient?.dm?.MoveWindow(hwnd, 0, 0);
+
+      // 中文注释：获取客户区矩形，输出调试
+      const rect = rec?.ffoClient?.getClientRect(hwnd);
+      console.log(rect, 'clientRect');
+
+      // 中文注释：调试截图确认识别区域
+      dm?.Capture(0, 150, 400, 450, 'ocr_debug.bmp');
+
+      // 中文注释：在识别区域内抽样取色，确认前景文字是否为黑字或白字
+      const sampleColors = [
+        dm?.GetColor(10, 160),
+        dm?.GetColor(200, 300),
+        dm?.GetColor(390, 440),
+      ];
+      console.log('[OCR取色样本]', sampleColors);
+
+      // 中文注释：辅助函数：把 RRGGBB 转为亮度（0~255），用于判断前景是白字还是黑字
+      const toBrightness = (hex: any): number => {
+        const s = String(hex || '000000');
+        const r = parseInt(s.slice(0, 2), 16) || 0;
+        const g = parseInt(s.slice(2, 4), 16) || 0;
+        const b = parseInt(s.slice(4, 6), 16) || 0;
+        // 中文注释：使用加权亮度公式（更符合人眼感知）
+        return Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
+      };
+      const brightnessList = sampleColors.map(c => toBrightness(c));
+      const avgBrightness = Math.round(
+        brightnessList.reduce((a, b) => a + b, 0) / (brightnessList.length || 1)
+      );
+      console.log('[OCR亮度统计] 点亮度=', brightnessList, '平均亮度=', avgBrightness);
+
+      // 中文注释：根据平均亮度估计文字颜色（深色文本 vs 浅色文本），并准备候选掩码
+      const isWhiteText = avgBrightness >= 180; // 中文注释：>=180 认为区域主要是浅色（白字）
+      const maskCandidates = isWhiteText
+        ? ['D0D0D0-FFFFFF', 'C0C0C0-FFFFFF'] // 中文注释：白字掩码（含抗锯齿浅灰）
+        : ['000000-202020', '000000-303030']; // 中文注释：黑字掩码（含抗锯齿深灰）
+
+      // 中文注释：相似度阈值候选，从宽到严，逐步尝试提高命中概率
+      const simCandidates = [0.55, 0.5, 0.6];
+
+      // 中文注释：遍历掩码与相似度组合，直到获得非空识别结果
+      let ocrResult: string = '';
+      outer: for (const mask of maskCandidates) {
+        for (const sim of simCandidates) {
+          const r = dm?.Ocr(0, 150, 400, 450, mask, sim);
+          console.log(`[OCR尝试] mask=${mask} sim=${sim} =>`, r);
+          if (r && String(r).trim().length > 0) {
+            ocrResult = String(r);
+            break outer;
+          }
+        }
+      }
+
+      // 中文注释：若仍为空，最后再用默认黑字掩码+更低相似度兜底
+      if (!ocrResult || ocrResult.trim().length === 0) {
+        const fallback = dm?.Ocr(0, 150, 400, 450, '000000-202020', 0.48);
+        console.log('[OCR兜底] mask=000000-202020 sim=0.48 =>', fallback);
+        if (fallback && String(fallback).trim().length > 0) {
+          ocrResult = String(fallback);
+        }
+      }
+
+      console.log('[左上角文字识别]', ocrResult);
+    } catch (e) {
+      console.warn('绑定后 OCR/示例操作失败: ', (e as any)?.message || e);
+    }
+  });
+  ffoEvents.on('error', (payload: any) => {
+    const msg = typeof payload?.error === 'string' ? payload.error : (payload?.error?.message || String(payload?.error));
+    console.warn(`[事件错误] pid=${payload?.pid ?? '-'} hwnd=${payload?.hwnd ?? '-'} | ${msg}`);
+  });
+  ffoEvents.on('unbind', ({ hwnd }) => {
+    console.log(`[解绑完成] hwnd=${hwnd}`);
   });
 });
 
