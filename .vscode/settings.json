@@ -1,0 +1,40 @@
+{
+  // 中文注释：启用保存时自动格式化（由 Prettier 负责）
+  "editor.formatOnSave": true,
+  // 中文注释：全局默认格式化器指定为 Prettier 扩展
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // 中文注释：在保存时执行 ESLint 的自动修复与整理导入
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+
+  // 中文注释：让 ESLint 插件使用 flat config（读取 eslint.config.js）
+  "eslint.experimental.useFlatConfig": true,
+  // 中文注释：启用 ESLint 并校验 TS/JS 文件
+  "eslint.enable": true,
+  "eslint.validate": ["javascript", "typescript"],
+  // 中文注释：自动发现工作目录（多包/子项目时同样适用）
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+
+  // 中文注释：Prettier 的配置文件路径（匹配仓库根的 .prettierrc.json）
+  "prettier.configPath": ".prettierrc.json",
+
+  // 中文注释：统一为 LF，配合 .prettierrc 的 endOfLine=lf
+  "files.eol": "\n",
+
+  // 中文注释：为特定语言显式指定使用 Prettier
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}

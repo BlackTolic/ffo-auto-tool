@@ -234,11 +234,9 @@ export class Damo {
   async loadDictFromFileAsync(index: number, filePath: string): Promise<number> {
     try {
       const absPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-      const raw = await fs.promises.readFile(absPath, 'utf8');
-      const content = this.sanitizeDictContent(raw);
-      const ret = this.dm.SetDict(index, content);
+      const ret = this.dm.SetDict(index, absPath);
       if (ret === 1) {
-        this.dictSource = { type: 'file', path: absPath, length: content.length };
+        this.dictSource = { type: 'file', path: absPath, length: ret.length };
       }
       return ret;
     } catch (e) {

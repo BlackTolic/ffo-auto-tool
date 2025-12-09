@@ -1,14 +1,19 @@
-import { app, BrowserWindow, ipcMain, Notification } from 'electron';
-import { Damo } from './damo/damo';
-import cp from 'child_process'
-import { validateEnvironment } from './envCheck'; // 中文注释：引入运行时环境校验
-import { screen } from 'electron'; // 中文注释：用于获取显示器 DPI 缩放因子
-import { ffoEvents, damoBindingManager } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
+import cp from 'child_process';
+import { app, BrowserWindow, ipcMain, Notification, screen } from 'electron';
 import fs from 'fs'; // 中文注释：读取字典文件
 import path from 'path'; // 中文注释：拼接字典路径
+import { SCREENSHOT_PATH } from './constant/config';
+import { Damo } from './damo/damo';
+import { validateEnvironment } from './envCheck'; // 中文注释：引入运行时环境校验
+import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
 
 // 中文注释：按 PID 查找顶层可见窗口句柄，带重试与枚举回退
-async function findHandleByPidWithRetry(dm: any, pid: number, attempts = 5, delayMs = 500): Promise<number> {
+async function findHandleByPidWithRetry(
+  dm: any,
+  pid: number,
+  attempts = 5,
+  delayMs = 500
+): Promise<number> {
   // 中文注释：循环尝试，优先使用 FindWindowByProcessId（可见顶层窗口），失败则使用枚举接口回退
   for (let i = 0; i < attempts; i++) {
     try {
@@ -21,8 +26,8 @@ async function findHandleByPidWithRetry(dm: any, pid: number, attempts = 5, dela
       const listStr: string = dm.EnumWindowByProcessId(pid, '', '', 8 + 16);
       const candidates = String(listStr || '')
         .split(',')
-        .map(s => parseInt(s))
-        .filter(n => Number.isFinite(n) && n > 0);
+        .map((s) => parseInt(s))
+        .filter((n) => Number.isFinite(n) && n > 0);
       if (candidates.length > 0) {
         return candidates[0];
       }
@@ -30,17 +35,19 @@ async function findHandleByPidWithRetry(dm: any, pid: number, attempts = 5, dela
       const listTopOnly: string = dm.EnumWindowByProcessId(pid, '', '', 8);
       const topOnly = String(listTopOnly || '')
         .split(',')
-        .map(s => parseInt(s))
-        .filter(n => Number.isFinite(n) && n > 0);
+        .map((s) => parseInt(s))
+        .filter((n) => Number.isFinite(n) && n > 0);
       if (topOnly.length > 0) {
         return topOnly[0];
       }
     } catch (e) {
       // 中文注释：忽略单次错误，继续重试
-      console.warn(`[FindWindowByPID] 尝试 ${i + 1}/${attempts} 失败: ${String((e as any)?.message || e)}`);
+      console.warn(
+        `[FindWindowByPID] 尝试 ${i + 1}/${attempts} 失败: ${String((e as any)?.message || e)}`
+      );
     }
     // 中文注释：等待后再次尝试，给窗口创建与显示留时间
-    await new Promise(resolve => setTimeout(resolve, delayMs));
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
   return 0;
 }
@@ -129,28 +136,34 @@ ipcMain.handle('damo:getWindowInfo', async (_event, hwnd: number) => {
   return { windowRect, clientRect, scaleFactor };
 });
 
-ipcMain.handle('damo:clientCssToScreenPx', async (_event, hwnd: number, xCss: number, yCss: number) => {
-  // 中文注释：把客户区 CSS(DIP) 坐标转换为屏幕像素坐标
-  const dm = ensureDamo();
-  const windowRect = await dm.getWindowRect(hwnd);
-  const display = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
-  const sf = display.scaleFactor;
-  // 先把 CSS(DIP) 转为客户区像素坐标，再用插件转换为屏幕像素坐标
-  const xClientPx = Math.round(xCss * sf);
-  const yClientPx = Math.round(yCss * sf);
-  return dm.clientToScreen(hwnd, xClientPx, yClientPx);
-});
+ipcMain.handle(
+  'damo:clientCssToScreenPx',
+  async (_event, hwnd: number, xCss: number, yCss: number) => {
+    // 中文注释：把客户区 CSS(DIP) 坐标转换为屏幕像素坐标
+    const dm = ensureDamo();
+    const windowRect = await dm.getWindowRect(hwnd);
+    const display = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
+    const sf = display.scaleFactor;
+    // 先把 CSS(DIP) 转为客户区像素坐标，再用插件转换为屏幕像素坐标
+    const xClientPx = Math.round(xCss * sf);
+    const yClientPx = Math.round(yCss * sf);
+    return dm.clientToScreen(hwnd, xClientPx, yClientPx);
+  }
+);
 
-ipcMain.handle('damo:screenPxToClientCss', async (_event, hwnd: number, xScreenPx: number, yScreenPx: number) => {
-  // 中文注释：把屏幕像素坐标转换为客户区 CSS(DIP) 坐标
-  const dm = ensureDamo();
-  const windowRect = await dm.getWindowRect(hwnd);
-  const display = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
-  const sf = display.scaleFactor;
-  // 先用插件把屏幕像素转换为客户区像素，再除以缩放因子得到 CSS(DIP)
-  const clientPx = await dm.screenToClient(hwnd, xScreenPx, yScreenPx);
-  return { x: clientPx.x / sf, y: clientPx.y / sf };
-});
+ipcMain.handle(
+  'damo:screenPxToClientCss',
+  async (_event, hwnd: number, xScreenPx: number, yScreenPx: number) => {
+    // 中文注释：把屏幕像素坐标转换为客户区 CSS(DIP) 坐标
+    const dm = ensureDamo();
+    const windowRect = await dm.getWindowRect(hwnd);
+    const display = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
+    const sf = display.scaleFactor;
+    // 先用插件把屏幕像素转换为客户区像素，再除以缩放因子得到 CSS(DIP)
+    const clientPx = await dm.screenToClient(hwnd, xScreenPx, yScreenPx);
+    return { x: clientPx.x / sf, y: clientPx.y / sf };
+  }
+);
 ipcMain.handle('damo:getDictInfo', (_event, hwnd?: number) => {
   // 中文注释：查询当前 OCR 使用的字库信息；优先按窗口句柄查询对应实例
   if (typeof hwnd === 'number' && hwnd > 0) {
@@ -198,26 +211,26 @@ app.whenReady().then(() => {
   // 中文注释：在环境校验通过后再进行进程扫描与大漠绑定逻辑
   cp.exec('tasklist', async function (error, stdout) {
     if (error) {
-      console.log(error)
-      return
+      console.log(error);
+      return;
     }
     // console.log('进程列表:', stdout)
-    if (!stdout) return
-    const list = stdout.split('\n')
+    if (!stdout) return;
+    const list = stdout.split('\n');
     for (const line of list) {
-      const processMessage = line.trim().split(/\s+/)
-      const processName = processMessage[0] // 中文注释：processMessage[0]进程名称 ， processMessage[1]进程id
+      const processMessage = line.trim().split(/\s+/);
+      const processName = processMessage[0]; // 中文注释：processMessage[0]进程名称 ， processMessage[1]进程id
       // if (processName === 'qqfo.exe') {
-        if (processName === 'Notepad.exe') {
+      if (processName === 'Notepad.exe') {
         // 中文注释：判断进程为 wegame.exe，拿到进程 id（注意可能存在多个 wegame 实例，可按需扩展条件）
-        const pid = parseInt(processMessage[1])
+        const pid = parseInt(processMessage[1]);
         // Electron 的系统通知功能
-        new Notification({ title: '注入幻想进程', body: pid.toString() }).show()
+        new Notification({ title: '注入幻想进程', body: pid.toString() }).show();
         // 中文注释：通过事件总线触发按 PID 的多窗口绑定（每个窗口独立实例化大漠对象）
         ffoEvents.emit('bind:pid', { pid });
       }
     }
-  })
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -233,30 +246,26 @@ app.whenReady().then(() => {
     try {
       // 中文注释：优先从候选路径加载字典，按顺序尝试；成功后启用索引 0
       const dm = rec?.ffoClient?.dm; // 中文注释：底层大漠 COM 对象
-      const dictCandidates = [
-        // path.join(process.cwd(), 'ocr.dict'),
-        // path.join(process.cwd(), 'src', 'lib', 'test.dict.txt'),
-         path.join(process.cwd(), 'src', 'lib', 'test.dict.txt'),
-      ];
+
+      const dictPath = path.join(process.cwd(), '/src/lib/font/1_cn.txt');
       let dictLoaded = false;
-      for (const p of dictCandidates) {
-        if (fs.existsSync(p)) {
-          try {
-            const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, p);
-            if (ret === 1) {
-              dm?.UseDict(0);
-              console.log(`[OCR字典] 已加载 ${path.basename(p)} 并启用索引 0`);
-              dictLoaded = true;
-              // 中文注释：字库加载成功后，向渲染进程广播当前字库信息
-              const info = rec?.ffoClient?.getCurrentDictInfo?.();
-              BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('damo:dictInfoUpdated', { hwnd, info }));
-              break;
-            } else {
-              console.warn(`[OCR字典] SetDict 返回值=${ret} | 路径=${p}`);
-            }
-          } catch (err) {
-            console.warn(`[OCR字典] 加载失败: ${p} | ${String((err as any)?.message || err)}`);
+      if (fs.existsSync(dictPath)) {
+        try {
+          const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, dictPath);
+          if (ret === 1) {
+            dm?.UseDict(0);
+            console.log(`[OCR字典] 已加载 ${path.basename(dictPath)} 并启用索引 0`);
+            dictLoaded = true;
+            // 中文注释：字库加载成功后，向渲染进程广播当前字库信息
+            const info = rec?.ffoClient?.getCurrentDictInfo?.();
+            BrowserWindow.getAllWindows().forEach((w) =>
+              w.webContents.send('damo:dictInfoUpdated', { hwnd, info })
+            );
+          } else {
+            console.warn(`[OCR字典] SetDict 返回值=${ret} | 路径=${dictPath}`);
           }
+        } catch (err) {
+          console.warn(`[OCR字典] 加载失败: ${dictPath} | ${String((err as any)?.message || err)}`);
         }
       }
       if (!dictLoaded) {
@@ -264,7 +273,9 @@ app.whenReady().then(() => {
         console.log('[OCR字典] 使用默认字典索引 0（未找到或加载失败）');
         // 中文注释：即便未加载成功，也广播当前字库信息（通常为默认索引）
         const info = rec?.ffoClient?.getCurrentDictInfo?.();
-        BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('damo:dictInfoUpdated', { hwnd, info }));
+        BrowserWindow.getAllWindows().forEach((w) =>
+          w.webContents.send('damo:dictInfoUpdated', { hwnd, info })
+        );
       }
 
       // 中文注释：示例移动窗口
@@ -273,64 +284,67 @@ app.whenReady().then(() => {
       // 中文注释：获取客户区矩形，输出调试
       const rect = rec?.ffoClient?.getClientRect(hwnd);
       console.log(rect, 'clientRect');
-
+      const screen_w = dm.GetScreenWidth();
+      const screen_h = dm.GetScreenHeight();
       // 中文注释：调试截图确认识别区域
-      dm?.Capture(0, 150, 400, 450, 'ocr_debug.bmp');
+      // dm?.Capture(0, 150, 400, 450, SCREENSHOT_PATH + '/ocr_debug.bmp');
+      dm?.Capture(0, 0, screen_w - 1, screen_h - 1, SCREENSHOT_PATH + '/ocr_debug.png');
 
-      // 中文注释：在识别区域内抽样取色，确认前景文字是否为黑字或白字
-      const sampleColors = [
-        dm?.GetColor(10, 160),
-        dm?.GetColor(200, 300),
-        dm?.GetColor(390, 440),
-      ];
-      console.log('[OCR取色样本]', sampleColors);
+      // // 中文注释：在识别区域内抽样取色，确认前景文字是否为黑字或白字
+      // const sampleColors = [
+      //   dm?.GetColor(10, 160),
+      //   dm?.GetColor(200, 300),
+      //   dm?.GetColor(390, 440),
+      // ];
+      // console.log('[OCR取色样本]', sampleColors);
 
-      // 中文注释：辅助函数：把 RRGGBB 转为亮度（0~255），用于判断前景是白字还是黑字
-      const toBrightness = (hex: any): number => {
-        const s = String(hex || '000000');
-        const r = parseInt(s.slice(0, 2), 16) || 0;
-        const g = parseInt(s.slice(2, 4), 16) || 0;
-        const b = parseInt(s.slice(4, 6), 16) || 0;
-        // 中文注释：使用加权亮度公式（更符合人眼感知）
-        return Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
-      };
-      const brightnessList = sampleColors.map(c => toBrightness(c));
-      const avgBrightness = Math.round(
-        brightnessList.reduce((a, b) => a + b, 0) / (brightnessList.length || 1)
-      );
-      console.log('[OCR亮度统计] 点亮度=', brightnessList, '平均亮度=', avgBrightness);
+      // // 中文注释：辅助函数：把 RRGGBB 转为亮度（0~255），用于判断前景是白字还是黑字
+      // const toBrightness = (hex: any): number => {
+      //   const s = String(hex || '000000');
+      //   const r = parseInt(s.slice(0, 2), 16) || 0;
+      //   const g = parseInt(s.slice(2, 4), 16) || 0;
+      //   const b = parseInt(s.slice(4, 6), 16) || 0;
+      //   // 中文注释：使用加权亮度公式（更符合人眼感知）
+      //   return Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
+      // };
+      // const brightnessList = sampleColors.map(c => toBrightness(c));
+      // const avgBrightness = Math.round(
+      //   brightnessList.reduce((a, b) => a + b, 0) / (brightnessList.length || 1)
+      // );
+      // console.log('[OCR亮度统计] 点亮度=', brightnessList, '平均亮度=', avgBrightness);
 
-      // 中文注释：根据平均亮度估计文字颜色（深色文本 vs 浅色文本），并准备候选掩码
-      const isWhiteText = avgBrightness >= 180; // 中文注释：>=180 认为区域主要是浅色（白字）
-      const maskCandidates = isWhiteText
-        ? ['D0D0D0-FFFFFF', 'C0C0C0-FFFFFF'] // 中文注释：白字掩码（含抗锯齿浅灰）
-        : ['000000-202020', '000000-303030']; // 中文注释：黑字掩码（含抗锯齿深灰）
+      // // 中文注释：根据平均亮度估计文字颜色（深色文本 vs 浅色文本），并准备候选掩码
+      // const isWhiteText = avgBrightness >= 180; // 中文注释：>=180 认为区域主要是浅色（白字）
+      // const maskCandidates = isWhiteText
+      //   ? ['D0D0D0-FFFFFF', 'C0C0C0-FFFFFF'] // 中文注释：白字掩码（含抗锯齿浅灰）
+      //   : ['000000-202020', '000000-303030']; // 中文注释：黑字掩码（含抗锯齿深灰）
 
-      // 中文注释：相似度阈值候选，从宽到严，逐步尝试提高命中概率
-      const simCandidates = [0.55, 0.5, 0.6];
+      // // 中文注释：相似度阈值候选，从宽到严，逐步尝试提高命中概率
+      // const simCandidates = [0.55, 0.5, 0.6];
 
-      // 中文注释：遍历掩码与相似度组合，直到获得非空识别结果
-      let ocrResult: string = '';
-      outer: for (const mask of maskCandidates) {
-        for (const sim of simCandidates) {
-          const r = dm?.Ocr(0, 150, 400, 450, mask, sim);
-          console.log(`[OCR尝试] mask=${mask} sim=${sim} =>`, r);
-          if (r && String(r).trim().length > 0) {
-            ocrResult = String(r);
-            break outer;
-          }
-        }
-      }
+      // // 中文注释：遍历掩码与相似度组合，直到获得非空识别结果
+      // let ocrResult: string = '';
+      // outer: for (const mask of maskCandidates) {
+      //   for (const sim of simCandidates) {
+      //     const r = dm?.Ocr(0, 150, 400, 450, mask, sim);
+      //     console.log(`[OCR尝试] mask=${mask} sim=${sim} =>`, r);
+      //     if (r && String(r).trim().length > 0) {
+      //       ocrResult = String(r);
+      //       break outer;
+      //     }
+      //   }
+      // }
 
-      // 中文注释：若仍为空，最后再用默认黑字掩码+更低相似度兜底
-      if (!ocrResult || ocrResult.trim().length === 0) {
-        const fallback = dm?.Ocr(0, 150, 400, 450, '000000-202020', 0.48);
-        console.log('[OCR兜底] mask=000000-202020 sim=0.48 =>', fallback);
-        if (fallback && String(fallback).trim().length > 0) {
-          ocrResult = String(fallback);
-        }
-      }
+      // // 中文注释：若仍为空，最后再用默认黑字掩码+更低相似度兜底
+      // if (!ocrResult || ocrResult.trim().length === 0) {
+      //   const fallback = dm?.Ocr(0, 150, 400, 450, '000000-202020', 0.48);
+      //   console.log('[OCR兜底] mask=000000-202020 sim=0.48 =>', fallback);
+      //   if (fallback && String(fallback).trim().length > 0) {
+      //     ocrResult = String(fallback);
+      //   }
+      // }
 
+      const ocrResult = dm?.Ocr(0, 150, 400, 450, '000000-202020', 0.48);
       console.log('[左上角文字识别]', ocrResult);
     } catch (e) {
       // 中文注释：忽略单次错误，继续
@@ -338,7 +352,10 @@ app.whenReady().then(() => {
     }
   });
   ffoEvents.on('error', (payload: any) => {
-    const msg = typeof payload?.error === 'string' ? payload.error : (payload?.error?.message || String(payload?.error));
+    const msg =
+      typeof payload?.error === 'string'
+        ? payload.error
+        : payload?.error?.message || String(payload?.error);
     console.warn(`[事件错误] pid=${payload?.pid ?? '-'} hwnd=${payload?.hwnd ?? '-'} | ${msg}`);
   });
   ffoEvents.on('unbind', ({ hwnd }) => {
@@ -386,7 +403,9 @@ app.on('before-quit', () => {
       'damo:getDictInfo',
     ];
     channels.forEach((ch) => {
-      try { ipcMain.removeHandler(ch); } catch {}
+      try {
+        ipcMain.removeHandler(ch);
+      } catch {}
     });
   } catch (e) {
     console.warn('[退出清理] 移除 IPC handler 失败:', String((e as any)?.message || e));

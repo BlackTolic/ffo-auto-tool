@@ -1,0 +1,9 @@
+{
+  // 中文注释：工作区推荐安装的 VSCode 扩展
+  "recommendations": [
+    // 中文注释：ESLint 扩展（负责代码质量检查与自动修复）
+    "dbaeumer.vscode-eslint",
+    // 中文注释：Prettier 扩展（负责统一代码风格格式化）
+    "esbenp.prettier-vscode"
+  ]
+}
