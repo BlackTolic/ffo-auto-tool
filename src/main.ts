@@ -287,64 +287,10 @@ app.whenReady().then(() => {
       const screen_w = dm.GetScreenWidth();
       const screen_h = dm.GetScreenHeight();
       // 中文注释：调试截图确认识别区域
-      // dm?.Capture(0, 150, 400, 450, SCREENSHOT_PATH + '/ocr_debug.bmp');
-      dm?.Capture(0, 0, screen_w - 1, screen_h - 1, SCREENSHOT_PATH + '/ocr_debug.png');
+      dm?.Capture(0, 150, 400, 450, SCREENSHOT_PATH + '/ocr_debug.png');
+      // dm?.Capture(0, 0, screen_w - 1, screen_h - 1, SCREENSHOT_PATH + '/ocr_debug.png');
 
-      // // 中文注释：在识别区域内抽样取色，确认前景文字是否为黑字或白字
-      // const sampleColors = [
-      //   dm?.GetColor(10, 160),
-      //   dm?.GetColor(200, 300),
-      //   dm?.GetColor(390, 440),
-      // ];
-      // console.log('[OCR取色样本]', sampleColors);
-
-      // // 中文注释：辅助函数：把 RRGGBB 转为亮度（0~255），用于判断前景是白字还是黑字
-      // const toBrightness = (hex: any): number => {
-      //   const s = String(hex || '000000');
-      //   const r = parseInt(s.slice(0, 2), 16) || 0;
-      //   const g = parseInt(s.slice(2, 4), 16) || 0;
-      //   const b = parseInt(s.slice(4, 6), 16) || 0;
-      //   // 中文注释：使用加权亮度公式（更符合人眼感知）
-      //   return Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
-      // };
-      // const brightnessList = sampleColors.map(c => toBrightness(c));
-      // const avgBrightness = Math.round(
-      //   brightnessList.reduce((a, b) => a + b, 0) / (brightnessList.length || 1)
-      // );
-      // console.log('[OCR亮度统计] 点亮度=', brightnessList, '平均亮度=', avgBrightness);
-
-      // // 中文注释：根据平均亮度估计文字颜色（深色文本 vs 浅色文本），并准备候选掩码
-      // const isWhiteText = avgBrightness >= 180; // 中文注释：>=180 认为区域主要是浅色（白字）
-      // const maskCandidates = isWhiteText
-      //   ? ['D0D0D0-FFFFFF', 'C0C0C0-FFFFFF'] // 中文注释：白字掩码（含抗锯齿浅灰）
-      //   : ['000000-202020', '000000-303030']; // 中文注释：黑字掩码（含抗锯齿深灰）
-
-      // // 中文注释：相似度阈值候选，从宽到严，逐步尝试提高命中概率
-      // const simCandidates = [0.55, 0.5, 0.6];
-
-      // // 中文注释：遍历掩码与相似度组合，直到获得非空识别结果
-      // let ocrResult: string = '';
-      // outer: for (const mask of maskCandidates) {
-      //   for (const sim of simCandidates) {
-      //     const r = dm?.Ocr(0, 150, 400, 450, mask, sim);
-      //     console.log(`[OCR尝试] mask=${mask} sim=${sim} =>`, r);
-      //     if (r && String(r).trim().length > 0) {
-      //       ocrResult = String(r);
-      //       break outer;
-      //     }
-      //   }
-      // }
-
-      // // 中文注释：若仍为空，最后再用默认黑字掩码+更低相似度兜底
-      // if (!ocrResult || ocrResult.trim().length === 0) {
-      //   const fallback = dm?.Ocr(0, 150, 400, 450, '000000-202020', 0.48);
-      //   console.log('[OCR兜底] mask=000000-202020 sim=0.48 =>', fallback);
-      //   if (fallback && String(fallback).trim().length > 0) {
-      //     ocrResult = String(fallback);
-      //   }
-      // }
-
-      const ocrResult = dm?.Ocr(0, 150, 400, 450, '000000-202020', 0.48);
+      const ocrResult = dm?.Ocr(0, 150, 400, 450, '000000-111111', 1.0);
       console.log('[左上角文字识别]', ocrResult);
     } catch (e) {
       // 中文注释：忽略单次错误，继续
