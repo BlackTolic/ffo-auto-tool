@@ -7,50 +7,7 @@ import { Damo } from './damo/damo';
 import { validateEnvironment } from './envCheck'; // 中文注释：引入运行时环境校验
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
 
-// 中文注释：按 PID 查找顶层可见窗口句柄，带重试与枚举回退
-async function findHandleByPidWithRetry(
-  dm: any,
-  pid: number,
-  attempts = 5,
-  delayMs = 500
-): Promise<number> {
-  // 中文注释：循环尝试，优先使用 FindWindowByProcessId（可见顶层窗口），失败则使用枚举接口回退
-  for (let i = 0; i < attempts; i++) {
-    try {
-      // 中文注释：首先尝试直接查找顶层可见窗口
-      const hwnd = dm.FindWindowByProcessId(pid, '', '');
-      if (hwnd && hwnd > 0) {
-        return hwnd;
-      }
-      // 中文注释：回退到枚举（过滤 8=顶级窗口，16=可见窗口），拿到第一个候选
-      const listStr: string = dm.EnumWindowByProcessId(pid, '', '', 8 + 16);
-      const candidates = String(listStr || '')
-        .split(',')
-        .map((s) => parseInt(s))
-        .filter((n) => Number.isFinite(n) && n > 0);
-      if (candidates.length > 0) {
-        return candidates[0];
-      }
-      // 中文注释：再回退一次，仅匹配顶级窗口（可能目标窗口当前不可见）
-      const listTopOnly: string = dm.EnumWindowByProcessId(pid, '', '', 8);
-      const topOnly = String(listTopOnly || '')
-        .split(',')
-        .map((s) => parseInt(s))
-        .filter((n) => Number.isFinite(n) && n > 0);
-      if (topOnly.length > 0) {
-        return topOnly[0];
-      }
-    } catch (e) {
-      // 中文注释：忽略单次错误，继续重试
-      console.warn(
-        `[FindWindowByPID] 尝试 ${i + 1}/${attempts} 失败: ${String((e as any)?.message || e)}`
-      );
-    }
-    // 中文注释：等待后再次尝试，给窗口创建与显示留时间
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
-  }
-  return 0;
-}
+// 中文注释：移除未使用的窗口查找辅助函数（逻辑已不再使用，避免冗余）
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -80,173 +37,85 @@ function ensureDamo(): Damo {
   return damo;
 }
 
-// 新增：环境校验的 IPC（渲染进程可主动拉取校验结果）
-ipcMain.handle('env:check', () => {
-  // 中文注释：返回一次性的校验结果对象（包含逐项详情）
-  return validateEnvironment();
-});
-
-// IPC handlers to access Damo from renderer via preload
-ipcMain.handle('damo:ver', () => {
-  return ensureDamo().ver();
-});
-
-ipcMain.handle('damo:getForegroundWindow', () => {
-  return ensureDamo().getForegroundWindow();
-});
-
-ipcMain.handle(
-  'damo:bindWindow',
-  (_event, hwnd: number, display: string, mouse: string, keypad: string, mode: number) => {
-    return ensureDamo().bindWindow(hwnd, display, mouse, keypad, mode);
-  }
-);
-
-ipcMain.handle('damo:unbindWindow', () => {
-  return ensureDamo().unbindWindow();
-});
-
-ipcMain.handle('damo:getClientRect', (_event, hwnd: number) => {
-  // 中文注释：通过 IPC 暴露客户区矩形查询
-  return ensureDamo().getClientRect(hwnd);
-});
-
-ipcMain.handle('damo:clientToScreen', (_event, hwnd: number, x: number, y: number) => {
-  // 中文注释：客户区坐标 -> 屏幕坐标
-  return ensureDamo().clientToScreen(hwnd, x, y);
-});
-
-ipcMain.handle('damo:screenToClient', (_event, hwnd: number, x: number, y: number) => {
-  // 中文注释：屏幕坐标 -> 客户区坐标
-  return ensureDamo().screenToClient(hwnd, x, y);
-});
-ipcMain.handle('damo:getWindowRect', (_event, hwnd: number) => {
-  // 中文注释：通过 IPC 暴露窗口矩形查询，返回 x/y/width/height
-  return ensureDamo().getWindowRect(hwnd);
-});
-
-ipcMain.handle('damo:getWindowInfo', async (_event, hwnd: number) => {
-  // 中文注释：聚合返回窗口矩形、客户区矩形和所在显示器的缩放因子
-  const dm = ensureDamo();
-  const windowRect = await dm.getWindowRect(hwnd);
-  const clientRect = await dm.getClientRect(hwnd);
-  // 根据窗口左上角找到最近的显示器，获取其 DPI 缩放因子
-  const display = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
-  const scaleFactor = display.scaleFactor; // 例如 1.25、1.5 等
-  return { windowRect, clientRect, scaleFactor };
-});
-
-ipcMain.handle(
-  'damo:clientCssToScreenPx',
-  async (_event, hwnd: number, xCss: number, yCss: number) => {
-    // 中文注释：把客户区 CSS(DIP) 坐标转换为屏幕像素坐标
+// 中文注释：统一注册所有 IPC 通道的函数
+function setupIpcHandlers() {
+  ipcMain.handle('env:check', () => validateEnvironment());
+  ipcMain.handle('damo:ver', () => ensureDamo().ver());
+  ipcMain.handle('damo:getForegroundWindow', () => ensureDamo().getForegroundWindow());
+  ipcMain.handle(
+    'damo:bindWindow',
+    (_event, hwnd: number, display: string, mouse: string, keypad: string, mode: number) => {
+      return ensureDamo().bindWindow(hwnd, display, mouse, keypad, mode);
+    }
+  );
+  ipcMain.handle('damo:unbindWindow', () => ensureDamo().unbindWindow());
+  ipcMain.handle('damo:getClientRect', (_event, hwnd: number) => ensureDamo().getClientRect(hwnd));
+  ipcMain.handle('damo:clientToScreen', (_event, hwnd: number, x: number, y: number) =>
+    ensureDamo().clientToScreen(hwnd, x, y)
+  );
+  ipcMain.handle('damo:screenToClient', (_event, hwnd: number, x: number, y: number) =>
+    ensureDamo().screenToClient(hwnd, x, y)
+  );
+  ipcMain.handle('damo:getWindowRect', (_event, hwnd: number) => ensureDamo().getWindowRect(hwnd));
+  ipcMain.handle('damo:getWindowInfo', async (_event, hwnd: number) => {
     const dm = ensureDamo();
     const windowRect = await dm.getWindowRect(hwnd);
-    const display = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
-    const sf = display.scaleFactor;
-    // 先把 CSS(DIP) 转为客户区像素坐标，再用插件转换为屏幕像素坐标
-    const xClientPx = Math.round(xCss * sf);
-    const yClientPx = Math.round(yCss * sf);
-    return dm.clientToScreen(hwnd, xClientPx, yClientPx);
-  }
-);
-
-ipcMain.handle(
-  'damo:screenPxToClientCss',
-  async (_event, hwnd: number, xScreenPx: number, yScreenPx: number) => {
-    // 中文注释：把屏幕像素坐标转换为客户区 CSS(DIP) 坐标
+    const clientRect = await dm.getClientRect(hwnd);
+    const displayInfo = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
+    const scaleFactor = displayInfo.scaleFactor;
+    return { windowRect, clientRect, scaleFactor };
+  });
+  ipcMain.handle(
+    'damo:clientCssToScreenPx',
+    async (_event, hwnd: number, xCss: number, yCss: number) => {
+      const dm = ensureDamo();
+      const windowRect = await dm.getWindowRect(hwnd);
+      const displayInfo = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
+      const sf = displayInfo.scaleFactor;
+      const xClientPx = Math.round(xCss * sf);
+      const yClientPx = Math.round(yCss * sf);
+      return dm.clientToScreen(hwnd, xClientPx, yClientPx);
+    }
+  );
+  ipcMain.handle('damo:screenPxToClientCss', async (_event, hwnd: number, x: number, y: number) => {
     const dm = ensureDamo();
     const windowRect = await dm.getWindowRect(hwnd);
-    const display = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
-    const sf = display.scaleFactor;
-    // 先用插件把屏幕像素转换为客户区像素，再除以缩放因子得到 CSS(DIP)
-    const clientPx = await dm.screenToClient(hwnd, xScreenPx, yScreenPx);
+    const displayInfo = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
+    const sf = displayInfo.scaleFactor;
+    const clientPx = await dm.screenToClient(hwnd, x, y);
     return { x: clientPx.x / sf, y: clientPx.y / sf };
-  }
-);
-ipcMain.handle('damo:getDictInfo', (_event, hwnd?: number) => {
-  // 中文注释：查询当前 OCR 使用的字库信息；优先按窗口句柄查询对应实例
-  if (typeof hwnd === 'number' && hwnd > 0) {
-    const rec = damoBindingManager.get(hwnd);
-    if (rec && typeof rec.ffoClient.getCurrentDictInfo === 'function') {
-      return rec.ffoClient.getCurrentDictInfo();
+  });
+  ipcMain.handle('damo:getDictInfo', (_event, hwnd?: number) => {
+    if (typeof hwnd === 'number' && hwnd > 0) {
+      const rec = damoBindingManager.get(hwnd);
+      if (rec && typeof rec.ffoClient.getCurrentDictInfo === 'function') {
+        return rec.ffoClient.getCurrentDictInfo();
+      }
+      return { activeIndex: null, source: { type: 'unknown' } };
+    }
+    const dm = ensureDamo();
+    if (typeof (dm as any).getCurrentDictInfo === 'function') {
+      return (dm as any).getCurrentDictInfo();
     }
     return { activeIndex: null, source: { type: 'unknown' } };
-  }
-  // 中文注释：否则返回主进程默认实例的字库信息（若存在）
-  const dm = ensureDamo();
-  if (typeof (dm as any).getCurrentDictInfo === 'function') {
-    return (dm as any).getCurrentDictInfo();
-  }
-  return { activeIndex: null, source: { type: 'unknown' } };
-});
-app.whenReady().then(() => {
-  // 中文注释：启动前进行环境版本与架构校验（在创建窗口与扫描进程之前执行）
-  const env = validateEnvironment();
-  const envCheckOnly = process.env.ENV_CHECK_ONLY === '1'; // 中文注释：仅校验模式，不创建窗口
-
-  // 打印逐项结果（无论通过与否，都输出便于观察）
-  console.log('== 环境校验结果 ==');
-  for (const item of env.items) {
-    console.log(`- ${item.name}: ${item.ok ? 'OK' : 'FAIL'} | ${item.message}`);
-  }
-
-  if (!env.ok) {
-    console.error('环境校验未通过，程序将退出。');
-    new Notification({ title: '环境校验失败', body: '请查看控制台日志并修复环境后重试。' }).show();
-    app.quit();
-    return;
-  }
-
-  // 如果仅校验模式，直接退出，不创建窗口与后续逻辑
-  if (envCheckOnly) {
-    console.log('仅校验模式，应用不创建窗口，退出。');
-    app.quit();
-    return;
-  }
-
-  // 创建主窗口（环境校验通过后）
-  createWindow();
-
-  // 中文注释：在环境校验通过后再进行进程扫描与大漠绑定逻辑
-  cp.exec('tasklist', async function (error, stdout) {
-    if (error) {
-      console.log(error);
-      return;
-    }
-    // console.log('进程列表:', stdout)
-    if (!stdout) return;
-    const list = stdout.split('\n');
-    for (const line of list) {
-      const processMessage = line.trim().split(/\s+/);
-      const processName = processMessage[0]; // 中文注释：processMessage[0]进程名称 ， processMessage[1]进程id
-      // if (processName === 'qqfo.exe') {
-      if (processName === 'Notepad.exe') {
-        // 中文注释：判断进程为 wegame.exe，拿到进程 id（注意可能存在多个 wegame 实例，可按需扩展条件）
-        const pid = parseInt(processMessage[1]);
-        // Electron 的系统通知功能
-        new Notification({ title: '注入幻想进程', body: pid.toString() }).show();
-        // 中文注释：通过事件总线触发按 PID 的多窗口绑定（每个窗口独立实例化大漠对象）
-        ffoEvents.emit('bind:pid', { pid });
-      }
-    }
   });
+}
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
-  // 中文注释：注册事件监听，便于观察绑定成功与错误
+// 中文注释：向所有渲染进程广播字库信息更新
+function broadcastDictInfoUpdated(hwnd: number, info: any) {
+  BrowserWindow.getAllWindows().forEach((w) =>
+    w.webContents.send('damo:dictInfoUpdated', { hwnd, info })
+  );
+}
+
+// 中文注释：为绑定成功事件注册处理逻辑（加载字库、调试输出、截图与 OCR 示例）
+function registerBoundEventHandlers() {
   ffoEvents.on('bound', async ({ pid, hwnd }) => {
-    // 中文注释：绑定成功通知并做一个简单示例：移动窗口到(0,0)
     new Notification({ title: '绑定成功', body: `PID=${pid} HWND=${hwnd}` }).show();
     const rec = damoBindingManager.get(hwnd);
     if (!rec) return;
     try {
-      // 中文注释：优先从候选路径加载字典，按顺序尝试；成功后启用索引 0
-      const dm = rec?.ffoClient?.dm; // 中文注释：底层大漠 COM 对象
-
+      const dm = rec?.ffoClient?.dm;
       const dictPath = path.join(process.cwd(), '/src/lib/font/1_cn.txt');
       let dictLoaded = false;
       if (fs.existsSync(dictPath)) {
@@ -256,11 +125,8 @@ app.whenReady().then(() => {
             dm?.UseDict(0);
             console.log(`[OCR字典] 已加载 ${path.basename(dictPath)} 并启用索引 0`);
             dictLoaded = true;
-            // 中文注释：字库加载成功后，向渲染进程广播当前字库信息
             const info = rec?.ffoClient?.getCurrentDictInfo?.();
-            BrowserWindow.getAllWindows().forEach((w) =>
-              w.webContents.send('damo:dictInfoUpdated', { hwnd, info })
-            );
+            broadcastDictInfoUpdated(hwnd, info);
           } else {
             console.warn(`[OCR字典] SetDict 返回值=${ret} | 路径=${dictPath}`);
           }
@@ -271,11 +137,8 @@ app.whenReady().then(() => {
       if (!dictLoaded) {
         dm?.UseDict(0);
         console.log('[OCR字典] 使用默认字典索引 0（未找到或加载失败）');
-        // 中文注释：即便未加载成功，也广播当前字库信息（通常为默认索引）
         const info = rec?.ffoClient?.getCurrentDictInfo?.();
-        BrowserWindow.getAllWindows().forEach((w) =>
-          w.webContents.send('damo:dictInfoUpdated', { hwnd, info })
-        );
+        broadcastDictInfoUpdated(hwnd, info);
       }
 
       // 中文注释：示例移动窗口
@@ -284,16 +147,16 @@ app.whenReady().then(() => {
       // 中文注释：获取客户区矩形，输出调试
       const rect = rec?.ffoClient?.getClientRect(hwnd);
       console.log(rect, 'clientRect');
+
+      // 中文注释：调试截图确认识别区域
       const screen_w = dm.GetScreenWidth();
       const screen_h = dm.GetScreenHeight();
-      // 中文注释：调试截图确认识别区域
       dm?.Capture(0, 150, 400, 450, SCREENSHOT_PATH + '/ocr_debug.png');
       // dm?.Capture(0, 0, screen_w - 1, screen_h - 1, SCREENSHOT_PATH + '/ocr_debug.png');
 
       const ocrResult = dm?.Ocr(0, 150, 400, 450, '000000-111111', 1.0);
       console.log('[左上角文字识别]', ocrResult);
     } catch (e) {
-      // 中文注释：忽略单次错误，继续
       console.warn('[OCR识别错误]', String((e as any)?.message || e));
     }
   });
@@ -307,7 +170,54 @@ app.whenReady().then(() => {
   ffoEvents.on('unbind', ({ hwnd }) => {
     console.log(`[解绑完成] hwnd=${hwnd}`);
   });
-});
+}
+
+// 中文注释：扫描进程并触发绑定（按名称过滤）
+function scanProcessesAndBind(targetName: string) {
+  cp.exec('tasklist', async function (error, stdout) {
+    if (error) {
+      console.log(error);
+      return;
+    }
+    if (!stdout) return;
+    const list = stdout.split('\n');
+    for (const line of list) {
+      const processMessage = line.trim().split(/\s+/);
+      const processName = processMessage[0];
+      if (processName === targetName) {
+        const pid = parseInt(processMessage[1]);
+        new Notification({ title: '注入幻想进程', body: pid.toString() }).show();
+        ffoEvents.emit('bind:pid', { pid });
+      }
+    }
+  });
+}
+
+// 中文注释：应用启动入口，负责环境校验、创建窗口、注册事件与进程扫描
+function bootstrapApp() {
+  const env = validateEnvironment();
+  const envCheckOnly = process.env.ENV_CHECK_ONLY === '1';
+
+  console.log('== 环境校验结果 ==');
+  for (const item of env.items) {
+    console.log(`- ${item.name}: ${item.ok ? 'OK' : 'FAIL'} | ${item.message}`);
+  }
+  if (!env.ok) {
+    console.error('环境校验未通过，程序将退出。');
+    new Notification({ title: '环境校验失败', body: '请查看控制台日志并修复环境后重试。' }).show();
+    app.quit();
+    return;
+  }
+  if (envCheckOnly) {
+    console.log('仅校验模式，应用不创建窗口，退出。');
+    app.quit();
+    return;
+  }
+
+  createWindow();
+  registerBoundEventHandlers();
+  scanProcessesAndBind('Notepad.exe'); // 中文注释：按需替换目标进程名
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
