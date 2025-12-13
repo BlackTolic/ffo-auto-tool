@@ -4,7 +4,7 @@
  */
 
 // 中文注释：自动打怪默认配置与合并函数
-import type { AutoCombatOptions } from '../utils/autoCombat';
+import type { AutoCombatOptions } from '../utils/auto-combat';
 
 // 中文注释：根据屏幕尺寸生成默认配置
 export function getDefaultAutoCombatOptions(screen_w: number, screen_h: number): Required<AutoCombatOptions> {
@@ -24,9 +24,6 @@ export function getDefaultAutoCombatOptions(screen_w: number, screen_h: number):
 }
 
 // 中文注释：合并用户覆盖项到默认配置（浅合并）
-export function mergeCombatOptions(
-  defaults: Required<AutoCombatOptions>,
-  overrides?: AutoCombatOptions
-): Required<AutoCombatOptions> {
+export function mergeCombatOptions(defaults: Required<AutoCombatOptions>, overrides?: AutoCombatOptions): Required<AutoCombatOptions> {
   return { ...defaults, ...(overrides || {}) } as Required<AutoCombatOptions>;
 }

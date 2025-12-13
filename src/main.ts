@@ -6,7 +6,8 @@ import { SCREENSHOT_PATH } from './constant/config';
 import { Damo } from './damo/damo';
 import { validateEnvironment } from './envCheck'; // 中文注释：引入运行时环境校验
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
-import { stopAutoCombat } from './ffo/utils/autoCombat';
+import { stopAutoCombat } from './ffo/utils/auto-combat';
+import { startKeyPress, stopKeyPress } from './ffo/utils/key-press'; // 中文注释：自动按键模块（启动/停止）
 
 // 中文注释：移除未使用的窗口查找辅助函数（逻辑已不再使用，避免冗余）
 
@@ -133,6 +134,9 @@ function registerBoundEventHandlers() {
       // 中文注释：启动自动打怪（默认配置，可在 autoCombat.ts 中调整）
       // startAutoCombat(rec);
 
+      // 中文注释：启动自动按键：F1，每 200ms 一次（约 5 次/秒）
+      startKeyPress('F1', 200, rec);
+
       // 中文注释：示例移动窗口
       rec?.ffoClient?.dm?.MoveWindow(hwnd, 0, 0);
 
@@ -143,11 +147,11 @@ function registerBoundEventHandlers() {
       // 中文注释：调试截图确认识别区域
       const screen_w = dm.GetScreenWidth();
       const screen_h = dm.GetScreenHeight();
-      dm?.Capture(0, 150, 400, 450, SCREENSHOT_PATH + '/ocr_debug.png');
-      // dm?.Capture(0, 0, screen_w - 1, screen_h - 1, SCREENSHOT_PATH + '/ocr_debug.png');
+      // dm?.Capture(0, 150, 400, 450, SCREENSHOT_PATH + '/ocr_debug.png');
+      dm?.Capture(0, 0, screen_w - 1, screen_h - 1, SCREENSHOT_PATH + '/ocr_debug.png');
 
-      const ocrResult = dm?.Ocr(0, 150, 400, 450, '000000-111111', 1.0);
-      console.log('[左上角文字识别]', ocrResult);
+      // const ocrResult = dm?.Ocr(0, 150, 400, 450, '000000-111111', 1.0);
+      // console.log('[左上角文字识别]', ocrResult);
     } catch (e) {
       console.warn('[OCR识别错误]', String((e as any)?.message || e));
     }
@@ -160,6 +164,8 @@ function registerBoundEventHandlers() {
     console.log(`[解绑完成] hwnd=${hwnd}`);
     // 中文注释：停止自动打怪（释放定时器）
     stopAutoCombat(hwnd);
+    // 中文注释：停止自动按键（释放定时器）
+    stopKeyPress(hwnd);
   });
 }
 
@@ -175,6 +181,7 @@ function scanProcessesAndBind(targetName: string) {
     for (const line of list) {
       const processMessage = line.trim().split(/\s+/);
       const processName = processMessage[0];
+      console.log(processName, 'processName');
       if (processName === targetName) {
         const pid = parseInt(processMessage[1]);
         new Notification({ title: '注入幻想进程', body: pid.toString() }).show();
@@ -207,7 +214,7 @@ function bootstrapApp() {
 
   createWindow();
   registerBoundEventHandlers();
-  scanProcessesAndBind('Notepad.exe'); // 中文注释：按需替换目标进程名
+  scanProcessesAndBind('qqfo.exe'); // 中文注释：按需替换目标进程名
 }
 
 app.on('window-all-closed', () => {
@@ -257,4 +264,8 @@ app.on('before-quit', () => {
   } catch (e) {
     console.warn('[退出清理] 移除 IPC handler 失败:', String((e as any)?.message || e));
   }
+});
+
+app.on('ready', () => {
+  bootstrapApp();
 });
