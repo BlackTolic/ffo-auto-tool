@@ -6,6 +6,7 @@ import { SCREENSHOT_PATH } from './constant/config';
 import { Damo } from './damo/damo';
 import { validateEnvironment } from './envCheck'; // 中文注释：引入运行时环境校验
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
+import { stopAutoCombat } from './ffo/utils/autoCombat';
 
 // 中文注释：移除未使用的窗口查找辅助函数（逻辑已不再使用，避免冗余）
 
@@ -42,20 +43,13 @@ function setupIpcHandlers() {
   ipcMain.handle('env:check', () => validateEnvironment());
   ipcMain.handle('damo:ver', () => ensureDamo().ver());
   ipcMain.handle('damo:getForegroundWindow', () => ensureDamo().getForegroundWindow());
-  ipcMain.handle(
-    'damo:bindWindow',
-    (_event, hwnd: number, display: string, mouse: string, keypad: string, mode: number) => {
-      return ensureDamo().bindWindow(hwnd, display, mouse, keypad, mode);
-    }
-  );
+  ipcMain.handle('damo:bindWindow', (_event, hwnd: number, display: string, mouse: string, keypad: string, mode: number) => {
+    return ensureDamo().bindWindow(hwnd, display, mouse, keypad, mode);
+  });
   ipcMain.handle('damo:unbindWindow', () => ensureDamo().unbindWindow());
   ipcMain.handle('damo:getClientRect', (_event, hwnd: number) => ensureDamo().getClientRect(hwnd));
-  ipcMain.handle('damo:clientToScreen', (_event, hwnd: number, x: number, y: number) =>
-    ensureDamo().clientToScreen(hwnd, x, y)
-  );
-  ipcMain.handle('damo:screenToClient', (_event, hwnd: number, x: number, y: number) =>
-    ensureDamo().screenToClient(hwnd, x, y)
-  );
+  ipcMain.handle('damo:clientToScreen', (_event, hwnd: number, x: number, y: number) => ensureDamo().clientToScreen(hwnd, x, y));
+  ipcMain.handle('damo:screenToClient', (_event, hwnd: number, x: number, y: number) => ensureDamo().screenToClient(hwnd, x, y));
   ipcMain.handle('damo:getWindowRect', (_event, hwnd: number) => ensureDamo().getWindowRect(hwnd));
   ipcMain.handle('damo:getWindowInfo', async (_event, hwnd: number) => {
     const dm = ensureDamo();
@@ -65,18 +59,15 @@ function setupIpcHandlers() {
     const scaleFactor = displayInfo.scaleFactor;
     return { windowRect, clientRect, scaleFactor };
   });
-  ipcMain.handle(
-    'damo:clientCssToScreenPx',
-    async (_event, hwnd: number, xCss: number, yCss: number) => {
-      const dm = ensureDamo();
-      const windowRect = await dm.getWindowRect(hwnd);
-      const displayInfo = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
-      const sf = displayInfo.scaleFactor;
-      const xClientPx = Math.round(xCss * sf);
-      const yClientPx = Math.round(yCss * sf);
-      return dm.clientToScreen(hwnd, xClientPx, yClientPx);
-    }
-  );
+  ipcMain.handle('damo:clientCssToScreenPx', async (_event, hwnd: number, xCss: number, yCss: number) => {
+    const dm = ensureDamo();
+    const windowRect = await dm.getWindowRect(hwnd);
+    const displayInfo = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
+    const sf = displayInfo.scaleFactor;
+    const xClientPx = Math.round(xCss * sf);
+    const yClientPx = Math.round(yCss * sf);
+    return dm.clientToScreen(hwnd, xClientPx, yClientPx);
+  });
   ipcMain.handle('damo:screenPxToClientCss', async (_event, hwnd: number, x: number, y: number) => {
     const dm = ensureDamo();
     const windowRect = await dm.getWindowRect(hwnd);
@@ -103,9 +94,7 @@ function setupIpcHandlers() {
 
 // 中文注释：向所有渲染进程广播字库信息更新
 function broadcastDictInfoUpdated(hwnd: number, info: any) {
-  BrowserWindow.getAllWindows().forEach((w) =>
-    w.webContents.send('damo:dictInfoUpdated', { hwnd, info })
-  );
+  BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('damo:dictInfoUpdated', { hwnd, info }));
 }
 
 // 中文注释：为绑定成功事件注册处理逻辑（加载字库、调试输出、截图与 OCR 示例）
@@ -141,6 +130,9 @@ function registerBoundEventHandlers() {
         broadcastDictInfoUpdated(hwnd, info);
       }
 
+      // 中文注释：启动自动打怪（默认配置，可在 autoCombat.ts 中调整）
+      // startAutoCombat(rec);
+
       // 中文注释：示例移动窗口
       rec?.ffoClient?.dm?.MoveWindow(hwnd, 0, 0);
 
@@ -161,14 +153,13 @@ function registerBoundEventHandlers() {
     }
   });
   ffoEvents.on('error', (payload: any) => {
-    const msg =
-      typeof payload?.error === 'string'
-        ? payload.error
-        : payload?.error?.message || String(payload?.error);
+    const msg = typeof payload?.error === 'string' ? payload.error : payload?.error?.message || String(payload?.error);
     console.warn(`[事件错误] pid=${payload?.pid ?? '-'} hwnd=${payload?.hwnd ?? '-'} | ${msg}`);
   });
   ffoEvents.on('unbind', ({ hwnd }) => {
     console.log(`[解绑完成] hwnd=${hwnd}`);
+    // 中文注释：停止自动打怪（释放定时器）
+    stopAutoCombat(hwnd);
   });
 }
 
