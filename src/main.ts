@@ -1,5 +1,5 @@
 import cp from 'child_process';
-import { app, BrowserWindow, ipcMain, Notification, screen } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, Notification, screen } from 'electron';
 import fs from 'fs'; // 中文注释：读取字典文件
 import path from 'path'; // 中文注释：拼接字典路径
 import { SCREENSHOT_PATH } from './constant/config';
@@ -9,7 +9,10 @@ import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：
 import { stopAutoCombat } from './ffo/utils/auto-combat';
 import { startKeyPress, stopKeyPress } from './ffo/utils/key-press'; // 中文注释：自动按键模块（启动/停止）
 
-// 中文注释：移除未使用的窗口查找辅助函数（逻辑已不再使用，避免冗余）
+// 中文注释：记录最近绑定成功的窗口句柄（供快捷键切换使用）
+let lastBoundHwnd: number | null = null;
+// 中文注释：记录每个窗口当前是否开启了自动按键
+const autoKeyOnByHwnd = new Map<number, boolean>();
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -37,6 +40,38 @@ function ensureDamo(): Damo {
     }
   }
   return damo;
+}
+
+// 中文注释：切换自动按键（供 IPC 与全局快捷键复用）
+function toggleAutoKey(
+  keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',
+  intervalMs: number = 200
+): { ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string } {
+  if (!lastBoundHwnd || lastBoundHwnd <= 0) {
+    return { ok: false, message: '暂无绑定窗口，无法切换自动按键' };
+  }
+  const hwnd = lastBoundHwnd;
+  const rec = damoBindingManager.get(hwnd);
+  if (!rec) {
+    return { ok: false, message: `找不到绑定记录：hwnd=${hwnd}` };
+  }
+  const currentlyOn = autoKeyOnByHwnd.get(hwnd) === true;
+  if (currentlyOn) {
+    try {
+      stopKeyPress(hwnd);
+    } catch {}
+    autoKeyOnByHwnd.set(hwnd, false);
+    return { ok: true, running: false, hwnd };
+  } else {
+    try {
+      startKeyPress(keyName, intervalMs, rec);
+    } catch (e) {
+      const msg = (e as any)?.message || String(e);
+      return { ok: false, message: `启动失败：${msg}` };
+    }
+    autoKeyOnByHwnd.set(hwnd, true);
+    return { ok: true, running: true, hwnd, key: keyName, intervalMs };
+  }
 }
 
 // 中文注释：统一注册所有 IPC 通道的函数
@@ -91,6 +126,11 @@ function setupIpcHandlers() {
     }
     return { activeIndex: null, source: { type: 'unknown' } };
   });
+
+  // 中文注释：自动按键切换的 IPC 处理（供渲染 Alt+W 调用）
+  ipcMain.handle('autoKey:toggle', (_event, keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1', intervalMs: number = 200) => {
+    return toggleAutoKey(keyName, intervalMs);
+  });
 }
 
 // 中文注释：向所有渲染进程广播字库信息更新
@@ -102,6 +142,7 @@ function broadcastDictInfoUpdated(hwnd: number, info: any) {
 function registerBoundEventHandlers() {
   ffoEvents.on('bound', async ({ pid, hwnd }) => {
     new Notification({ title: '绑定成功', body: `PID=${pid} HWND=${hwnd}` }).show();
+    lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄
     const rec = damoBindingManager.get(hwnd);
     if (!rec) return;
     try {
@@ -134,8 +175,8 @@ function registerBoundEventHandlers() {
       // 中文注释：启动自动打怪（默认配置，可在 autoCombat.ts 中调整）
       // startAutoCombat(rec);
 
-      // 中文注释：启动自动按键：F1，每 200ms 一次（约 5 次/秒）
-      startKeyPress('F1', 200, rec);
+      // 中文注释：不自动启动按键，改为由 Alt+W 快捷键控制
+      // startKeyPress(rec, 200, 'F1');
 
       // 中文注释：示例移动窗口
       rec?.ffoClient?.dm?.MoveWindow(hwnd, 0, 0);
@@ -166,6 +207,9 @@ function registerBoundEventHandlers() {
     stopAutoCombat(hwnd);
     // 中文注释：停止自动按键（释放定时器）
     stopKeyPress(hwnd);
+    // 中文注释：更新自动按键状态并重置最近绑定句柄
+    autoKeyOnByHwnd.delete(hwnd);
+    if (lastBoundHwnd === hwnd) lastBoundHwnd = null;
   });
 }
 
@@ -213,6 +257,7 @@ function bootstrapApp() {
   }
 
   createWindow();
+  setupIpcHandlers();
   registerBoundEventHandlers();
   scanProcessesAndBind('qqfo.exe'); // 中文注释：按需替换目标进程名
 }
@@ -255,6 +300,7 @@ app.on('before-quit', () => {
       'damo:clientCssToScreenPx',
       'damo:screenPxToClientCss',
       'damo:getDictInfo',
+      'autoKey:toggle',
     ];
     channels.forEach((ch) => {
       try {
@@ -264,8 +310,22 @@ app.on('before-quit', () => {
   } catch (e) {
     console.warn('[退出清理] 移除 IPC handler 失败:', String((e as any)?.message || e));
   }
+
+  try {
+    // 中文注释：注销所有全局快捷键
+    globalShortcut.unregisterAll();
+  } catch {}
 });
 
 app.on('ready', () => {
   bootstrapApp();
+  // 中文注释：注册全局快捷键 Alt+W，切换自动按 F1（无需界面焦点）
+  try {
+    globalShortcut.register('Alt+W', () => {
+      const ret = toggleAutoKey('F1', 200);
+      console.log('[全局快捷键] Alt+W 切换自动按键：', ret);
+    });
+  } catch (e) {
+    console.warn('[全局快捷键] 注册失败：', String((e as any)?.message || e));
+  }
 });

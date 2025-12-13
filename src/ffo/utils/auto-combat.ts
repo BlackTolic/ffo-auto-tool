@@ -8,8 +8,8 @@
  *       并提供 start/stop 两个入口用于控制自动战斗。
  */
 
-import type { DamoClientRecord } from '../events';
 import { getDefaultAutoCombatOptions } from '../constant/autoCombatConfig';
+import type { DamoClientRecord } from '../events';
 
 // 中文注释：自动战斗的可选配置
 export interface AutoCombatOptions {
@@ -176,7 +176,10 @@ function computeKitePoint(
   strategy: 'aroundRef' | 'aroundTarget'
 ): { x: number; y: number } {
   // 中文注释：计算基向量（不同策略下不同）
-  let vx = 1, vy = 0, baseX = ref.x, baseY = ref.y;
+  let vx = 1,
+    vy = 0,
+    baseX = ref.x,
+    baseY = ref.y;
   if (strategy === 'aroundTarget' && target) {
     // 中文注释：围绕目标：以目标为基点，方向取“参考点指向目标”或其正交方向
     vx = target.x - ref.x;
@@ -193,7 +196,7 @@ function computeKitePoint(
   const len = Math.max(Math.sqrt(vx * vx + vy * vy), 1e-6);
   let ux = vx / len;
   let uy = vy / len;
-  const rad = (angleDeg * Math.PI) / 180 * (toggle ? 1 : -1);
+  const rad = ((angleDeg * Math.PI) / 180) * (toggle ? 1 : -1);
   const rx = ux * Math.cos(rad) - uy * Math.sin(rad);
   const ry = ux * Math.sin(rad) + uy * Math.cos(rad);
   const x = Math.round(baseX + rx * radius);

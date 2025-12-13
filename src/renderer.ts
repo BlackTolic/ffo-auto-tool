@@ -106,6 +106,14 @@ window.addEventListener('DOMContentLoaded', () => {
   renderEnvStatus();
   renderDictInfo();
   subscribeDictInfoUpdates();
+
+  // 中文注释：移除渲染进程的 Alt+W 监听，避免与全局快捷键重复触发
+  // 如需在仅界面焦点下触发，可恢复此监听：
+  // window.addEventListener('keydown', async (e) => {
+  //   if (e.altKey && String(e.key).toLowerCase() === 'w') {
+  //     await window.damo.toggleAutoKey('F1', 200);
+  //   }
+  // });
 });
 
 // 中文注释：在页面卸载/关闭前执行清理（取消 IPC 事件订阅）
