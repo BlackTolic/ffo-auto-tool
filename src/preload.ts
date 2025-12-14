@@ -1,37 +1,31 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+// 中文注释：向渲染进程暴露用于操作大漠插件的 API
 const damo = {
   ver: (): Promise<string> => ipcRenderer.invoke('damo:ver'),
   getForegroundWindow: (): Promise<number> => ipcRenderer.invoke('damo:getForegroundWindow'),
   bindWindow: (hwnd: number, display: string, mouse: string, keypad: string, mode: number): Promise<number> => ipcRenderer.invoke('damo:bindWindow', hwnd, display, mouse, keypad, mode),
   unbindWindow: (): Promise<number> => ipcRenderer.invoke('damo:unbindWindow'),
-  getWindowRect: (hwnd: number): Promise<{ x: number; y: number; width: number; height: number }> => ipcRenderer.invoke('damo:getWindowRect', hwnd),
   getClientRect: (hwnd: number): Promise<{ x: number; y: number; width: number; height: number }> => ipcRenderer.invoke('damo:getClientRect', hwnd),
   clientToScreen: (hwnd: number, x: number, y: number): Promise<{ x: number; y: number }> => ipcRenderer.invoke('damo:clientToScreen', hwnd, x, y),
   screenToClient: (hwnd: number, x: number, y: number): Promise<{ x: number; y: number }> => ipcRenderer.invoke('damo:screenToClient', hwnd, x, y),
+  getWindowRect: (hwnd: number): Promise<{ x: number; y: number; width: number; height: number }> => ipcRenderer.invoke('damo:getWindowRect', hwnd),
   getWindowInfo: (
     hwnd: number
   ): Promise<{ windowRect: { x: number; y: number; width: number; height: number }; clientRect: { x: number; y: number; width: number; height: number }; scaleFactor: number }> =>
     ipcRenderer.invoke('damo:getWindowInfo', hwnd),
   clientCssToScreenPx: (hwnd: number, xCss: number, yCss: number): Promise<{ x: number; y: number }> => ipcRenderer.invoke('damo:clientCssToScreenPx', hwnd, xCss, yCss),
-  screenPxToClientCss: (hwnd: number, xScreenPx: number, yScreenPx: number): Promise<{ x: number; y: number }> => ipcRenderer.invoke('damo:screenPxToClientCss', hwnd, xScreenPx, yScreenPx),
-  // 中文注释：新增字库信息查询接口（支持可选窗口句柄）
-  getDictInfo: (hwnd?: number): Promise<{ activeIndex: number | null; source: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null }> =>
-    ipcRenderer.invoke('damo:getDictInfo', hwnd),
-  // 中文注释：新增字库信息更新事件监听接口（主进程广播时自动触发）
-  onDictInfoUpdated: (
-    callback: (payload: { hwnd: number; info: { activeIndex: number | null; source: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null } | null }) => void
-  ): void => {
-    ipcRenderer.on('damo:dictInfoUpdated', (_e, payload) => callback(payload));
-  },
-  // 中文注释：新增取消字库信息更新监听的方法（退出或卸载时调用）
-  offDictInfoUpdated: (): void => {
-    ipcRenderer.removeAllListeners('damo:dictInfoUpdated');
-  },
-  // 中文注释：新增自动按键切换接口（Alt+W 触发时调用）
-  toggleAutoKey: (keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1', intervalMs: number = 200): Promise<any> => {
-    return ipcRenderer.invoke('autoKey:toggle', keyName, intervalMs);
-  },
+  screenPxToClientCss: (hwnd: number, x: number, y: number): Promise<{ x: number; y: number }> => ipcRenderer.invoke('damo:screenPxToClientCss', hwnd, x, y),
+  getDictInfo: (hwnd?: number): Promise<any> => ipcRenderer.invoke('damo:getDictInfo', hwnd),
+
+  // 中文注释：一键绑定“当前前台窗口”的所属进程（通过绑定管理器），便于 Alt+W 切换
+  bindForeground: (): Promise<{ ok: boolean; count?: number; hwnd?: number; pid?: number; message?: string }> => ipcRenderer.invoke('ffo:bindForeground'),
+
+  // 中文注释：切换自动按键（通过主进程复用统一逻辑）
+  toggleAutoKey: (
+    keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',
+    intervalMs: number = 200
+  ): Promise<{ ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string }> => ipcRenderer.invoke('autoKey:toggle', keyName, intervalMs),
 };
 
 // 新增：环境校验 API，渲染进程可调用展示结果

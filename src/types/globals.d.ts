@@ -21,21 +21,20 @@ type DamoAPI = {
   getWindowInfo: (hwnd: number) => Promise<{ windowRect: { x: number; y: number; width: number; height: number }; clientRect: { x: number; y: number; width: number; height: number }; scaleFactor: number }>; // 中文注释：聚合窗口信息与显示器缩放
   clientCssToScreenPx: (hwnd: number, xCss: number, yCss: number) => Promise<{ x: number; y: number }>; // 中文注释：客户区 CSS(DIP) -> 屏幕像素
   screenPxToClientCss: (hwnd: number, xScreenPx: number, yScreenPx: number) => Promise<{ x: number; y: number }>; // 中文注释：屏幕像素 -> 客户区 CSS(DIP)
-  // 中文注释：新增字库信息查询接口（支持可选窗口句柄）
-  getDictInfo: (hwnd?: number) => Promise<{ activeIndex: number | null; source: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null }>;
-  // 中文注释：新增字库信息更新事件监听接口
-  onDictInfoUpdated: (callback: (payload: { hwnd: number; info: { activeIndex: number | null; source: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null } | null }) => void) => void;
-};
-
-// 新增：环境 API 类型（简化为 any 以避免与 TS 模块类型耦合）
-type EnvAPI = {
-  check: () => Promise<any>;
+  getDictInfo: (hwnd?: number) => Promise<any>; // 中文注释：查询当前 OCR 字库信息
+  bindForeground: () => Promise<{ ok: boolean; count?: number; hwnd?: number; pid?: number; message?: string }>; // 中文注释：一键绑定前台窗口所属进程（通过绑定管理器）
+  toggleAutoKey: (
+    keyName?: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10',
+    intervalMs?: number
+  ) => Promise<{ ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string }>; // 中文注释：切换自动按键
 };
 
 declare global {
   interface Window {
     damo: DamoAPI;
-    env: EnvAPI; // 中文注释：渲染进程可通过 window.env.check 获取环境校验结果
+    env: {
+      check: () => Promise<any>;
+    };
   }
 }
 

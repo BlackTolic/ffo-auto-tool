@@ -2,23 +2,46 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
-    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
-    <title>FFO Auto Script</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+    />
+    <title>FFO 辅助工具</title>
   </head>
   <body>
-    <h1>FFO Auto Script</h1>
-    <!-- 中文注释：首页新增OCR字库信息展示区块 -->
-    <section id="dict-info" style="margin-bottom: 16px; padding: 8px; border: 1px solid #ddd;">
-      <h2 style="margin: 0 0 8px; font-size: 16px;">当前 OCR 字库信息</h2>
-      <div id="dict-info-content">加载中…</div>
+    <h1>FFO 辅助工具</h1>
+
+    <section>
+      <h2>绑定操作</h2>
+      <div>
+        <button id="bind-foreground-btn">绑定当前前台窗口</button>
+        <span id="bind-foreground-result" style="margin-left: 8px; color: #555;"></span>
+      </div>
+      <p style="margin-top: 8px; color: #888;">
+        提示：推荐在目标窗口中按 <strong>Alt+B</strong> 进行绑定；点击按钮会聚焦本应用窗口，通常无法捕获目标前台窗口。
+      </p>
+      <p style="margin-top: 4px; color: #888;">
+        绑定成功后，可在目标窗口中按 <strong>Alt+W</strong> 切换自动 F1。
+      </p>
     </section>
 
-    <article>
-      <p>👋 Hello World!</p>
-      <section id="env-status">
-        <h2>Env status</h2>
-      </section>
-    </article>
+    <section>
+      <h2>Current OCR Dictionary Info</h2>
+      <div id="dict-info">
+        <div>Active Index: <span id="dict-active-index"></span></div>
+        <div>Source: <span id="dict-source"></span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Env status</h2>
+      <div>
+        <div>DM installed: <span id="dm-installed"></span></div>
+        <div>Running elevated: <span id="running-elevated"></span></div>
+        <div>App version: <span id="app-version"></span></div>
+      </div>
+    </section>
+
+    <script src="renderer.js"></script>
   </body>
 </html>

@@ -27,6 +27,9 @@ module.exports = {
     {
       name: '@electron-forge/plugin-webpack',
       config: {
+        // 中文注释：自定义端口，避免默认端口 3000/9000 冲突
+        port: 3010,
+        loggerPort: 9100,
         mainConfig: './webpack.main.config.js',
         renderer: {
           config: './webpack.renderer.config.js',

@@ -101,11 +101,36 @@ const subscribeDictInfoUpdates = () => {
   });
 };
 
+// 中文注释：绑定按钮点击处理（调用主进程实现的一键绑定前台窗口）
+const setupBindActions = () => {
+  const btn = document.getElementById('bind-foreground-btn') as HTMLButtonElement | null;
+  const resultEl = document.getElementById('bind-foreground-result');
+  if (!btn || !resultEl) return;
+  btn.addEventListener('click', async () => {
+    // 中文注释：防重入，点击一次期间禁用按钮
+    btn.disabled = true;
+    resultEl.textContent = '正在绑定前台窗口…';
+    try {
+      const ret = await window.damo.bindForeground();
+      if (ret.ok) {
+        resultEl.textContent = `绑定成功 | pid=${ret.pid} hwnd=${ret.hwnd} count=${ret.count}`;
+      } else {
+        resultEl.textContent = `绑定失败：${ret.message || '未知错误'}`;
+      }
+    } catch (e: any) {
+      resultEl.textContent = `绑定异常：${e?.message || e}`;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+};
+
 window.addEventListener('DOMContentLoaded', () => {
   // 中文注释：页面加载后渲染环境状态与字库信息，并订阅更新
   renderEnvStatus();
   renderDictInfo();
   subscribeDictInfoUpdates();
+  setupBindActions();
 
   // 中文注释：移除渲染进程的 Alt+W 监听，避免与全局快捷键重复触发
   // 如需在仅界面焦点下触发，可恢复此监听：

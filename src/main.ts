@@ -1,4 +1,3 @@
-import cp from 'child_process';
 import { app, BrowserWindow, globalShortcut, ipcMain, Notification, screen } from 'electron';
 import fs from 'fs'; // 中文注释：读取字典文件
 import path from 'path'; // 中文注释：拼接字典路径
@@ -9,7 +8,7 @@ import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：
 import { stopAutoCombat } from './ffo/utils/auto-combat';
 import { startKeyPress, stopKeyPress } from './ffo/utils/key-press'; // 中文注释：自动按键模块（启动/停止）
 
-// 中文注释：记录最近绑定成功的窗口句柄（供快捷键切换使用）
+// 中文注释：记录最近绑定成功的窗口句柄（供部分逻辑使用）
 let lastBoundHwnd: number | null = null;
 // 中文注释：记录每个窗口当前是否开启了自动按键
 const autoKeyOnByHwnd = new Map<number, boolean>();
@@ -27,7 +26,7 @@ const createWindow = () => {
   mainWindow.webContents.openDevTools();
 };
 
-// Initialize Damo wrapper safely
+// 中文注释：懒加载并缓存 Damo 包装实例
 let damo: Damo | null = null;
 function ensureDamo(): Damo {
   if (!damo) {
@@ -42,24 +41,43 @@ function ensureDamo(): Damo {
   return damo;
 }
 
-// 中文注释：切换自动按键（供 IPC 与全局快捷键复用）
+// 中文注释：切换自动按键（仅作用于“当前前台窗口”，必须已绑定）
 function toggleAutoKey(
   keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',
   intervalMs: number = 200
 ): { ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string } {
-  if (!lastBoundHwnd || lastBoundHwnd <= 0) {
-    return { ok: false, message: '暂无绑定窗口，无法切换自动按键' };
+  // 中文注释：获取当前前台窗口句柄（操作系统层面的活动窗口）
+  let hwnd = 0;
+  try {
+    const dm = ensureDamo();
+    hwnd = dm.getForegroundWindow();
+  } catch (e) {
+    const msg = (e as any)?.message || String(e);
+    return { ok: false, message: `获取前台窗口失败：${msg}` };
   }
-  const hwnd = lastBoundHwnd;
+
+  if (!hwnd || hwnd <= 0) {
+    return { ok: false, message: '未检测到前台窗口，无法切换自动按键' };
+  }
+
+  // 中文注释：只对已绑定的前台窗口生效
+  if (!damoBindingManager.isBound(hwnd)) {
+    return { ok: false, hwnd, message: '当前前台窗口未绑定，请先绑定后再切换' };
+  }
+
   const rec = damoBindingManager.get(hwnd);
   if (!rec) {
-    return { ok: false, message: `找不到绑定记录：hwnd=${hwnd}` };
+    return { ok: false, hwnd, message: `找不到绑定记录：hwnd=${hwnd}` };
   }
+
   const currentlyOn = autoKeyOnByHwnd.get(hwnd) === true;
   if (currentlyOn) {
     try {
       stopKeyPress(hwnd);
-    } catch {}
+    } catch (e) {
+      // 中文注释：停止失败不影响状态切换的结果，但记录日志
+      console.warn('[自动按键] 停止失败：', (e as any)?.message || e);
+    }
     autoKeyOnByHwnd.set(hwnd, false);
     return { ok: true, running: false, hwnd };
   } else {
@@ -67,7 +85,7 @@ function toggleAutoKey(
       startKeyPress(keyName, intervalMs, rec);
     } catch (e) {
       const msg = (e as any)?.message || String(e);
-      return { ok: false, message: `启动失败：${msg}` };
+      return { ok: false, hwnd, message: `启动失败：${msg}` };
     }
     autoKeyOnByHwnd.set(hwnd, true);
     return { ok: true, running: true, hwnd, key: keyName, intervalMs };
@@ -127,9 +145,29 @@ function setupIpcHandlers() {
     return { activeIndex: null, source: { type: 'unknown' } };
   });
 
-  // 中文注释：自动按键切换的 IPC 处理（供渲染 Alt+W 调用）
+  // 中文注释：自动按键切换的 IPC 处理（渲染层调用时也只作用当前前台窗口）
   ipcMain.handle('autoKey:toggle', (_event, keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1', intervalMs: number = 200) => {
     return toggleAutoKey(keyName, intervalMs);
+  });
+
+  // 中文注释：新增一键绑定前台窗口所属进程（通过绑定管理器），便于用户从渲染层触发绑定
+  ipcMain.handle('ffo:bindForeground', async () => {
+    try {
+      const dm = ensureDamo();
+      const hwnd = dm.getForegroundWindow();
+      if (!hwnd || hwnd <= 0) {
+        return { ok: false, message: '未检测到前台窗口' };
+      }
+      // 中文注释：通过底层 DM 获取前台窗口所属 PID
+      const pid = (dm as any).dm?.GetWindowProcessId?.(hwnd);
+      if (!pid || pid <= 0) {
+        return { ok: false, hwnd, message: '无法获取前台窗口 PID' };
+      }
+      const count = await damoBindingManager.bindWindowsForPid(pid);
+      return { ok: count > 0, count, hwnd, pid, message: count > 0 ? '绑定成功' : '未找到可绑定窗口' };
+    } catch (e) {
+      return { ok: false, message: (e as any)?.message || String(e) };
+    }
   });
 }
 
@@ -142,7 +180,7 @@ function broadcastDictInfoUpdated(hwnd: number, info: any) {
 function registerBoundEventHandlers() {
   ffoEvents.on('bound', async ({ pid, hwnd }) => {
     new Notification({ title: '绑定成功', body: `PID=${pid} HWND=${hwnd}` }).show();
-    lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄
+    lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄（供其他逻辑参考，不参与快捷键切换）
     const rec = damoBindingManager.get(hwnd);
     if (!rec) return;
     try {
@@ -168,164 +206,150 @@ function registerBoundEventHandlers() {
       if (!dictLoaded) {
         dm?.UseDict(0);
         console.log('[OCR字典] 使用默认字典索引 0（未找到或加载失败）');
-        const info = rec?.ffoClient?.getCurrentDictInfo?.();
-        broadcastDictInfoUpdated(hwnd, info);
       }
 
-      // 中文注释：启动自动打怪（默认配置，可在 autoCombat.ts 中调整）
-      // startAutoCombat(rec);
-
-      // 中文注释：不自动启动按键，改为由 Alt+W 快捷键控制
-      // startKeyPress(rec, 200, 'F1');
-
-      // 中文注释：示例移动窗口
-      rec?.ffoClient?.dm?.MoveWindow(hwnd, 0, 0);
-
-      // 中文注释：获取客户区矩形，输出调试
-      const rect = rec?.ffoClient?.getClientRect(hwnd);
-      console.log(rect, 'clientRect');
-
-      // 中文注释：调试截图确认识别区域
-      const screen_w = dm.GetScreenWidth();
-      const screen_h = dm.GetScreenHeight();
-      // dm?.Capture(0, 150, 400, 450, SCREENSHOT_PATH + '/ocr_debug.png');
-      dm?.Capture(0, 0, screen_w - 1, screen_h - 1, SCREENSHOT_PATH + '/ocr_debug.png');
-
-      // const ocrResult = dm?.Ocr(0, 150, 400, 450, '000000-111111', 1.0);
-      // console.log('[左上角文字识别]', ocrResult);
-    } catch (e) {
-      console.warn('[OCR识别错误]', String((e as any)?.message || e));
-    }
-  });
-  ffoEvents.on('error', (payload: any) => {
-    const msg = typeof payload?.error === 'string' ? payload.error : payload?.error?.message || String(payload?.error);
-    console.warn(`[事件错误] pid=${payload?.pid ?? '-'} hwnd=${payload?.hwnd ?? '-'} | ${msg}`);
-  });
-  ffoEvents.on('unbind', ({ hwnd }) => {
-    console.log(`[解绑完成] hwnd=${hwnd}`);
-    // 中文注释：停止自动打怪（释放定时器）
-    stopAutoCombat(hwnd);
-    // 中文注释：停止自动按键（释放定时器）
-    stopKeyPress(hwnd);
-    // 中文注释：更新自动按键状态并重置最近绑定句柄
-    autoKeyOnByHwnd.delete(hwnd);
-    if (lastBoundHwnd === hwnd) lastBoundHwnd = null;
-  });
-}
-
-// 中文注释：扫描进程并触发绑定（按名称过滤）
-function scanProcessesAndBind(targetName: string) {
-  cp.exec('tasklist', async function (error, stdout) {
-    if (error) {
-      console.log(error);
-      return;
-    }
-    if (!stdout) return;
-    const list = stdout.split('\n');
-    for (const line of list) {
-      const processMessage = line.trim().split(/\s+/);
-      const processName = processMessage[0];
-      console.log(processName, 'processName');
-      if (processName === targetName) {
-        const pid = parseInt(processMessage[1]);
-        new Notification({ title: '注入幻想进程', body: pid.toString() }).show();
-        ffoEvents.emit('bind:pid', { pid });
-      }
-    }
-  });
-}
-
-// 中文注释：应用启动入口，负责环境校验、创建窗口、注册事件与进程扫描
-function bootstrapApp() {
-  const env = validateEnvironment();
-  const envCheckOnly = process.env.ENV_CHECK_ONLY === '1';
-
-  console.log('== 环境校验结果 ==');
-  for (const item of env.items) {
-    console.log(`- ${item.name}: ${item.ok ? 'OK' : 'FAIL'} | ${item.message}`);
-  }
-  if (!env.ok) {
-    console.error('环境校验未通过，程序将退出。');
-    new Notification({ title: '环境校验失败', body: '请查看控制台日志并修复环境后重试。' }).show();
-    app.quit();
-    return;
-  }
-  if (envCheckOnly) {
-    console.log('仅校验模式，应用不创建窗口，退出。');
-    app.quit();
-    return;
-  }
-
-  createWindow();
-  setupIpcHandlers();
-  registerBoundEventHandlers();
-  scanProcessesAndBind('qqfo.exe'); // 中文注释：按需替换目标进程名
-}
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-// 中文注释：在应用退出前（before-quit）执行清理，解绑窗口、移除 IPC 与事件
-app.on('before-quit', () => {
-  try {
-    // 中文注释：解绑所有已绑定的大漠窗口（防止残留绑定）
-    damoBindingManager.unbindAll();
-  } catch (e) {
-    console.warn('[退出清理] 解绑所有窗口失败:', String((e as any)?.message || e));
-  }
-
-  try {
-    // 中文注释：移除所有事件总线监听器，防止内存泄漏
-    ffoEvents.removeAllListeners();
-  } catch (e) {
-    console.warn('[退出清理] 移除事件监听失败:', String((e as any)?.message || e));
-  }
-
-  try {
-    // 中文注释：移除主进程的 IPC handler，避免多次注册或残留
-    const channels = [
-      'env:check',
-      'damo:ver',
-      'damo:getForegroundWindow',
-      'damo:bindWindow',
-      'damo:unbindWindow',
-      'damo:getClientRect',
-      'damo:clientToScreen',
-      'damo:screenToClient',
-      'damo:getWindowRect',
-      'damo:getWindowInfo',
-      'damo:clientCssToScreenPx',
-      'damo:screenPxToClientCss',
-      'damo:getDictInfo',
-      'autoKey:toggle',
-    ];
-    channels.forEach((ch) => {
+      // 中文注释：示例截图（可选）
       try {
-        ipcMain.removeHandler(ch);
+        const bmpPath = path.join(SCREENSHOT_PATH, 'ocr_debug.bmp');
+        const pngPath = path.join(SCREENSHOT_PATH, 'ocr_debug.png');
+        const cap = dm?.CapturePng?.(0, 0, 800, 600, pngPath);
+        const cap2 = dm?.CaptureBmp?.(0, 0, 800, 600, bmpPath);
+        console.log(`[截图] PNG=${cap} BMP=${cap2} | ${pngPath}`);
       } catch {}
-    });
-  } catch (e) {
-    console.warn('[退出清理] 移除 IPC handler 失败:', String((e as any)?.message || e));
-  }
+    } catch (err) {
+      console.warn(`[绑定事件] 处理失败: ${String((err as any)?.message || err)}`);
+    }
+  });
 
-  try {
-    // 中文注释：注销所有全局快捷键
-    globalShortcut.unregisterAll();
-  } catch {}
-});
+  // 中文注释：解绑事件处理（停止定时器与清理状态）
+  ffoEvents.on('unbind', async ({ hwnd }) => {
+    try {
+      // 中文注释：停止自动打怪（释放定时器）
+      stopAutoCombat(hwnd);
+      // 中文注释：停止自动按键（释放定时器）
+      stopKeyPress(hwnd);
+      // 中文注释：更新自动按键状态并重置最近绑定句柄
+      autoKeyOnByHwnd.delete(hwnd);
+      if (lastBoundHwnd === hwnd) lastBoundHwnd = null;
+    } catch (err) {
+      console.warn(`[解绑事件] 清理失败: ${String((err as any)?.message || err)}`);
+    }
+  });
+}
 
-app.on('ready', () => {
-  bootstrapApp();
-  // 中文注释：注册全局快捷键 Alt+W，切换自动按 F1（无需界面焦点）
+function setupGlobalShortcut() {
+  // 中文注释：注册全局 Alt+W 快捷键（只作用当前前台窗口）
   try {
-    globalShortcut.register('Alt+W', () => {
+    const ok = globalShortcut.register('Alt+W', () => {
       const ret = toggleAutoKey('F1', 200);
-      console.log('[全局快捷键] Alt+W 切换自动按键：', ret);
+      const msg = ret.ok ? `[快捷键] Alt+W 切换成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+W 切换失败 | ${ret.message}`;
+      console.log(msg);
     });
+    if (!ok) {
+      console.warn('[快捷键] Alt+W 注册失败');
+    }
   } catch (e) {
-    console.warn('[全局快捷键] 注册失败：', String((e as any)?.message || e));
+    console.warn('[快捷键] Alt+W 注册异常：', (e as any)?.message || e);
   }
-});
+
+  // 中文注释：新增全局 Alt+B 快捷键，一键绑定“当前前台窗口”所属进程
+  try {
+    const okBind = globalShortcut.register('Alt+B', async () => {
+      try {
+        const dm = ensureDamo();
+        const hwnd = dm.getForegroundWindow();
+        if (!hwnd || hwnd <= 0) {
+          console.log('[快捷键] Alt+B 失败 | 未检测到前台窗口');
+          return;
+        }
+        const pid = (dm as any).dm?.GetWindowProcessId?.(hwnd);
+        if (!pid || pid <= 0) {
+          console.log(`[快捷键] Alt+B 失败 | 无法获取 PID | hwnd=${hwnd}`);
+          return;
+        }
+        const count = await damoBindingManager.bindWindowsForPid(pid);
+        const msg = count > 0 ? `[快捷键] Alt+B 绑定成功 | pid=${pid} hwnd=${hwnd} count=${count}` : `[快捷键] Alt+B 未找到可绑定窗口 | pid=${pid} hwnd=${hwnd}`;
+        console.log(msg);
+        new Notification({ title: count > 0 ? '绑定成功' : '绑定失败', body: `PID=${pid} HWND=${hwnd} COUNT=${count}` }).show();
+      } catch (err) {
+        console.warn('[快捷键] Alt+B 异常：', (err as any)?.message || err);
+      }
+    });
+    if (!okBind) {
+      console.warn('[快捷键] Alt+B 注册失败');
+    }
+  } catch (e) {
+    console.warn('[快捷键] Alt+B 注册异常：', (e as any)?.message || e);
+  }
+}
+
+function setupAppLifecycle() {
+  console.log('[应用生命周期] 开始初始化');
+  app.on('ready', () => {
+    createWindow();
+    console.log('[应用生命周期] 窗口创建完成');
+    setupIpcHandlers();
+    console.log('[应用生命周期] IPC 处理程序注册完成');
+    registerBoundEventHandlers();
+    console.log('[应用生命周期] 绑定事件处理程序注册完成');
+    setupGlobalShortcut();
+    console.log('[应用生命周期] 全局快捷键注册完成');
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
+
+  // 中文注释：在应用退出前（before-quit）执行清理，解绑窗口、移除 IPC 与事件
+  app.on('before-quit', () => {
+    try {
+      // 中文注释：解绑所有已绑定的大漠窗口（防止残留绑定）
+      damoBindingManager.unbindAll();
+    } catch (e) {
+      console.warn('[退出清理] 解绑所有窗口失败:', String((e as any)?.message || e));
+    }
+
+    try {
+      // 中文注释：移除所有事件总线监听器，防止内存泄漏
+      ffoEvents.removeAllListeners();
+    } catch (e) {
+      console.warn('[退出清理] 移除事件监听失败:', String((e as any)?.message || e));
+    }
+
+    try {
+      // 中文注释：移除主进程的 IPC handler，避免多次注册或残留
+      const channels = [
+        'env:check',
+        'damo:ver',
+        'damo:getForegroundWindow',
+        'damo:bindWindow',
+        'damo:unbindWindow',
+        'damo:getClientRect',
+        'damo:clientToScreen',
+        'damo:screenToClient',
+        'damo:getWindowRect',
+        'damo:getWindowInfo',
+        'damo:clientCssToScreenPx',
+        'damo:screenPxToClientCss',
+        'damo:getDictInfo',
+        'autoKey:toggle',
+        'ffo:bindForeground',
+      ];
+      channels.forEach((ch) => ipcMain.removeHandler(ch));
+    } catch (e) {
+      console.warn('[退出清理] 移除 IPC 失败:', String((e as any)?.message || e));
+    }
+
+    try {
+      // 中文注释：移除所有全局快捷键
+      globalShortcut.unregisterAll();
+    } catch (e) {
+      console.warn('[退出清理] 取消快捷键失败:', String((e as any)?.message || e));
+    }
+  });
+}
+
+// 中文注释：应用入口
+setupAppLifecycle();
