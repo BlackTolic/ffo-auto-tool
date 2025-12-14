@@ -257,16 +257,19 @@ function setupGlobalShortcut() {
     const okBind = globalShortcut.register('Alt+B', async () => {
       try {
         const dm = ensureDamo();
+        // 中文注释：获取当前前台窗口句柄
         const hwnd = dm.getForegroundWindow();
         if (!hwnd || hwnd <= 0) {
           console.log('[快捷键] Alt+B 失败 | 未检测到前台窗口');
           return;
         }
+        // 中文注释：获取当前前台窗口所属进程 ID
         const pid = (dm as any).dm?.GetWindowProcessId?.(hwnd);
         if (!pid || pid <= 0) {
           console.log(`[快捷键] Alt+B 失败 | 无法获取 PID | hwnd=${hwnd}`);
           return;
         }
+        // 中文注释：绑定当前前台窗口所属进程 ID 下的所有窗口
         const count = await damoBindingManager.bindWindowsForPid(pid);
         const msg = count > 0 ? `[快捷键] Alt+B 绑定成功 | pid=${pid} hwnd=${hwnd} count=${count}` : `[快捷键] Alt+B 未找到可绑定窗口 | pid=${pid} hwnd=${hwnd}`;
         console.log(msg);
@@ -353,3 +356,20 @@ function setupAppLifecycle() {
 
 // 中文注释：应用入口
 setupAppLifecycle();
+
+function getCurrentCursorPosition() {
+  //获取当前坐标位置
+  //  s = dm.Ocr(1241,110,1441,135,"e8f0e8-111111",1.0)
+  // s = dm.Ocr(287,483,340,523,"e8f0e8-111111",1.0)
+  // s = dm.Ocr(247,569,300,609,"e8f0e8-111111",1.0)
+  // s = dm.Ocr(919,791,972,831,"e8f0e8-111111",1.0)
+  // s = dm.Ocr(1298,766,1351,806,"e8f0e8-111111",1.0)
+  // s = dm.Ocr(784,807,837,847,"e8f0e8-111111",1.0)
+  // s = dm.Ocr(947,804,1000,844,"e8f0e8-111111",1.0)
+  // s = dm.Ocr(1200,775,1253,815,"e8f0e8-111111",1.0)
+  // s = dm.Ocr(965,759,1018,799,"e8f0e8-111111",1.0)
+  // s = dm.Ocr(261,694,314,734,"e8f0e8-111111",1.0)
+  // 二郎神杨戬 s = dm.Ocr(664,305,788,502,"00f000-111111",1.0)
+  // 选择面板s = dm.Ocr(583,426,844,521,"e8f0e8-111111",1.0)
+  // 查找面板 s = dm.Ocr(1106,851,1494,901,"a87848-111111|201010-000000",1.0)
+}
