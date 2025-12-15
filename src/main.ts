@@ -1,7 +1,7 @@
 import { app, BrowserWindow, globalShortcut, ipcMain, Notification, screen } from 'electron';
 import fs from 'fs'; // 中文注释：读取字典文件
 import path from 'path'; // 中文注释：拼接字典路径
-import { SCREENSHOT_PATH } from './constant/config';
+import { OCR_FONT_PATH_, SCREENSHOT_PATH } from './constant/config';
 import { Damo } from './damo/damo';
 import { validateEnvironment } from './envCheck'; // 中文注释：引入运行时环境校验
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
@@ -51,6 +51,7 @@ function toggleAutoKey(
   let hwnd = 0;
   try {
     const dm = ensureDamo();
+    // 中文注释：获取当前前台窗口句柄（操作系统层面的活动窗口）
     hwnd = dm.getForegroundWindow();
   } catch (e) {
     const msg = (e as any)?.message || String(e);
@@ -66,11 +67,13 @@ function toggleAutoKey(
     return { ok: false, hwnd, message: '当前前台窗口未绑定，请先绑定后再切换' };
   }
 
+  // 中文注释：获取绑定记录
   const rec = damoBindingManager.get(hwnd);
   if (!rec) {
     return { ok: false, hwnd, message: `找不到绑定记录：hwnd=${hwnd}` };
   }
 
+  // 中文注释：根据当前状态判断是否需要启动或停止自动按键
   const currentlyOn = autoKeyOnByHwnd.get(hwnd) === true;
   if (currentlyOn) {
     try {
@@ -88,6 +91,7 @@ function toggleAutoKey(
       const msg = (e as any)?.message || String(e);
       return { ok: false, hwnd, message: `启动失败：${msg}` };
     }
+    // 中文注释：记录按键状态
     autoKeyOnByHwnd.set(hwnd, true);
     return { ok: true, running: true, hwnd, key: keyName, intervalMs };
   }
@@ -186,22 +190,21 @@ function registerBoundEventHandlers() {
     if (!rec) return;
     try {
       const dm = rec?.ffoClient?.dm;
-      const dictPath = path.join(process.cwd(), '/src/lib/font/1_cn.txt');
       let dictLoaded = false;
-      if (fs.existsSync(dictPath)) {
+      if (fs.existsSync(OCR_FONT_PATH_)) {
         try {
-          const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, dictPath);
+          const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, OCR_FONT_PATH_);
           if (ret === 1) {
             dm?.UseDict(0);
-            console.log(`[OCR字典] 已加载 ${path.basename(dictPath)} 并启用索引 0`);
+            console.log(`[OCR字典] 已加载 ${path.basename(OCR_FONT_PATH_)} 并启用索引 0`);
             dictLoaded = true;
             const info = rec?.ffoClient?.getCurrentDictInfo?.();
             broadcastDictInfoUpdated(hwnd, info);
           } else {
-            console.warn(`[OCR字典] SetDict 返回值=${ret} | 路径=${dictPath}`);
+            console.warn(`[OCR字典] SetDict 返回值=${ret} | 路径=${OCR_FONT_PATH_}`);
           }
         } catch (err) {
-          console.warn(`[OCR字典] 加载失败: ${dictPath} | ${String((err as any)?.message || err)}`);
+          console.warn(`[OCR字典] 加载失败: ${OCR_FONT_PATH_} | ${String((err as any)?.message || err)}`);
         }
       }
       if (!dictLoaded) {
@@ -211,11 +214,11 @@ function registerBoundEventHandlers() {
 
       // 中文注释：示例截图（可选）
       try {
-        const bmpPath = path.join(SCREENSHOT_PATH, 'ocr_debug.bmp');
-        const pngPath = path.join(SCREENSHOT_PATH, 'ocr_debug.png');
-        const cap = dm?.CapturePng?.(0, 0, 800, 600, pngPath);
-        const cap2 = dm?.CaptureBmp?.(0, 0, 800, 600, bmpPath);
-        console.log(`[截图] PNG=${cap} BMP=${cap2} | ${pngPath}`);
+        // 截取全屏
+        const screenWidth = dm?.GetSystemMetrics?.(0);
+        const screenHeight = dm?.GetSystemMetrics?.(1);
+        const cap = dm?.CapturePng?.(0, 0, screenWidth, screenHeight, SCREENSHOT_PATH);
+        console.log(`[截图] PNG=${cap} | ${SCREENSHOT_PATH}`);
       } catch {}
     } catch (err) {
       console.warn(`[绑定事件] 处理失败: ${String((err as any)?.message || err)}`);

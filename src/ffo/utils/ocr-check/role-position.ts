@@ -65,7 +65,7 @@ export function startRolePositionPolling(
     throw new Error('未提供有效的绑定记录或 dm 实例');
   }
   // 中文注释：若已有轮询，则先停止，避免多个定时器并发
-  stopRolePositionPolling(hwnd);
+  // stopRolePositionPolling(hwnd);
   const timer = setInterval(
     () => {
       try {

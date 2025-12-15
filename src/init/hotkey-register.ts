@@ -1,10 +1,12 @@
 import { globalShortcut, Notification } from 'electron';
 import type { Damo } from '../damo/damo';
 import { damoBindingManager } from '../ffo/events';
+import { startRolePositionPolling } from '../ffo/utils/ocr-check/role-position';
 
 // 中文注释：集中管理全局快捷键的注册逻辑，避免分散在 main.ts
 // - Alt+W：切换自动按键，仅作用当前前台且已绑定的窗口
 // - Alt+B：绑定当前前台窗口所属进程的所有候选窗口
+// - Alt+R：启动当前前台窗口的角色坐标轮询（每秒一次）
 // 通过依赖注入复用主进程已有方法，避免循环依赖
 export function registerGlobalHotkeys(deps: {
   // 中文注释：切换自动按键（由主进程提供实现）
@@ -53,5 +55,47 @@ export function registerGlobalHotkeys(deps: {
     if (!okBind) console.warn('[快捷键] Alt+B 注册失败');
   } catch (e) {
     console.warn('[快捷键] Alt+B 注册异常：', (e as any)?.message || e);
+  }
+
+  // 中文注释：Alt+R 启动当前前台窗口的角色坐标轮询（每秒一次）
+  try {
+    const okRole = globalShortcut.register('Alt+R', () => {
+      try {
+        const dm = deps.ensureDamo();
+        const hwnd = dm.getForegroundWindow();
+        if (!hwnd || hwnd <= 0) {
+          console.log('[快捷键] Alt+R 失败 | 未检测到前台窗口');
+          return;
+        }
+        if (!damoBindingManager.isBound(hwnd)) {
+          console.log('[快捷键] Alt+R 失败 | 当前前台窗口未绑定');
+          return;
+        }
+        const rec = damoBindingManager.get(hwnd);
+        if (!rec) {
+          console.log(`[快捷键] Alt+R 失败 | 找不到绑定记录 | hwnd=${hwnd}`);
+          return;
+        }
+        // 中文注释：启动每秒轮询角色坐标
+        startRolePositionPolling(
+          rec,
+          (pos) => {
+            console.log(`[角色坐标] 轮询到坐标 | hwnd=${hwnd}`, pos);
+            if (pos) {
+              console.log(`[角色坐标] x=${pos.x} y=${pos.y} | text=${pos.text}`);
+            } else {
+              console.warn('[角色坐标] 未识别到坐标');
+            }
+          },
+          1000
+        );
+        console.log(`[快捷键] Alt+R 已启动坐标轮询 | hwnd=${hwnd}`);
+      } catch (err) {
+        console.warn('[快捷键] Alt+R 异常：', (err as any)?.message || err);
+      }
+    });
+    if (!okRole) console.warn('[快捷键] Alt+R 注册失败');
+  } catch (e) {
+    console.warn('[快捷键] Alt+R 注册异常：', (e as any)?.message || e);
   }
 }
