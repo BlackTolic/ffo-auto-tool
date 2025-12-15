@@ -7,6 +7,7 @@ import { validateEnvironment } from './envCheck'; // 中文注释：引入运行
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
 import { stopAutoCombat } from './ffo/utils/auto-combat';
 import { startKeyPress, stopKeyPress } from './ffo/utils/key-press'; // 中文注释：自动按键模块（启动/停止）
+import { registerGlobalHotkeys } from './init/hotkey-register';
 
 // 中文注释：记录最近绑定成功的窗口句柄（供部分逻辑使用）
 let lastBoundHwnd: number | null = null;
@@ -237,55 +238,6 @@ function registerBoundEventHandlers() {
   });
 }
 
-function setupGlobalShortcut() {
-  // 中文注释：注册全局 Alt+W 快捷键（只作用当前前台窗口）
-  try {
-    const ok = globalShortcut.register('Alt+W', () => {
-      const ret = toggleAutoKey('F1', 200);
-      const msg = ret.ok ? `[快捷键] Alt+W 切换成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+W 切换失败 | ${ret.message}`;
-      console.log(msg);
-    });
-    if (!ok) {
-      console.warn('[快捷键] Alt+W 注册失败');
-    }
-  } catch (e) {
-    console.warn('[快捷键] Alt+W 注册异常：', (e as any)?.message || e);
-  }
-
-  // 中文注释：新增全局 Alt+B 快捷键，一键绑定“当前前台窗口”所属进程
-  try {
-    const okBind = globalShortcut.register('Alt+B', async () => {
-      try {
-        const dm = ensureDamo();
-        // 中文注释：获取当前前台窗口句柄
-        const hwnd = dm.getForegroundWindow();
-        if (!hwnd || hwnd <= 0) {
-          console.log('[快捷键] Alt+B 失败 | 未检测到前台窗口');
-          return;
-        }
-        // 中文注释：获取当前前台窗口所属进程 ID
-        const pid = (dm as any).dm?.GetWindowProcessId?.(hwnd);
-        if (!pid || pid <= 0) {
-          console.log(`[快捷键] Alt+B 失败 | 无法获取 PID | hwnd=${hwnd}`);
-          return;
-        }
-        // 中文注释：绑定当前前台窗口所属进程 ID 下的所有窗口
-        const count = await damoBindingManager.bindWindowsForPid(pid);
-        const msg = count > 0 ? `[快捷键] Alt+B 绑定成功 | pid=${pid} hwnd=${hwnd} count=${count}` : `[快捷键] Alt+B 未找到可绑定窗口 | pid=${pid} hwnd=${hwnd}`;
-        console.log(msg);
-        new Notification({ title: count > 0 ? '绑定成功' : '绑定失败', body: `PID=${pid} HWND=${hwnd} COUNT=${count}` }).show();
-      } catch (err) {
-        console.warn('[快捷键] Alt+B 异常：', (err as any)?.message || err);
-      }
-    });
-    if (!okBind) {
-      console.warn('[快捷键] Alt+B 注册失败');
-    }
-  } catch (e) {
-    console.warn('[快捷键] Alt+B 注册异常：', (e as any)?.message || e);
-  }
-}
-
 function setupAppLifecycle() {
   console.log('[应用生命周期] 开始初始化');
   app.on('ready', () => {
@@ -295,7 +247,8 @@ function setupAppLifecycle() {
     console.log('[应用生命周期] IPC 处理程序注册完成');
     registerBoundEventHandlers();
     console.log('[应用生命周期] 绑定事件处理程序注册完成');
-    setupGlobalShortcut();
+    // 中文注释：将全局快捷键注册集中到 hotkey-register.ts
+    registerGlobalHotkeys({ toggleAutoKey, ensureDamo });
     console.log('[应用生命周期] 全局快捷键注册完成');
   });
 
@@ -372,4 +325,5 @@ function getCurrentCursorPosition() {
   // 二郎神杨戬 s = dm.Ocr(664,305,788,502,"00f000-111111",1.0)
   // 选择面板s = dm.Ocr(583,426,844,521,"e8f0e8-111111",1.0)
   // 查找面板 s = dm.Ocr(1106,851,1494,901,"a87848-111111|201010-000000",1.0)
+  // 桃溪 仓库145/51 ，飞机 151，17
 }
