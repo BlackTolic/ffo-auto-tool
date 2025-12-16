@@ -1,26 +1,77 @@
 import { globalShortcut } from 'electron';
-import type { Damo } from '../damo/damo';
+import { ensureDamo } from '../damo/damo';
 import { damoBindingManager } from '../ffo/events';
+import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { startRolePositionPolling } from '../ffo/utils/ocr-check/role-position';
+
+// 中文注释：记录每个窗口当前是否开启了自动按键
+const autoKeyOnByHwnd = new Map<number, boolean>();
+
+// 负责控制按键按下、停止、检查是否先于绑定
+export const toggleAutoKey = (
+  keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',
+  intervalMs: number = 90
+): { ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string } => {
+  // 中文注释：获取当前前台窗口句柄（操作系统层面的活动窗口）
+  let hwnd = 0;
+  try {
+    const dm = ensureDamo();
+    // 中文注释：获取当前前台窗口句柄（操作系统层面的活动窗口）
+    hwnd = dm.getForegroundWindow();
+  } catch (e) {
+    const msg = (e as any)?.message || String(e);
+    return { ok: false, message: `获取前台窗口失败：${msg}` };
+  }
+
+  if (!hwnd || hwnd <= 0) {
+    return { ok: false, message: '未检测到前台窗口，无法切换自动按键' };
+  }
+
+  // 中文注释：只对已绑定的前台窗口生效
+  if (!damoBindingManager.isBound(hwnd)) {
+    return { ok: false, hwnd, message: '当前前台窗口未绑定，请先绑定后再切换' };
+  }
+
+  // 中文注释：获取绑定记录
+  const rec = damoBindingManager.get(hwnd);
+  if (!rec) {
+    return { ok: false, hwnd, message: `找不到绑定记录：hwnd=${hwnd}` };
+  }
+
+  // 中文注释：根据当前状态判断是否需要启动或停止自动按键
+  const currentlyOn = autoKeyOnByHwnd.get(hwnd) === true;
+  if (currentlyOn) {
+    try {
+      stopKeyPress(hwnd);
+    } catch (e) {
+      // 中文注释：停止失败不影响状态切换的结果，但记录日志
+      console.warn('[自动按键] 停止失败：', (e as any)?.message || e);
+    }
+    autoKeyOnByHwnd.set(hwnd, false);
+    return { ok: true, running: false, hwnd };
+  } else {
+    try {
+      startKeyPress(keyName, intervalMs, rec);
+    } catch (e) {
+      const msg = (e as any)?.message || String(e);
+      return { ok: false, hwnd, message: `启动失败：${msg}` };
+    }
+    // 中文注释：记录按键状态
+    autoKeyOnByHwnd.set(hwnd, true);
+    return { ok: true, running: true, hwnd, key: keyName, intervalMs };
+  }
+};
 
 // 中文注释：集中管理全局快捷键的注册逻辑，避免分散在 main.ts
 // - Alt+W：切换自动按键，仅作用当前前台且已绑定的窗口
 // - Alt+B：绑定当前前台窗口所属进程的所有候选窗口（修复原 Alt+Q 冲突）
 // - Alt+R：启动当前前台窗口的角色坐标轮询（每秒一次）
 // 通过依赖注入复用主进程已有方法，避免循环依赖
-export function registerGlobalHotkeys(deps: {
-  // 中文注释：切换自动按键（由主进程提供实现）
-  toggleAutoKey: (
-    keyName?: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10',
-    intervalMs?: number
-  ) => { ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string };
-  // 中文注释：提供大漠实例的工厂函数（主进程懒加载实例）
-  ensureDamo: () => Damo;
-}) {
+export function registerGlobalHotkeys() {
   // 中文注释：Alt+W 切换自动按键
   try {
     const ok = globalShortcut.register('Alt+W', () => {
-      const ret = deps.toggleAutoKey('F1', 200);
+      const ret = toggleAutoKey('F1', 200);
       const msg = ret.ok ? `[快捷键] Alt+W 切换成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+W 切换失败 | ${ret.message}`;
       console.log(msg);
     });
@@ -33,7 +84,7 @@ export function registerGlobalHotkeys(deps: {
   try {
     const okBind = globalShortcut.register('Alt+B', async () => {
       try {
-        const dm = deps.ensureDamo();
+        const dm = ensureDamo();
         // 中文注释：获取当前前台窗口句柄
         const hwnd = dm.getForegroundWindow();
         console.log('[快捷键] Alt+B 检测到前台窗口', hwnd);
@@ -69,7 +120,7 @@ export function registerGlobalHotkeys(deps: {
   try {
     const okRole = globalShortcut.register('Alt+R', () => {
       try {
-        const dm = deps.ensureDamo();
+        const dm = ensureDamo();
         const hwnd = dm.getForegroundWindow();
         if (!hwnd || hwnd <= 0) {
           console.log('[快捷键] Alt+R 失败 | 未检测到前台窗口', hwnd);

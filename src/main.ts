@@ -5,14 +5,12 @@ import { OCR_FONT_PATH, SCREENSHOT_PATH } from './constant/config';
 import { ensureDamo, registerDamoOnce } from './damo/damo';
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
 import { stopAutoCombat } from './ffo/utils/auto-combat';
-import { startKeyPress, stopKeyPress } from './ffo/utils/key-press'; // 中文注释：自动按键模块（启动/停止）
+import { stopKeyPress } from './ffo/utils/key-press'; // 中文注释：自动按键模块（启动/停止）
 import { registerGlobalHotkeys } from './init/hotkey-register';
 import { registerIpcHandlers } from './init/ipc-handle'; // 中文注释：集中管理 IPC 注册的模块
 
 // 中文注释：记录最近绑定成功的窗口句柄（供部分逻辑使用）
 let lastBoundHwnd: number | null = null;
-// 中文注释：记录每个窗口当前是否开启了自动按键
-const autoKeyOnByHwnd = new Map<number, boolean>();
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -27,65 +25,10 @@ const createWindow = () => {
   mainWindow.webContents.openDevTools();
 };
 
-// 负责控制按键按下、停止、检查是否先于绑定
-function toggleAutoKey(
-  keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',
-  intervalMs: number = 90
-): { ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string } {
-  // 中文注释：获取当前前台窗口句柄（操作系统层面的活动窗口）
-  let hwnd = 0;
-  try {
-    const dm = ensureDamo();
-    // 中文注释：获取当前前台窗口句柄（操作系统层面的活动窗口）
-    hwnd = dm.getForegroundWindow();
-  } catch (e) {
-    const msg = (e as any)?.message || String(e);
-    return { ok: false, message: `获取前台窗口失败：${msg}` };
-  }
-
-  if (!hwnd || hwnd <= 0) {
-    return { ok: false, message: '未检测到前台窗口，无法切换自动按键' };
-  }
-
-  // 中文注释：只对已绑定的前台窗口生效
-  if (!damoBindingManager.isBound(hwnd)) {
-    return { ok: false, hwnd, message: '当前前台窗口未绑定，请先绑定后再切换' };
-  }
-
-  // 中文注释：获取绑定记录
-  const rec = damoBindingManager.get(hwnd);
-  if (!rec) {
-    return { ok: false, hwnd, message: `找不到绑定记录：hwnd=${hwnd}` };
-  }
-
-  // 中文注释：根据当前状态判断是否需要启动或停止自动按键
-  const currentlyOn = autoKeyOnByHwnd.get(hwnd) === true;
-  if (currentlyOn) {
-    try {
-      stopKeyPress(hwnd);
-    } catch (e) {
-      // 中文注释：停止失败不影响状态切换的结果，但记录日志
-      console.warn('[自动按键] 停止失败：', (e as any)?.message || e);
-    }
-    autoKeyOnByHwnd.set(hwnd, false);
-    return { ok: true, running: false, hwnd };
-  } else {
-    try {
-      startKeyPress(keyName, intervalMs, rec);
-    } catch (e) {
-      const msg = (e as any)?.message || String(e);
-      return { ok: false, hwnd, message: `启动失败：${msg}` };
-    }
-    // 中文注释：记录按键状态
-    autoKeyOnByHwnd.set(hwnd, true);
-    return { ok: true, running: true, hwnd, key: keyName, intervalMs };
-  }
-}
-
 // 中文注释：统一注册所有 IPC 通道的函数
 function setupIpcHandlers() {
   // 中文注释：IPC 注册已集中到 ipc-handle.ts，这里仅委托调用，避免重复注册与代码分散
-  registerIpcHandlers({ ensureDamo, damoBindingManager, toggleAutoKey, registerDamoOnce });
+  registerIpcHandlers({ ensureDamo, damoBindingManager });
 }
 // 中文注释：IPC 注册已集中到 ipc-handle.ts，这里不再直接注册各通道
 // 中文注释：向所有渲染进程广播字库信息更新
@@ -145,7 +88,7 @@ function registerBoundEventHandlers() {
       // 中文注释：停止自动按键（释放定时器）
       stopKeyPress(hwnd);
       // 中文注释：更新自动按键状态并重置最近绑定句柄
-      autoKeyOnByHwnd.delete(hwnd);
+      // autoKeyOnByHwnd.delete(hwnd);
       if (lastBoundHwnd === hwnd) lastBoundHwnd = null;
     } catch (err) {
       console.warn(`[解绑事件] 清理失败: ${String((err as any)?.message || err)}`);
@@ -163,7 +106,7 @@ function setupAppLifecycle() {
     registerBoundEventHandlers();
     console.log('[应用生命周期] 绑定事件处理程序注册完成');
     // 中文注释：将全局快捷键注册集中到 hotkey-register.ts
-    registerGlobalHotkeys({ toggleAutoKey, ensureDamo });
+    registerGlobalHotkeys();
     console.log('[应用生命周期] 全局快捷键注册完成');
   });
 
