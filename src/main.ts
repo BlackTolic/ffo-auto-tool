@@ -1,16 +1,9 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, Notification } from 'electron';
-import fs from 'fs'; // 中文注释：读取字典文件
-import path from 'path'; // 中文注释：拼接字典路径
-import { OCR_FONT_PATH, SCREENSHOT_PATH } from './constant/config';
+import { app, BrowserWindow, globalShortcut, ipcMain } from 'electron';
 import { ensureDamo, registerDamoOnce } from './damo/damo';
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
-import { stopAutoCombat } from './ffo/utils/auto-combat';
-import { stopKeyPress } from './ffo/utils/key-press'; // 中文注释：自动按键模块（启动/停止）
+import { registerBoundEventHandlers } from './init/event-register';
 import { registerGlobalHotkeys } from './init/hotkey-register';
-import { registerIpcHandlers } from './init/ipc-handle'; // 中文注释：集中管理 IPC 注册的模块
-
-// 中文注释：记录最近绑定成功的窗口句柄（供部分逻辑使用）
-let lastBoundHwnd: number | null = null;
+import { registerIpcHandlers } from './init/ipc-handle-register'; // 中文注释：集中管理 IPC 注册的模块
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -20,88 +13,16 @@ const createWindow = () => {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
   });
-
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   mainWindow.webContents.openDevTools();
 };
 
-// 中文注释：统一注册所有 IPC 通道的函数
-function setupIpcHandlers() {
-  // 中文注释：IPC 注册已集中到 ipc-handle.ts，这里仅委托调用，避免重复注册与代码分散
-  registerIpcHandlers({ ensureDamo, damoBindingManager });
-}
-// 中文注释：IPC 注册已集中到 ipc-handle.ts，这里不再直接注册各通道
-// 中文注释：向所有渲染进程广播字库信息更新
-function broadcastDictInfoUpdated(hwnd: number, info: any) {
-  BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('damo:dictInfoUpdated', { hwnd, info }));
-}
-
-// 中文注释：为绑定成功事件注册处理逻辑（加载字库、调试输出、截图与 OCR 示例）
-function registerBoundEventHandlers() {
-  ffoEvents.on('bound', async ({ pid, hwnd }) => {
-    new Notification({ title: '绑定成功', body: `PID=${pid} HWND=${hwnd}` }).show();
-    lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄（供其他逻辑参考，不参与快捷键切换）
-    const rec = damoBindingManager.get(hwnd);
-    if (!rec) return;
-    try {
-      const dm = rec?.ffoClient?.dm;
-      let dictLoaded = false;
-      if (fs.existsSync(OCR_FONT_PATH)) {
-        try {
-          const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, OCR_FONT_PATH);
-          if (ret === 1) {
-            dm?.UseDict(0);
-            console.log(`[OCR字典] 已加载 ${path.basename(OCR_FONT_PATH)} 并启用索引 0`);
-            dictLoaded = true;
-            const info = rec?.ffoClient?.getCurrentDictInfo?.();
-            broadcastDictInfoUpdated(hwnd, info);
-          } else {
-            console.warn(`[OCR字典] SetDict 返回值=${ret} | 路径=${OCR_FONT_PATH}`);
-          }
-        } catch (err) {
-          console.warn(`[OCR字典] 加载失败: ${OCR_FONT_PATH} | ${String((err as any)?.message || err)}`);
-        }
-      }
-      if (!dictLoaded) {
-        dm?.UseDict(0);
-        console.log('[OCR字典] 使用默认字典索引 0（未找到或加载失败）');
-      }
-
-      // 中文注释：示例截图（可选）
-      try {
-        // 截取全屏
-        const screenWidth = dm?.GetSystemMetrics?.(0) - 1;
-        const screenHeight = dm?.GetSystemMetrics?.(1) - 1;
-        const cap = dm?.CapturePng?.(0, 0, screenWidth, screenHeight, SCREENSHOT_PATH);
-        console.log(`[截图] PNG=${cap} | ${SCREENSHOT_PATH}`);
-      } catch {}
-    } catch (err) {
-      console.warn(`[绑定事件] 处理失败: ${String((err as any)?.message || err)}`);
-    }
-  });
-
-  // 中文注释：解绑事件处理（停止定时器与清理状态）
-  ffoEvents.on('unbind', async ({ hwnd }) => {
-    try {
-      // 中文注释：停止自动打怪（释放定时器）
-      stopAutoCombat(hwnd);
-      // 中文注释：停止自动按键（释放定时器）
-      stopKeyPress(hwnd);
-      // 中文注释：更新自动按键状态并重置最近绑定句柄
-      // autoKeyOnByHwnd.delete(hwnd);
-      if (lastBoundHwnd === hwnd) lastBoundHwnd = null;
-    } catch (err) {
-      console.warn(`[解绑事件] 清理失败: ${String((err as any)?.message || err)}`);
-    }
-  });
-}
-
 function setupAppLifecycle() {
-  console.log('[应用生命周期] 开始初始化');
   app.on('ready', () => {
     createWindow();
     console.log('[应用生命周期] 窗口创建完成');
-    setupIpcHandlers();
+    // 中文注释：IPC 注册已集中到 ipc-handle.ts，这里仅委托调用，避免重复注册与代码分散
+    registerIpcHandlers({ ensureDamo, damoBindingManager });
     console.log('[应用生命周期] IPC 处理程序注册完成');
     registerBoundEventHandlers();
     console.log('[应用生命周期] 绑定事件处理程序注册完成');

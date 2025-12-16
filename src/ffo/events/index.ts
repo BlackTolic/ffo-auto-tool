@@ -176,7 +176,6 @@ export class DamoBindingManager {
         }
         // 中文注释：记录成功绑定的客户端
         this.clientsByHwnd.set(hwnd, { pid, hwnd, ffoClient: client });
-        console.log(`[绑定] 成功绑定窗口 hwnd=${hwnd}, pid=${pid}`);
         successCount++;
         // 中文注释：通知订阅者该窗口绑定成功
         ffoEvents.emit('bound', { pid, hwnd } as BoundPayload);
