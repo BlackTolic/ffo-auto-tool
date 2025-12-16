@@ -251,3 +251,13 @@ export class Damo {
     };
   }
 }
+
+// 中文注释：导出单例获取函数，集中管理 Damo 实例（懒加载）
+let __damoSingleton: Damo | null = null;
+export function ensureDamo(): Damo {
+  // 中文注释：仅在首次调用时创建实例，后续复用，避免重复 COM 初始化
+  if (!__damoSingleton) {
+    __damoSingleton = new Damo();
+  }
+  return __damoSingleton;
+}

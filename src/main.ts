@@ -1,13 +1,13 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, Notification, screen } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, Notification } from 'electron';
 import fs from 'fs'; // 中文注释：读取字典文件
 import path from 'path'; // 中文注释：拼接字典路径
 import { OCR_FONT_PATH_, SCREENSHOT_PATH } from './constant/config';
-import { Damo } from './damo/damo';
-import { validateEnvironment } from './envCheck'; // 中文注释：引入运行时环境校验
+import { ensureDamo } from './damo/damo';
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
 import { stopAutoCombat } from './ffo/utils/auto-combat';
 import { startKeyPress, stopKeyPress } from './ffo/utils/key-press'; // 中文注释：自动按键模块（启动/停止）
 import { registerGlobalHotkeys } from './init/hotkey-register';
+import { registerIpcHandlers } from './init/ipc-handle'; // 中文注释：集中管理 IPC 注册的模块
 
 // 中文注释：记录最近绑定成功的窗口句柄（供部分逻辑使用）
 let lastBoundHwnd: number | null = null;
@@ -26,21 +26,6 @@ const createWindow = () => {
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   mainWindow.webContents.openDevTools();
 };
-
-// 中文注释：懒加载并缓存 Damo 包装实例
-let damo: Damo | null = null;
-function ensureDamo(): Damo {
-  if (!damo) {
-    try {
-      damo = new Damo();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error('[Damo] 初始化失败:', msg);
-      throw e;
-    }
-  }
-  return damo;
-}
 
 // 中文注释：切换自动按键（仅作用于“当前前台窗口”，必须已绑定）
 function toggleAutoKey(
@@ -99,83 +84,10 @@ function toggleAutoKey(
 
 // 中文注释：统一注册所有 IPC 通道的函数
 function setupIpcHandlers() {
-  ipcMain.handle('env:check', () => validateEnvironment());
-  ipcMain.handle('damo:ver', () => ensureDamo().ver());
-  ipcMain.handle('damo:getForegroundWindow', () => ensureDamo().getForegroundWindow());
-  ipcMain.handle('damo:bindWindow', (_event, hwnd: number, display: string, mouse: string, keypad: string, mode: number) => {
-    return ensureDamo().bindWindow(hwnd, display, mouse, keypad, mode);
-  });
-  ipcMain.handle('damo:unbindWindow', () => ensureDamo().unbindWindow());
-  ipcMain.handle('damo:getClientRect', (_event, hwnd: number) => ensureDamo().getClientRect(hwnd));
-  ipcMain.handle('damo:clientToScreen', (_event, hwnd: number, x: number, y: number) => ensureDamo().clientToScreen(hwnd, x, y));
-  ipcMain.handle('damo:screenToClient', (_event, hwnd: number, x: number, y: number) => ensureDamo().screenToClient(hwnd, x, y));
-  ipcMain.handle('damo:getWindowRect', (_event, hwnd: number) => ensureDamo().getWindowRect(hwnd));
-  ipcMain.handle('damo:getWindowInfo', async (_event, hwnd: number) => {
-    const dm = ensureDamo();
-    const windowRect = await dm.getWindowRect(hwnd);
-    const clientRect = await dm.getClientRect(hwnd);
-    const displayInfo = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
-    const scaleFactor = displayInfo.scaleFactor;
-    return { windowRect, clientRect, scaleFactor };
-  });
-  ipcMain.handle('damo:clientCssToScreenPx', async (_event, hwnd: number, xCss: number, yCss: number) => {
-    const dm = ensureDamo();
-    const windowRect = await dm.getWindowRect(hwnd);
-    const displayInfo = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
-    const sf = displayInfo.scaleFactor;
-    const xClientPx = Math.round(xCss * sf);
-    const yClientPx = Math.round(yCss * sf);
-    return dm.clientToScreen(hwnd, xClientPx, yClientPx);
-  });
-  ipcMain.handle('damo:screenPxToClientCss', async (_event, hwnd: number, x: number, y: number) => {
-    const dm = ensureDamo();
-    const windowRect = await dm.getWindowRect(hwnd);
-    const displayInfo = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
-    const sf = displayInfo.scaleFactor;
-    const clientPx = await dm.screenToClient(hwnd, x, y);
-    return { x: clientPx.x / sf, y: clientPx.y / sf };
-  });
-  ipcMain.handle('damo:getDictInfo', (_event, hwnd?: number) => {
-    if (typeof hwnd === 'number' && hwnd > 0) {
-      const rec = damoBindingManager.get(hwnd);
-      if (rec && typeof rec.ffoClient.getCurrentDictInfo === 'function') {
-        return rec.ffoClient.getCurrentDictInfo();
-      }
-      return { activeIndex: null, source: { type: 'unknown' } };
-    }
-    const dm = ensureDamo();
-    if (typeof (dm as any).getCurrentDictInfo === 'function') {
-      return (dm as any).getCurrentDictInfo();
-    }
-    return { activeIndex: null, source: { type: 'unknown' } };
-  });
-
-  // 中文注释：自动按键切换的 IPC 处理（渲染层调用时也只作用当前前台窗口）
-  ipcMain.handle('autoKey:toggle', (_event, keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1', intervalMs: number = 200) => {
-    return toggleAutoKey(keyName, intervalMs);
-  });
-
-  // 中文注释：新增一键绑定前台窗口所属进程（通过绑定管理器），便于用户从渲染层触发绑定
-  ipcMain.handle('ffo:bindForeground', async () => {
-    try {
-      const dm = ensureDamo();
-      const hwnd = dm.getForegroundWindow();
-      if (!hwnd || hwnd <= 0) {
-        return { ok: false, message: '未检测到前台窗口' };
-      }
-      // 中文注释：通过底层 DM 获取前台窗口所属 PID
-      const pid = (dm as any).dm?.GetWindowProcessId?.(hwnd);
-      if (!pid || pid <= 0) {
-        return { ok: false, hwnd, message: '无法获取前台窗口 PID' };
-      }
-      const count = await damoBindingManager.bindWindowsForPid(pid);
-      return { ok: count > 0, count, hwnd, pid, message: count > 0 ? '绑定成功' : '未找到可绑定窗口' };
-    } catch (e) {
-      return { ok: false, message: (e as any)?.message || String(e) };
-    }
-  });
+  // 中文注释：IPC 注册已集中到 ipc-handle.ts，这里仅委托调用，避免重复注册与代码分散
+  registerIpcHandlers({ ensureDamo, damoBindingManager, toggleAutoKey });
 }
-
+// 中文注释：IPC 注册已集中到 ipc-handle.ts，这里不再直接注册各通道
 // 中文注释：向所有渲染进程广播字库信息更新
 function broadcastDictInfoUpdated(hwnd: number, info: any) {
   BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('damo:dictInfoUpdated', { hwnd, info }));
