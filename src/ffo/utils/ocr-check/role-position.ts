@@ -4,8 +4,12 @@
 import type { DamoClientRecord } from '../../events';
 
 // 中文注释：默认用于识别坐标的屏幕区域与参数（根据你的示例）
-const DEFAULT_REGION = { x1: 1316, y1: 111, x2: 1389, y2: 138 };
-const DEFAULT_COLOR = 'e8f0e8-111111';
+// const DEFAULT_REGION = { x1: 1316, y1: 111, x2: 1389, y2: 138 };
+// const DEFAULT_COLOR = 'e8f0e8-111111';
+// const DEFAULT_SIM = 1.0;
+
+const DEFAULT_REGION = { x1: 2458, y1: 232, x2: 2579, y2: 266 };
+const DEFAULT_COLOR = '110a00-555555';
 const DEFAULT_SIM = 1.0;
 
 // 中文注释：轮询定时器映射，按窗口句柄管理，便于停止

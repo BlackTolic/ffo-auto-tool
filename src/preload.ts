@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { DamoRegResult } from './damo/damo'; // 中文注释：引入一次性注册的返回类型，便于渲染层类型提示
 
 // 中文注释：向渲染进程暴露用于操作大漠插件的 API
 const damo = {
@@ -26,6 +27,9 @@ const damo = {
     keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',
     intervalMs: number = 200
   ): Promise<{ ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string }> => ipcRenderer.invoke('autoKey:toggle', keyName, intervalMs),
+
+  // 中文注释：手动触发一次“收费注册”，仅首次真正执行，后续返回上次结果
+  register: (): Promise<DamoRegResult> => ipcRenderer.invoke('damo:register'),
 };
 
 // 新增：环境校验 API，渲染进程可调用展示结果

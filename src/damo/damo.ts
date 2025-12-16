@@ -26,15 +26,12 @@ export class Damo {
   constructor() {
     if (!winax) {
       // 中文提示：引导安装 winax 及其构建依赖
-      throw new Error(
-        'winax 未安装或构建失败。请先安装 Visual Studio C++ 构建工具和 Python，再执行: npm i winax'
-      );
+      throw new Error('winax 未安装或构建失败。请先安装 Visual Studio C++ 构建工具和 Python，再执行: npm i winax');
     }
     try {
       // 使用 COM ProgID 创建大漠对象，要求已正确注册 dm.dll（位数需匹配）
       this.dm = new winax.Object('dm.dmsoft');
-      // 中文注释：创建对象后尝试进行收费注册（需管理员权限），否则可能返回 -2
-      this.reg();
+      // 中文注释：构造函数不再调用收费注册，避免每次实例化重复注册
     } catch (err: any) {
       // -2147221005 = REGDB_E_CLASSNOTREG（类未注册），常见于未注册或位数不匹配
       const errno = err && typeof err.errno === 'number' ? err.errno : null;
@@ -48,23 +45,23 @@ export class Damo {
     }
   }
 
-    reg() {
-      // 中文注释：大漠收费注册（Reg/RegEx）需管理员权限，否则返回 -2
-      const elevated = isElevated();
-      if (!elevated) {
-        // 非管理员时，不强制抛错，返回 -2 并给出中文提示，避免影响免费功能
-        const code = -2;
-        console.warn('大漠收费注册未执行：当前进程非管理员(-2)。请以管理员运行或关闭UAC后重试。');
-        console.warn('提示：右键以管理员身份运行终端，再执行 npm run start:utf8');
-        return code;
-      }
-      // 执行收费注册（示例：使用你的用户名与附加码）
-      const regCode = this.dm.Reg('yonghufd83601c96660b0709d34423d3bad506', 'yk3112313');
-      console.log('大漠插件注册返回值: ', regCode, this.describeRegResult(regCode));
-      console.log('大漠插件版本：', this.dm.Ver());
-      console.log('大漠插件路径：', this.dm.GetBasePath());
-      return regCode;
+  reg() {
+    // 中文注释：大漠收费注册（Reg/RegEx）需管理员权限，否则返回 -2
+    const elevated = isElevated();
+    if (!elevated) {
+      // 非管理员时，不强制抛错，返回 -2 并给出中文提示，避免影响免费功能
+      const code = -2;
+      console.warn('大漠收费注册未执行：当前进程非管理员(-2)。请以管理员运行或关闭UAC后重试。');
+      console.warn('提示：右键以管理员身份运行终端，再执行 npm run start:utf8');
+      return code;
     }
+    // 执行收费注册（示例：使用你的用户名与附加码）
+    const regCode = this.dm.Reg('yonghufd83601c96660b0709d34423d3bad506', 'yk3112313');
+    console.log('大漠插件注册返回值: ', regCode, this.describeRegResult(regCode));
+    console.log('大漠插件版本：', this.dm.Ver());
+    console.log('大漠插件路径：', this.dm.GetBasePath());
+    return regCode;
+  }
 
   // 新增：返回码中文含义（汇总常见结果，便于快速定位问题）
   private describeRegResult(code: number): string {
@@ -223,7 +220,7 @@ export class Damo {
   private sanitizeDictContent(content: string): string {
     let s = content || '';
     // 中文注释：移除 UTF-8/UTF-16 BOM
-    if (s.charCodeAt(0) === 0xFEFF) {
+    if (s.charCodeAt(0) === 0xfeff) {
       s = s.slice(1);
     }
     // 中文注释：统一换行，某些版本要求 CRLF，否则可能触发“打开字库失败”
@@ -254,10 +251,91 @@ export class Damo {
 
 // 中文注释：导出单例获取函数，集中管理 Damo 实例（懒加载）
 let __damoSingleton: Damo | null = null;
+// 中文注释：是否已执行一次收费注册（手动控制，避免重复）
+let __damoRegisteredOnce: boolean = false;
+// 中文注释：最近一次注册返回码（便于展示或复用）
+let __damoLastRegCode: number | undefined = undefined;
 export function ensureDamo(): Damo {
   // 中文注释：仅在首次调用时创建实例，后续复用，避免重复 COM 初始化
   if (!__damoSingleton) {
     __damoSingleton = new Damo();
   }
   return __damoSingleton;
+}
+
+// 中文注释：大漠注册结果的接口类型（便于渲染或日志输出）
+export interface DamoRegResult {
+  // 中文注释：是否本次调用实际执行了注册（true 表示首次注册；false 表示之前已注册过）
+  ran: boolean;
+  // 中文注释：大漠注册返回码（例如 1=成功，-2=非管理员等）
+  code?: number;
+  // 中文注释：返回码的中文说明（便于快速定位问题）
+  desc?: string;
+  // 中文注释：当前进程是否管理员（注册前后都可用于判断提示）
+  admin?: boolean;
+  // 中文注释：额外提示信息（例如“已注册无需重复”等）
+  message?: string;
+}
+
+// 中文注释：手动执行一次收费注册（Reg），后续重复调用直接返回上次结果
+export function registerDamoOnce(): DamoRegResult {
+  const admin = isElevated();
+  if (__damoRegisteredOnce) {
+    return {
+      ran: false,
+      code: __damoLastRegCode,
+      desc: describeReg(__damoLastRegCode),
+      admin,
+      message: '已注册，无需重复执行',
+    };
+  }
+  const dm = ensureDamo();
+  const code = dm.reg();
+  __damoLastRegCode = code;
+  __damoRegisteredOnce = true;
+  return {
+    ran: true,
+    code,
+    desc: describeReg(code),
+    admin,
+    message: '已尝试执行收费注册',
+  };
+}
+
+// 中文注释：返回码中文映射（与类内私有描述保持一致，便于外部展示）
+function describeReg(code?: number): string {
+  switch (code) {
+    case 1:
+      return '成功';
+    case 0:
+      return '失败(未知错误)';
+    case -1:
+      return '无法连接网络/可能防火墙拦截或IP暂封';
+    case -2:
+      return '进程未以管理员运行(UAC 导致)';
+    case 2:
+      return '余额不足';
+    case 3:
+      return '绑定了本机器，但账户余额不足50元';
+    case 4:
+      return '注册码错误';
+    case 5:
+      return '机器或IP在黑名单/不在白名单';
+    case 6:
+      return '非法使用插件/系统语言非中文简体可能触发';
+    case 7:
+      return '帐号因非法使用被封禁';
+    case 8:
+      return '附加码不在白名单中';
+    case 77:
+      return '机器码或IP因非法使用被封禁(全局封禁)';
+    case 777:
+      return '同一机器码注册次数超限，暂时封禁';
+    case -8:
+      return '版本附加信息长度超过20';
+    case -9:
+      return '版本附加信息包含非法字符';
+    default:
+      return '未知返回码';
+  }
 }

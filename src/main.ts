@@ -1,8 +1,8 @@
 import { app, BrowserWindow, globalShortcut, ipcMain, Notification } from 'electron';
 import fs from 'fs'; // 中文注释：读取字典文件
 import path from 'path'; // 中文注释：拼接字典路径
-import { OCR_FONT_PATH_, SCREENSHOT_PATH } from './constant/config';
-import { ensureDamo } from './damo/damo';
+import { OCR_FONT_PATH, SCREENSHOT_PATH } from './constant/config';
+import { ensureDamo, registerDamoOnce } from './damo/damo';
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
 import { stopAutoCombat } from './ffo/utils/auto-combat';
 import { startKeyPress, stopKeyPress } from './ffo/utils/key-press'; // 中文注释：自动按键模块（启动/停止）
@@ -27,10 +27,10 @@ const createWindow = () => {
   mainWindow.webContents.openDevTools();
 };
 
-// 中文注释：切换自动按键（仅作用于“当前前台窗口”，必须已绑定）
+// 负责控制按键按下、停止、检查是否先于绑定
 function toggleAutoKey(
   keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',
-  intervalMs: number = 200
+  intervalMs: number = 90
 ): { ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string } {
   // 中文注释：获取当前前台窗口句柄（操作系统层面的活动窗口）
   let hwnd = 0;
@@ -85,7 +85,7 @@ function toggleAutoKey(
 // 中文注释：统一注册所有 IPC 通道的函数
 function setupIpcHandlers() {
   // 中文注释：IPC 注册已集中到 ipc-handle.ts，这里仅委托调用，避免重复注册与代码分散
-  registerIpcHandlers({ ensureDamo, damoBindingManager, toggleAutoKey });
+  registerIpcHandlers({ ensureDamo, damoBindingManager, toggleAutoKey, registerDamoOnce });
 }
 // 中文注释：IPC 注册已集中到 ipc-handle.ts，这里不再直接注册各通道
 // 中文注释：向所有渲染进程广播字库信息更新
@@ -103,20 +103,20 @@ function registerBoundEventHandlers() {
     try {
       const dm = rec?.ffoClient?.dm;
       let dictLoaded = false;
-      if (fs.existsSync(OCR_FONT_PATH_)) {
+      if (fs.existsSync(OCR_FONT_PATH)) {
         try {
-          const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, OCR_FONT_PATH_);
+          const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, OCR_FONT_PATH);
           if (ret === 1) {
             dm?.UseDict(0);
-            console.log(`[OCR字典] 已加载 ${path.basename(OCR_FONT_PATH_)} 并启用索引 0`);
+            console.log(`[OCR字典] 已加载 ${path.basename(OCR_FONT_PATH)} 并启用索引 0`);
             dictLoaded = true;
             const info = rec?.ffoClient?.getCurrentDictInfo?.();
             broadcastDictInfoUpdated(hwnd, info);
           } else {
-            console.warn(`[OCR字典] SetDict 返回值=${ret} | 路径=${OCR_FONT_PATH_}`);
+            console.warn(`[OCR字典] SetDict 返回值=${ret} | 路径=${OCR_FONT_PATH}`);
           }
         } catch (err) {
-          console.warn(`[OCR字典] 加载失败: ${OCR_FONT_PATH_} | ${String((err as any)?.message || err)}`);
+          console.warn(`[OCR字典] 加载失败: ${OCR_FONT_PATH} | ${String((err as any)?.message || err)}`);
         }
       }
       if (!dictLoaded) {
@@ -127,8 +127,8 @@ function registerBoundEventHandlers() {
       // 中文注释：示例截图（可选）
       try {
         // 截取全屏
-        const screenWidth = dm?.GetSystemMetrics?.(0);
-        const screenHeight = dm?.GetSystemMetrics?.(1);
+        const screenWidth = dm?.GetSystemMetrics?.(0) - 1;
+        const screenHeight = dm?.GetSystemMetrics?.(1) - 1;
         const cap = dm?.CapturePng?.(0, 0, screenWidth, screenHeight, SCREENSHOT_PATH);
         console.log(`[截图] PNG=${cap} | ${SCREENSHOT_PATH}`);
       } catch {}
@@ -207,6 +207,7 @@ function setupAppLifecycle() {
         'damo:getDictInfo',
         'autoKey:toggle',
         'ffo:bindForeground',
+        'damo:register', // 中文注释：新增手动注册通道的清理
       ];
       channels.forEach((ch) => ipcMain.removeHandler(ch));
     } catch (e) {
@@ -222,6 +223,8 @@ function setupAppLifecycle() {
   });
 }
 
+// 中文注释：手动注册大漠插件（仅一次）
+registerDamoOnce();
 // 中文注释：应用入口
 setupAppLifecycle();
 

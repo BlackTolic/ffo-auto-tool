@@ -1,11 +1,11 @@
-import { globalShortcut, Notification } from 'electron';
+import { globalShortcut } from 'electron';
 import type { Damo } from '../damo/damo';
 import { damoBindingManager } from '../ffo/events';
 import { startRolePositionPolling } from '../ffo/utils/ocr-check/role-position';
 
 // 中文注释：集中管理全局快捷键的注册逻辑，避免分散在 main.ts
 // - Alt+W：切换自动按键，仅作用当前前台且已绑定的窗口
-// - Alt+B：绑定当前前台窗口所属进程的所有候选窗口
+// - Alt+B：绑定当前前台窗口所属进程的所有候选窗口（修复原 Alt+Q 冲突）
 // - Alt+R：启动当前前台窗口的角色坐标轮询（每秒一次）
 // 通过依赖注入复用主进程已有方法，避免循环依赖
 export function registerGlobalHotkeys(deps: {
@@ -29,25 +29,33 @@ export function registerGlobalHotkeys(deps: {
     console.warn('[快捷键] Alt+W 注册异常：', (e as any)?.message || e);
   }
 
-  // 中文注释：Alt+B 绑定当前前台窗口所属进程
+  // 中文注释：Alt+B 绑定当前前台窗口所属进程（避免 Alt+Q 导致部分输入法/系统热键冲突）
   try {
     const okBind = globalShortcut.register('Alt+B', async () => {
       try {
         const dm = deps.ensureDamo();
+        // 中文注释：获取当前前台窗口句柄
         const hwnd = dm.getForegroundWindow();
+        console.log('[快捷键] Alt+B 检测到前台窗口', hwnd);
         if (!hwnd || hwnd <= 0) {
           console.log('[快捷键] Alt+B 失败 | 未检测到前台窗口');
           return;
         }
         const pid = (dm as any).dm?.GetWindowProcessId?.(hwnd);
+        console.log('[快捷键] Alt+B 检测到 PID', pid);
         if (!pid || pid <= 0) {
           console.log(`[快捷键] Alt+B 失败 | 无法获取 PID | hwnd=${hwnd}`);
           return;
         }
+        // 中文注释：避免绑定自身 Electron 主进程窗口，防止钩子影响稳定性
+        if (pid === process.pid) {
+          console.log('[快捷键] Alt+B 忽略 | 当前前台窗口属于本程序，请先激活游戏窗口');
+          return;
+        }
         const count = await damoBindingManager.bindWindowsForPid(pid);
+        console.log('[绑定次数', count);
         const msg = count > 0 ? `[快捷键] Alt+B 绑定成功 | pid=${pid} hwnd=${hwnd} count=${count}` : `[快捷键] Alt+B 未找到可绑定窗口 | pid=${pid} hwnd=${hwnd}`;
         console.log(msg);
-        new Notification({ title: count > 0 ? '绑定成功' : '绑定失败', body: `PID=${pid} HWND=${hwnd} COUNT=${count}` }).show();
       } catch (err) {
         console.warn('[快捷键] Alt+B 异常：', (err as any)?.message || err);
       }
@@ -64,18 +72,20 @@ export function registerGlobalHotkeys(deps: {
         const dm = deps.ensureDamo();
         const hwnd = dm.getForegroundWindow();
         if (!hwnd || hwnd <= 0) {
-          console.log('[快捷键] Alt+R 失败 | 未检测到前台窗口');
+          console.log('[快捷键] Alt+R 失败 | 未检测到前台窗口', hwnd);
           return;
         }
         if (!damoBindingManager.isBound(hwnd)) {
           console.log('[快捷键] Alt+R 失败 | 当前前台窗口未绑定');
           return;
         }
+        console.log(`[快捷键] Alt+R 开始轮询 | hwnd=${hwnd}`);
         const rec = damoBindingManager.get(hwnd);
         if (!rec) {
           console.log(`[快捷键] Alt+R 失败 | 找不到绑定记录 | hwnd=${hwnd}`);
           return;
         }
+
         // 中文注释：启动每秒轮询角色坐标
         startRolePositionPolling(
           rec,

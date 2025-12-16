@@ -10,51 +10,51 @@ import { Damo } from '../../damo/damo';
 // 中文注释：绑定配置（可按需覆盖默认值）
 export interface BindConfig {
   display?: string; // 显示绑定方式，如 'gdi'、'dx'
-  mouse?: string;   // 鼠标绑定方式，如 'windows'、'dx'
-  keypad?: string;  // 键盘绑定方式，如 'windows'、'dx'
-  api?: string;     // 扩展 API/模式，如 'dx.public.active.api'
-  mode?: number;    // 绑定模式参数（整数位标志位）
+  mouse?: string; // 鼠标绑定方式，如 'windows'、'dx'
+  keypad?: string; // 键盘绑定方式，如 'windows'、'dx'
+  api?: string; // 扩展 API/模式，如 'dx.public.active.api'
+  mode?: number; // 绑定模式参数（整数位标志位）
 }
 
 // 中文注释：绑定请求事件的负载
 export interface BindRequestPayload {
-  pid: number;              // 目标进程 PID
-  config?: BindConfig;      // 可选的绑定配置覆盖
+  pid: number; // 目标进程 PID
+  config?: BindConfig; // 可选的绑定配置覆盖
 }
 
 // 中文注释：绑定成功事件的负载
 export interface BoundPayload {
-  pid: number;              // 目标进程 PID
-  hwnd: number;             // 成功绑定的窗口句柄
+  pid: number; // 目标进程 PID
+  hwnd: number; // 成功绑定的窗口句柄
 }
 
 // 中文注释：解绑事件负载
 export interface UnbindPayload {
-  hwnd: number;             // 解绑的窗口句柄
+  hwnd: number; // 解绑的窗口句柄
 }
 
 // 中文注释：错误事件负载
 export interface ErrorPayload {
-  pid?: number;             // 可选：与错误相关的 PID
-  hwnd?: number;            // 可选：与错误相关的窗口句柄
-  error: Error | string;    // 错误对象或信息
+  pid?: number; // 可选：与错误相关的 PID
+  hwnd?: number; // 可选：与错误相关的窗口句柄
+  error: Error | string; // 错误对象或信息
 }
 
 // 中文注释：事件名联合类型，便于统一管理
 export type FfoEventName =
-  | 'bind:pid'    // 触发按 PID 扫描并绑定所有窗口
-  | 'bound'       // 某个窗口绑定成功
-  | 'unbind'      // 某个窗口解绑完成
-  | 'error';      // 发生错误
+  | 'bind:pid' // 触发按 PID 扫描并绑定所有窗口
+  | 'bound' // 某个窗口绑定成功
+  | 'unbind' // 某个窗口解绑完成
+  | 'error'; // 发生错误
 
 // 中文注释：事件总线（发布/订阅）
 export const ffoEvents = new EventEmitter();
 
 // 中文注释：管理器内部保存的客户端结构
 export interface DamoClientRecord {
-  pid: number;    // 进程 ID
-  hwnd: number;   // 窗口句柄
-  ffoClient: Damo;       // 对应的大漠实例（每个窗口一个）
+  pid: number; // 进程 ID
+  hwnd: number; // 窗口句柄
+  ffoClient: Damo; // 对应的大漠实例（每个窗口一个）
 }
 
 // 中文注释：大漠绑定管理器（多窗口）
@@ -122,15 +122,15 @@ export class DamoBindingManager {
       // 8=顶级窗口，16=可见窗口；优先取可见顶级
       const visTop = String(dmRaw.EnumWindowByProcessId(pid, '', '', 8 + 16) || '')
         .split(',')
-        .map(s => parseInt(s))
-        .filter(n => Number.isFinite(n) && n > 0);
+        .map((s) => parseInt(s))
+        .filter((n) => Number.isFinite(n) && n > 0);
       results.push(...visTop);
       if (results.length === 0) {
         // 回退仅顶级（可能当前不可见）
         const topOnly = String(dmRaw.EnumWindowByProcessId(pid, '', '', 8) || '')
           .split(',')
-          .map(s => parseInt(s))
-          .filter(n => Number.isFinite(n) && n > 0);
+          .map((s) => parseInt(s))
+          .filter((n) => Number.isFinite(n) && n > 0);
         results.push(...topOnly);
       }
     } catch (err) {
@@ -152,6 +152,7 @@ export class DamoBindingManager {
       return 0;
     }
 
+    // 中文注释：枚举窗口句柄
     const hwnds = this.enumerateWindowsByPid(probe.dm, pid);
     let successCount = 0;
 
@@ -175,6 +176,7 @@ export class DamoBindingManager {
         }
         // 中文注释：记录成功绑定的客户端
         this.clientsByHwnd.set(hwnd, { pid, hwnd, ffoClient: client });
+        console.log(`[绑定] 成功绑定窗口 hwnd=${hwnd}, pid=${pid}`);
         successCount++;
         // 中文注释：通知订阅者该窗口绑定成功
         ffoEvents.emit('bound', { pid, hwnd } as BoundPayload);
@@ -182,10 +184,12 @@ export class DamoBindingManager {
         // 中文注释：发生错误，通知订阅者
         ffoEvents.emit('error', { pid, hwnd, error: err } as ErrorPayload);
         // 中文注释：务必释放可能的绑定（防止半绑定状态）
-        try { client.unbindWindow(); } catch {}
+        try {
+          client.unbindWindow();
+        } catch {}
       }
     }
-
+    console.log('[绑定] 枚举窗口 hwnds', hwnds);
     return successCount;
   }
 }
@@ -195,6 +199,7 @@ export const damoBindingManager = new DamoBindingManager();
 
 // 中文注释：默认订阅：当收到按 PID 绑定请求时，执行绑定逻辑
 ffoEvents.on('bind:pid', async (payload: BindRequestPayload) => {
+  console.log('[绑定] 收到按 PID 绑定请求', payload);
   const { pid, config } = payload;
   try {
     await damoBindingManager.bindWindowsForPid(pid, config);

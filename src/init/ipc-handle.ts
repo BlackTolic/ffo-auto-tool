@@ -8,9 +8,14 @@ export function registerIpcHandlers(deps: {
   // 中文注释：大漠绑定管理器（用于按 PID 绑定多个窗口等）
   damoBindingManager: any;
   // 中文注释：自动按键切换函数（用于 Alt+W 逻辑的渲染层 IPC）
-  toggleAutoKey: (keyName?: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10', intervalMs?: number) => any;
+  toggleAutoKey: (
+    keyName?: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10',
+    intervalMs?: number
+  ) => any;
+  // 中文注释：手动执行一次大漠收费注册（仅在需要时调用）
+  registerDamoOnce?: () => any;
 }) {
-  const { ensureDamo, damoBindingManager, toggleAutoKey } = deps;
+  const { ensureDamo, damoBindingManager, toggleAutoKey, registerDamoOnce } = deps;
 
   // 环境校验
   ipcMain.handle('env:check', () => validateEnvironment());
@@ -22,9 +27,12 @@ export function registerIpcHandlers(deps: {
   ipcMain.handle('damo:getForegroundWindow', () => ensureDamo().getForegroundWindow());
 
   // 绑定窗口
-  ipcMain.handle('damo:bindWindow', (_event, hwnd: number, display: string, mouse: string, keypad: string, mode: number) => {
-    return ensureDamo().bindWindow(hwnd, display, mouse, keypad, mode);
-  });
+  ipcMain.handle(
+    'damo:bindWindow',
+    (_event, hwnd: number, display: string, mouse: string, keypad: string, mode: number) => {
+      return ensureDamo().bindWindow(hwnd, display, mouse, keypad, mode);
+    }
+  );
 
   // 解绑窗口
   ipcMain.handle('damo:unbindWindow', () => ensureDamo().unbindWindow());
@@ -33,10 +41,14 @@ export function registerIpcHandlers(deps: {
   ipcMain.handle('damo:getClientRect', (_event, hwnd: number) => ensureDamo().getClientRect(hwnd));
 
   // 客户区坐标转换为屏幕坐标
-  ipcMain.handle('damo:clientToScreen', (_event, hwnd: number, x: number, y: number) => ensureDamo().clientToScreen(hwnd, x, y));
+  ipcMain.handle('damo:clientToScreen', (_event, hwnd: number, x: number, y: number) =>
+    ensureDamo().clientToScreen(hwnd, x, y)
+  );
 
   // 屏幕坐标转换为客户区坐标
-  ipcMain.handle('damo:screenToClient', (_event, hwnd: number, x: number, y: number) => ensureDamo().screenToClient(hwnd, x, y));
+  ipcMain.handle('damo:screenToClient', (_event, hwnd: number, x: number, y: number) =>
+    ensureDamo().screenToClient(hwnd, x, y)
+  );
 
   // 获取窗口矩形（含边框）
   ipcMain.handle('damo:getWindowRect', (_event, hwnd: number) => ensureDamo().getWindowRect(hwnd));
@@ -89,7 +101,14 @@ export function registerIpcHandlers(deps: {
   });
 
   // 自动按键切换（渲染层调用）
-  ipcMain.handle('autoKey:toggle', (_event, keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1', intervalMs: number = 200) => toggleAutoKey(keyName, intervalMs));
+  ipcMain.handle(
+    'autoKey:toggle',
+    (
+      _event,
+      keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',
+      intervalMs: number = 200
+    ) => toggleAutoKey(keyName, intervalMs)
+  );
 
   // 绑定前台窗口所属进程的所有子窗口（通过绑定管理器）
   ipcMain.handle('ffo:bindForeground', async () => {
@@ -109,4 +128,9 @@ export function registerIpcHandlers(deps: {
       return { ok: false, message: (e as any)?.message || String(e) };
     }
   });
+
+  // 中文注释：手动注册一次（收费注册），返回注册状态码与中文说明
+  if (typeof registerDamoOnce === 'function') {
+    ipcMain.handle('damo:register', () => registerDamoOnce());
+  }
 }
