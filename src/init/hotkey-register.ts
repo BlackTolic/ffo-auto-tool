@@ -71,7 +71,7 @@ export function registerGlobalHotkeys() {
   // 中文注释：Alt+W 切换自动按键
   try {
     const ok = globalShortcut.register('Alt+W', () => {
-      const ret = toggleAutoKey('F1', 200);
+      const ret = toggleAutoKey('F1', 90);
       const msg = ret.ok ? `[快捷键] Alt+W 切换成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+W 切换失败 | ${ret.message}`;
       console.log(msg);
     });
@@ -137,19 +137,17 @@ export function registerGlobalHotkeys() {
           return;
         }
 
-        // 中文注释：启动每秒轮询角色坐标
-        startRolePositionPolling(
-          rec,
-          (pos) => {
-            console.log(`[角色坐标] 轮询到坐标 | hwnd=${hwnd}`, pos);
-            if (pos) {
-              console.log(`[角色坐标] x=${pos.x} y=${pos.y} | text=${pos.text}`);
-            } else {
-              console.warn('[角色坐标] 未识别到坐标');
-            }
-          },
-          1000
-        );
+        const posCallback = (pos: any) => {
+          console.log(`[角色坐标] 轮询到坐标 | hwnd=${hwnd}`, pos);
+          if (pos) {
+            console.log(`[角色坐标] x=${pos.x} y=${pos.y} | text=${pos.text}`);
+          } else {
+            console.warn('[角色坐标] 未识别到坐标');
+          }
+        };
+
+        // 中文注释：启动每秒轮询角色坐
+        startRolePositionPolling(rec, posCallback, 1000);
         console.log(`[快捷键] Alt+R 已启动坐标轮询 | hwnd=${hwnd}`);
       } catch (err) {
         console.warn('[快捷键] Alt+R 异常：', (err as any)?.message || err);

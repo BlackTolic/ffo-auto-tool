@@ -55,7 +55,7 @@ export const registerBoundEventHandlers = () => {
           console.warn(`[截图失败] 获取窗口矩形失败 HWND=${hwnd}`);
           return;
         }
-        const cap = dm?.CapturePng?.(windowRect.left, windowRect.top, windowRect.right, windowRect.bottom, `${SCREENSHOT_PATH}/${pid}.png`);
+        const cap = dm?.CapturePng?.(windowRect.left, windowRect.top, windowRect.right - 1, windowRect.bottom - 1, `${SCREENSHOT_PATH}/${pid}.png`);
         if (cap) {
           console.log(`[截图] PNG=${cap} | ${SCREENSHOT_PATH}/${pid}.png`);
         } else {
