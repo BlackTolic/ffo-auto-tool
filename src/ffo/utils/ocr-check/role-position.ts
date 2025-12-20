@@ -2,15 +2,14 @@
 // 中文注释：该模块提供一次性获取与每秒轮询两种调用方式，基于已绑定窗口对应的大漠实例。
 
 import type { DamoClientRecord } from '../../events';
-
 // 中文注释：默认用于识别坐标的屏幕区域与参数（根据你的示例）
-// const DEFAULT_REGION = { x1: 1316, y1: 111, x2: 1389, y2: 138 };
-// const DEFAULT_COLOR = 'e8f0e8-111111';
-// const DEFAULT_SIM = 1.0;
-
-const DEFAULT_REGION = { x1: 2458, y1: 232, x2: 2579, y2: 266 };
-const DEFAULT_COLOR = '110a00-555555';
+const DEFAULT_REGION = { x1: 1482, y1: 34, x2: 1547, y2: 62 };
+const DEFAULT_COLOR = 'ffffff-111111';
 const DEFAULT_SIM = 1.0;
+
+// const DEFAULT_REGION = { x1: 2458, y1: 232, x2: 2579, y2: 266 };
+// const DEFAULT_COLOR = '110a00-555555';
+// const DEFAULT_SIM = 1.0;
 
 // 中文注释：轮询定时器映射，按窗口句柄管理，便于停止
 const pollTimers = new Map<number, ReturnType<typeof setInterval>>();
@@ -68,23 +67,38 @@ export function startRolePositionPolling(
   if (!hwnd || !dm) {
     throw new Error('未提供有效的绑定记录或 dm 实例');
   }
+
+  const raw: string = dm.Ocr(region.x1, region.y1, region.x2, region.y2, color, sim);
+  console.log('[角色坐标] OCR 原始文本:', raw);
   // 中文注释：若已有轮询，则先停止，避免多个定时器并发
   // stopRolePositionPolling(hwnd);
-  const timer = setInterval(
-    () => {
-      try {
-        const raw: string = String(dm.Ocr(region.x1, region.y1, region.x2, region.y2, color, sim) || '').trim();
-        const pos = parseRolePositionFromText(raw);
-        onUpdate(pos);
-      } catch (err) {
-        console.warn('[角色坐标] 轮询失败:', String((err as any)?.message || err));
-        onUpdate(null);
-      }
-    },
-    Math.max(200, intervalMs)
-  ); // 中文注释：最小间隔 200ms，避免过于频繁
-  pollTimers.set(hwnd, timer);
-  return timer;
+  // const timer = setInterval(
+  //   () => {
+  //     try {
+  //       const raw: string = String(dm.Ocr(region.x1, region.y1, region.x2, region.y2, color, sim) || '').trim();
+  //       console.log('[角色坐标] OCR 原始文本:', raw);
+  //       // 截图
+  //       const path = `${SCREENSHOT_PATH}${hwnd}_6.png`;
+  //       console.log(`[截图] 路径=${path}`);
+  //       dm?.CapturePng?.(region.x1, region.y1, region.x2 - 1, region.y2 - 1, path);
+
+  //       if (raw) {
+  //         console.log(`[截图] PNG=${raw} | ${path}`);
+  //       } else {
+  //         console.warn(`[截图失败] 截图返回值=${raw} HWND=${hwnd}`);
+  //       }
+
+  //       const pos = parseRolePositionFromText(raw);
+  //       onUpdate(pos);
+  //     } catch (err) {
+  //       console.warn('[角色坐标] 轮询失败:', String((err as any)?.message || err));
+  //       onUpdate(null);
+  //     }
+  //   },
+  //   Math.max(10000, intervalMs)
+  // ); // 中文注释：最小间隔 200ms，避免过于频繁
+  // pollTimers.set(hwnd, timer);
+  // return timer;
 }
 
 // 停止角色坐标的轮询（按窗口句柄）
