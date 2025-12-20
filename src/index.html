@@ -11,8 +11,12 @@
   <body>
     <h1>FFO 辅助工具</h1>
 
+    <!-- 中文注释：React 根容器，React 应用将在此挂载显示 -->
+    <div id="root"></div>
+
+    <!-- 中文注释：保留原有静态段落以兼容旧逻辑（可后续逐步迁移到 React） -->
     <section>
-      <h2>绑定操作</h2>
+      <h2>绑定操作（旧版静态）</h2>
       <div>
         <button id="bind-foreground-btn">绑定当前前台窗口</button>
         <span id="bind-foreground-result" style="margin-left: 8px; color: #555;"></span>
@@ -26,22 +30,10 @@
     </section>
 
     <section>
-      <h2>Current OCR Dictionary Info</h2>
-      <div id="dict-info">
-        <div>Active Index: <span id="dict-active-index"></span></div>
-        <div>Source: <span id="dict-source"></span></div>
-      </div>
+      <h2>Env status（旧版静态）</h2>
+      <div id="env-status"></div>
     </section>
 
-    <section>
-      <h2>Env status</h2>
-      <div>
-        <div>DM installed: <span id="dm-installed"></span></div>
-        <div>Running elevated: <span id="running-elevated"></span></div>
-        <div>App version: <span id="app-version"></span></div>
-      </div>
-    </section>
-
-    <script src="renderer.js"></script>
+    <!-- 中文注释：开发模式下由 Electron Forge Webpack 自动注入脚本，这里无需手动引入 renderer.js -->
   </body>
 </html>
