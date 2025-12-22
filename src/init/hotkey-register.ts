@@ -140,6 +140,7 @@ export function registerGlobalHotkeys() {
 
         const posCallback = (pos: any) => {
           console.log(`[角色坐标] 轮询到坐标 | hwnd=${hwnd}`, pos);
+          leftMoveTo();
           if (pos) {
             console.log(`[角色坐标] x=${pos.x} y=${pos.y} | text=${pos.text}`);
             // 中文注释：获取到角色坐标后，尝试移动到目标坐标
