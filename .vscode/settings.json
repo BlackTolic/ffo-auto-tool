@@ -12,14 +12,21 @@
 
   // 中文注释：让 ESLint 插件使用 flat config（读取 eslint.config.js）
   "eslint.experimental.useFlatConfig": true,
-  // 中文注释：启用 ESLint 并校验 TS/JS 文件
+  // 中文注释：启用 ESLint 并校验 TS/JS/JSX/TSX 文件
   "eslint.enable": true,
-  "eslint.validate": ["javascript", "typescript"],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
   // 中文注释：自动发现工作目录（多包/子项目时同样适用）
   "eslint.workingDirectories": [{ "mode": "auto" }],
 
   // 中文注释：Prettier 的配置文件路径（匹配仓库根的 .prettierrc.json）
   "prettier.configPath": ".prettierrc.json",
+  // 中文注释：使用 EditorConfig（如果存在）
+  "prettier.useEditorConfig": true,
 
   // 中文注释：统一为 LF，配合 .prettierrc 的 endOfLine=lf
   "files.eol": "\n",
@@ -32,6 +39,9 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[json]": {
