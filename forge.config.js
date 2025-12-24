@@ -66,16 +66,17 @@ module.exports = {
     {
       name: '@electron-forge/plugin-webpack',
       config: {
-        // 中文注释：自定义端口，避免默认端口 3000/9000 冲突
-        port: 3010,
-        loggerPort: 9100,
+        // 中文注释：自定义端口，避免默认端口及占用冲突
+        port: 3020,
+        // 中文注释：变更日志服务端口，避免 9100 被占用导致启动失败
+        loggerPort: 9201,
         mainConfig: './webpack.main.config.js',
         renderer: {
           config: './webpack.renderer.config.js',
           entryPoints: [
             {
               html: './src/index.html',
-              js: './src/renderer.ts',
+              js: './src/renderer.tsx',
               name: 'main_window',
               preload: {
                 js: './src/preload.ts',

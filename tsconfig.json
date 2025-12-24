@@ -11,7 +11,9 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "types": ["node"],
-    "typeRoots": ["./src/types", "./node_modules/@types"]
+    "typeRoots": ["./src/types", "./node_modules/@types"],
+    // 中文注释：启用 React 新版 JSX 变换（无需显式导入 React）
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*", "webpack.*.config.js", "forge.config.js", "eslint.config.js"],
   "exclude": ["node_modules", "out", "dist", ".webpack"]

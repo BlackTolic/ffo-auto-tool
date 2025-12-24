@@ -1,6 +1,7 @@
 import { globalShortcut } from 'electron';
 import { ensureDamo } from '../damo/damo';
 import { damoBindingManager } from '../ffo/events';
+import { leftMoveTo } from '../ffo/utils/base-opr/move';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { startRolePositionPolling } from '../ffo/utils/ocr-check/role-position';
 
@@ -139,8 +140,23 @@ export function registerGlobalHotkeys() {
 
         const posCallback = (pos: any) => {
           console.log(`[角色坐标] 轮询到坐标 | hwnd=${hwnd}`, pos);
+          leftMoveTo();
           if (pos) {
             console.log(`[角色坐标] x=${pos.x} y=${pos.y} | text=${pos.text}`);
+            // 中文注释：获取到角色坐标后，尝试移动到目标坐标
+            if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+              // 中文注释：假设目标坐标为 (pos.x + 100, pos.y + 50)，可根据实际需求调整
+
+              try {
+                // 中文注释：移动鼠标到目标坐标并点击
+                leftMoveTo();
+                console.log(`[角色坐标] 已移动到目标坐标 | x=${pos.x} y=${pos.y}`);
+              } catch (moveErr) {
+                console.warn('[角色坐标] 移动失败：', (moveErr as any)?.message || moveErr);
+              }
+            } else {
+              console.warn('[角色坐标] 坐标无效，无法移动');
+            }
           } else {
             console.warn('[角色坐标] 未识别到坐标');
           }

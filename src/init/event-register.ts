@@ -26,6 +26,7 @@ export const registerBoundEventHandlers = () => {
       let dictLoaded = false;
       if (fs.existsSync(OCR_FONT_PATH)) {
         try {
+          // 加载ffo字库
           const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, OCR_FONT_PATH);
           if (ret === 1) {
             // 中文注释：加载字库成功后，启用索引 0（默认字库）

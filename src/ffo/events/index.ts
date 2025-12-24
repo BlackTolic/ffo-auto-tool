@@ -64,11 +64,17 @@ export class DamoBindingManager {
 
   // 中文注释：默认绑定配置（可被调用方覆盖）
   private defaultConfig: Required<BindConfig> = {
-    display: 'gdi',
-    mouse: 'windows',
-    keypad: 'windows',
-    api: 'dx.public.active.api',
-    mode: 0,
+    // display: 'gdi',
+    // mouse: 'windows',
+    // keypad: 'windows',
+    // api: 'dx.public.active.api',
+    // mode: 0,
+
+    display: 'dx2',
+    mouse: 'dx.mouse.position.lock.api|dx.mouse.api|dx.mouse.cursor',
+    keypad: 'dx.keypad.api',
+    api: 'dx.public.active.api|dx.public.hide.dll|dx.public.graphic.protect|dx.public.down.cpu',
+    mode: 101,
   };
 
   // 中文注释：获取已绑定的所有窗口记录
