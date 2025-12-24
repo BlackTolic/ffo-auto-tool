@@ -24,7 +24,7 @@
   },
   "keywords": [],
   "author": {
-    "name": "月牙魔法师",
+    "name": "MoonMage",
     "email": "617938514@qq.com"
   },
   "license": "MIT",
@@ -59,6 +59,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "electron-squirrel-startup": "^1.0.1",
+    "electron-winstaller": "^5.1.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "winax": "^3.6.2"
