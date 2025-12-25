@@ -159,22 +159,40 @@ export function validateEnvironment(): EnvCheckResult {
     items.push({ name: 'winax 原生模块', ok: r.ok, message: r.message });
   }
 
-  // 3) Python 版本（优先取 .npmrc 中的 python 路径）
+  // 3) Python 版本（仅在开发环境下检查，或者如果能读取到配置才检查）
+  // 生产环境通常不需要 Python，除非业务强依赖。
+  // 我们通过检查是否能读取到 .npmrc 来隐式判断是否处于开发源码环境。
   const npmrc = readNpmrcConfig(cwd);
-  {
-    const r = getPythonVersion(npmrc.pythonPath);
-    items.push({ name: 'Python 版本', ok: r.ok, message: r.message });
-  }
+  // 如果是打包后的环境（通常没有 .npmrc），且 winax 已加载成功，则跳过构建工具检查
+  const isProduction = !npmrc.pythonPath && !npmrc.msvsVersion && process.resourcesPath;
 
-  // 4) VS2022 Build Tools（通过 msvs_version + MSBuild 路径）
-  {
-    const r = checkVSBuildTools(npmrc.msvsVersion);
-    items.push({ name: 'VS2022 Build Tools', ok: r.ok, message: r.message });
+  if (!isProduction) {
+    {
+      const r = getPythonVersion(npmrc.pythonPath);
+      items.push({ name: 'Python 版本 (Dev)', ok: r.ok, message: r.message });
+    }
+
+    // 4) VS2022 Build Tools（通过 msvs_version + MSBuild 路径）
+    {
+      const r = checkVSBuildTools(npmrc.msvsVersion);
+      items.push({ name: 'VS2022 Build Tools (Dev)', ok: r.ok, message: r.message });
+    }
+  } else {
+    // 生产环境，直接标记为忽略或通过
+    items.push({ name: 'Python 环境', ok: true, message: '运行时无需 Python (Production)' });
+    items.push({ name: '编译工具链', ok: true, message: '运行时无需 VS Build Tools (Production)' });
   }
 
   // 5) dm.dll 位数（要求与 Electron 进程架构一致）
   {
-    const dllPath = path.resolve(cwd, 'src', 'lib', 'dm.dll');
+    // 在生产环境，dm.dll 可能位于 resources/app/src/lib 或其他位置
+    // 简单起见，我们尝试在当前目录及常见的打包路径寻找
+    let dllPath = path.resolve(cwd, 'src', 'lib', 'dm.dll');
+    if (!fs.existsSync(dllPath) && process.resourcesPath) {
+       // 尝试在 resources/app/src/lib 下寻找 (for asar: false)
+       dllPath = path.resolve(process.resourcesPath, 'app', 'src', 'lib', 'dm.dll');
+    }
+    
     const r = detectDllArch(dllPath);
     const archMatch = r.arch ? ((r.arch === 'x86' && process.arch === 'ia32') || (r.arch === 'x64' && process.arch === 'x64')) : false;
     const ok = r.ok && archMatch;
