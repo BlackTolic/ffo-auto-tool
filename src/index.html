@@ -1,11 +1,8 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
-    />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
     <title>FFO 辅助工具</title>
   </head>
   <body>
@@ -19,19 +16,16 @@
       <h2>绑定操作（旧版静态）</h2>
       <div>
         <button id="bind-foreground-btn">绑定当前前台窗口</button>
-        <span id="bind-foreground-result" style="margin-left: 8px; color: #555;"></span>
+        <span id="bind-foreground-result" style="margin-left: 8px; color: #555"></span>
       </div>
-      <p style="margin-top: 8px; color: #888;">
-        提示：推荐在目标窗口中按 <strong>Alt+B</strong> 进行绑定；点击按钮会聚焦本应用窗口，通常无法捕获目标前台窗口。
-      </p>
-      <p style="margin-top: 4px; color: #888;">
-        绑定成功后，可在目标窗口中按 <strong>Alt+W</strong> 切换自动 F1。
-      </p>
+      <p style="margin-top: 8px; color: #888">提示：推荐在目标窗口中按 <strong>Alt+B</strong> 进行绑定；点击按钮会聚焦本应用窗口，通常无法捕获目标前台窗口。</p>
+      <p style="margin-top: 4px; color: #888">绑定成功后，可在目标窗口中按 <strong>Alt+W</strong> 切换自动 F1。</p>
     </section>
 
     <section>
       <h2>Env status（旧版静态）</h2>
       <div id="env-status"></div>
+      <h5>当前版本是测试版中的测试版，仅有个自动按键功能。有需求、有问题请在游戏中联系游戏ID：花开无须折</h2>
     </section>
 
     <!-- 中文注释：开发模式下由 Electron Forge Webpack 自动注入脚本，这里无需手动引入 renderer.js -->
