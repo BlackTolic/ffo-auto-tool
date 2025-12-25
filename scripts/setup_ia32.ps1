@@ -2,6 +2,8 @@
 # 说明：本脚本将安装 32 位 Electron@13.6.9，使用 VS2022 工具链重建 winax（32 位），并给出 dm.dll 注册指引。
 # 注意：请先确保已安装 VS2022 Build Tools，并包含 MSVC v143（x86/x64）和最新 Windows SDK。
 
+# 安装前需要先执行这个脚本
+
 $ErrorActionPreference = 'Stop'
 
 # 为避免控制台乱码，仅设置输出为 UTF-8（不影响脚本逻辑）
@@ -10,6 +12,7 @@ $ErrorActionPreference = 'Stop'
 Write-Host '==> Set mirror and arch: ia32' -ForegroundColor Cyan
 $env:ELECTRON_MIRROR = 'https://npmmirror.com/mirrors/electron/'
 $env:npm_config_arch = 'ia32'
+$env:npm_config_target = '13.6.9' # 显式指定 Electron 头文件版本，确保 node-gyp 正确下载/匹配
 
 Write-Host '==> Configure node-gyp/VS environment' -ForegroundColor Cyan
 $env:GYP_MSVS_VERSION = '2022'
@@ -53,7 +56,7 @@ npm install -D electron@13.6.9 --force
 
 Write-Host '==> Rebuild winax for Electron 13.6.9 (ia32)' -ForegroundColor Cyan
 # 使用 npm rebuild 指定 electron 头文件与目标版本；架构由 npm_config_arch 控制为 ia32
-npm rebuild winax --runtime=electron --target=13.6.9 --dist-url=https://electronjs.org/headers --build-from-source
+npm rebuild winax --runtime=electron --target=13.6.9 --dist-url=https://www.electronjs.org/headers --build-from-source
 
 Write-Host '==> Done: Electron ia32 + winax ia32 rebuild success.' -ForegroundColor Green
 

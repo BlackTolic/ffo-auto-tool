@@ -187,13 +187,16 @@ export function validateEnvironment(): EnvCheckResult {
   {
     // 在生产环境，dm.dll 可能位于 resources/app/src/lib 或其他位置
     // 简单起见，我们尝试在当前目录及常见的打包路径寻找
-    let dllPath = path.resolve(cwd, 'src', 'lib', 'dm.dll');
+    let dllPath = path.resolve(cwd, 'src', 'lib', 'dm.dll'); // 中文注释：开发模式路径
     if (!fs.existsSync(dllPath) && process.resourcesPath) {
-       // 尝试在 resources/app/src/lib 下寻找 (for asar: false)
-       dllPath = path.resolve(process.resourcesPath, 'app', 'src', 'lib', 'dm.dll');
+        // 中文注释：常见打包路径（asar:false）
+        const candidate1 = path.resolve(process.resourcesPath, 'app', 'src', 'lib', 'dm.dll');
+        // 中文注释：兜底路径，某些打包器可能直接将资源放在 resources\src\lib
+        const candidate2 = path.resolve(process.resourcesPath, 'src', 'lib', 'dm.dll');
+        dllPath = fs.existsSync(candidate1) ? candidate1 : candidate2;
     }
     
-    const r = detectDllArch(dllPath);
+    const r = detectDllArch(dllPath); // 中文注释：检测 dm.dll 位数
     const archMatch = r.arch ? ((r.arch === 'x86' && process.arch === 'ia32') || (r.arch === 'x64' && process.arch === 'x64')) : false;
     const ok = r.ok && archMatch;
     const message = r.message + (r.ok ? (archMatch ? '（与进程位数匹配）' : '（与进程位数不匹配）') : '');
