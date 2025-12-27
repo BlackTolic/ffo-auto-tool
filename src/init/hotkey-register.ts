@@ -83,36 +83,36 @@ export function registerGlobalHotkeys() {
 
   // 中文注释：Alt+B 绑定当前前台窗口所属进程（避免 Alt+Q 导致部分输入法/系统热键冲突）
   try {
-    const okBind = globalShortcut.register('Alt+B', async () => {
+    const okBind = globalShortcut.register('Alt+Q', async () => {
       try {
         const dm = ensureDamo();
         // 中文注释：获取当前前台窗口句柄
         const hwnd = dm.getForegroundWindow();
-        console.log('[快捷键] Alt+B 检测到前台窗口', hwnd);
+        console.log('[快捷键] Alt+Q 检测到前台窗口', hwnd);
         if (!hwnd || hwnd <= 0) {
-          console.log('[快捷键] Alt+B 失败 | 未检测到前台窗口');
+          console.log('[快捷键] Alt+Q 失败 | 未检测到前台窗口');
           return;
         }
         const pid = (dm as any).dm?.GetWindowProcessId?.(hwnd);
-        console.log('[快捷键] Alt+B 检测到 PID', pid);
+        console.log('[快捷键] Alt+Q 检测到 PID', pid);
         if (!pid || pid <= 0) {
-          console.log(`[快捷键] Alt+B 失败 | 无法获取 PID | hwnd=${hwnd}`);
+          console.log(`[快捷键] Alt+Q 失败 | 无法获取 PID | hwnd=${hwnd}`);
           return;
         }
         // 中文注释：避免绑定自身 Electron 主进程窗口，防止钩子影响稳定性
         if (pid === process.pid) {
-          console.log('[快捷键] Alt+B 忽略 | 当前前台窗口属于本程序，请先激活游戏窗口');
+          console.log('[快捷键] Alt+Q 忽略 | 当前前台窗口属于本程序，请先激活游戏窗口');
           return;
         }
         const count = await damoBindingManager.bindWindowsForPid(pid);
         console.log('[绑定次数', count);
-        const msg = count > 0 ? `[快捷键] Alt+B 绑定成功 | pid=${pid} hwnd=${hwnd} count=${count}` : `[快捷键] Alt+B 未找到可绑定窗口 | pid=${pid} hwnd=${hwnd}`;
+        const msg = count > 0 ? `[快捷键] Alt+Q 绑定成功 | pid=${pid} hwnd=${hwnd} count=${count}` : `[快捷键] Alt+Q 未找到可绑定窗口 | pid=${pid} hwnd=${hwnd}`;
         console.log(msg);
       } catch (err) {
-        console.warn('[快捷键] Alt+B 异常：', (err as any)?.message || err);
+        console.warn('[快捷键] Alt+Q 异常：', (err as any)?.message || err);
       }
     });
-    if (!okBind) console.warn('[快捷键] Alt+B 注册失败');
+    if (!okBind) console.warn('[快捷键] Alt+Q 注册失败');
   } catch (e) {
     console.warn('[快捷键] Alt+B 注册异常：', (e as any)?.message || e);
   }

@@ -85,7 +85,7 @@ export const App: React.FC<AppProps> = () => {
           <span style={{ marginLeft: 8, color: '#555' }}>{bindText || (!isElectron ? '预览模式下无法绑定，请在 Electron 应用中使用' : '')}</span>
         </div>
         <p style={{ marginTop: 8, color: '#888' }}>
-          提示：推荐在目标窗口中按 <strong>Alt+B</strong> 进行绑定；点击按钮会聚焦本应用窗口，通常无法捕获目标前台窗口。
+          提示：推荐在目标窗口中按 <strong>Alt+Q</strong> 进行绑定；点击按钮会聚焦本应用窗口，通常无法捕获目标前台窗口。
         </p>
       </section>
 

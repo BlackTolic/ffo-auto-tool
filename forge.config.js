@@ -7,7 +7,7 @@ process.env.CL = '/std:c++20';
 const fs = require('fs-extra');
 const path = require('path');
 // 中文注释：正确从命名导出解构 AutoUnpackNativesPlugin（否则会报 not a constructor）
-const { AutoUnpackNativesPlugin } = require('@electron-forge/plugin-auto-unpack-natives');
+// const { AutoUnpackNativesPlugin } = require('@electron-forge/plugin-auto-unpack-natives');
 
 /**
  * 复制任务参数类型（JSDoc 类型声明，用于 JS 下的类型提示）
@@ -56,12 +56,7 @@ function copyDirectory(task) {
 function getEnvFlags() {
   // 中文注释：Forge 在 start 时通常会设置 NODE_ENV=development；同时根据命令行参数进行兜底判断
   const isDev = process.env.NODE_ENV === 'development';
-  const isStart =
-    isDev ||
-    process.argv.some((arg) =>
-      /electron-forge-start|electron-forge start/i.test(arg)
-    ) ||
-    process.env.FORGE_START === 'true';
+  const isStart = isDev || process.argv.some((arg) => /electron-forge-start|electron-forge start/i.test(arg)) || process.env.FORGE_START === 'true';
 
   return { isDev, isStart };
 }
@@ -71,7 +66,7 @@ const envFlags = getEnvFlags();
 module.exports = {
   // 中文注释：Electron 打包配置，启用 asar 并设置镜像源避免 GitHub 443 超时
   packagerConfig: {
-    asar: true, // 中文注释：启用 asar；配合 AutoUnpackNativesPlugin，原生 .node 会被解包到 asar 外
+    asar: false, // 中文注释：启用 asar；配合 AutoUnpackNativesPlugin，原生 .node 会被解包到 asar 外
     download: {
       mirror: 'https://npmmirror.com/mirrors/electron/', // 中文注释：Electron 国内镜像加速
     },
@@ -120,7 +115,7 @@ module.exports = {
       },
     },
     // 中文注释：仅在非 start 场景启用自动解包插件，避免与 webpack 抢占 start 命令
-    ...(!envFlags.isStart ? [new AutoUnpackNativesPlugin()] : []),
+    // ...(!envFlags.isStart ? [new AutoUnpackNativesPlugin()] : []),
   ],
   hooks: {
     /**
