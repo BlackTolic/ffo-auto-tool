@@ -1,70 +1,70 @@
-import { ensureDamo } from '../../../damo/damo';
-
-// const x1 = 397;
-// const y1 = 125;
-// const x2 = 897;
-// const y2 = 635;
-
 const x1 = 442;
 const y1 = 177;
 const x2 = 842;
 const y2 = 577;
 
 // 左移
-export const leftMoveTo = () => {
-  const { dm } = ensureDamo();
-  // 496,351
-  // dm.moveTo(x1, (y1 + y2) / 2);
-  console.log('开始移动啦iiiiiiii');
-  dm.moveTo(496, 351);
-  dm.leftClick();
+export const leftMoveTo = (dm: any) => {
+  console.log(x1, (y1 + y2) / 2);
+  dm.MoveTo(x1, (y1 + y2) / 2);
+  setTimeout(() => {
+    dm.LeftClick();
+  }, 500);
 };
 
 // 右移
-export const rightMoveTo = () => {
-  const { dm } = ensureDamo();
-  dm.moveTo(x2, (y1 + y2) / 2);
-  dm.leftClick();
+export const rightMoveTo = (dm: any) => {
+  console.log(x2, (y1 + y2) / 2);
+  dm.MoveTo(x2, (y1 + y2) / 2);
+  setTimeout(() => {
+    dm.LeftClick();
+  }, 500);
 };
 
 // 上移
-export const upMoveTo = () => {
-  const { dm } = ensureDamo();
-  dm.moveTo((x1 + x2) / 2, y1);
-  dm.leftClick();
+export const upMoveTo = (dm: any) => {
+  dm.MoveTo((x1 + x2) / 2, y1);
+  setTimeout(() => {
+    dm.LeftClick();
+  }, 500);
 };
 
 // 下移
-export const downMoveTo = () => {
-  const { dm } = ensureDamo();
-  dm.moveTo((x1 + x2) / 2, y2);
-  dm.leftClick();
+export const downMoveTo = (dm: any) => {
+  dm.MoveTo((x1 + x2) / 2, y2);
+  setTimeout(() => {
+    dm.LeftClick();
+  }, 500);
 };
 
 // 左上
-export const upLeftMoveTo = () => {
-  const { dm } = ensureDamo();
-  dm.moveTo(x1, y1);
-  dm.leftClick();
+export const upLeftMoveTo = (dm: any) => {
+  dm.MoveTo(x1, y1);
+  setTimeout(() => {
+    dm.LeftClick();
+  }, 500);
 };
 
 // 右上
-export const upRightMoveTo = () => {
-  const { dm } = ensureDamo();
-  dm.moveTo(x2, y1);
-  dm.leftClick();
+export const upRightMoveTo = (dm: any) => {
+  dm.MoveTo(x2, y1);
+  setTimeout(() => {
+    dm.LeftClick();
+  }, 500);
 };
 
 // 左下
-export const downLeftMoveTo = () => {
-  const { dm } = ensureDamo();
-  dm.moveTo(x1, y2);
-  dm.leftClick();
+export const downLeftMoveTo = (dm: any) => {
+  dm.MoveTo(x1, y2);
+  setTimeout(() => {
+    dm.LeftClick();
+  }, 500);
 };
 
 // 右下
-export const downRightMoveTo = () => {
-  const { dm } = ensureDamo();
-  dm.moveTo(x2, y2);
-  dm.leftClick();
+export const downRightMoveTo = (dm: any) => {
+  dm.MoveTo(x2, y2);
+  setTimeout(() => {
+    dm.LeftClick();
+  }, 500);
 };

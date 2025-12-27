@@ -64,20 +64,23 @@ export class DamoBindingManager {
 
   // 中文注释：默认绑定配置（可被调用方覆盖）
   private defaultConfig: Required<BindConfig> = {
-    display: 'gdi',
-    // display: 'dx2',
-    mouse: 'windows2',
-    // mouse: 'dx.mouse.position.lock.api|dx.mouse.api|dx.mouse.cursor',
-    keypad: 'windows',
-    api: 'dx.public.active.api',
-    // api: 'dx.public.active.api|dx.public.hide.dll|dx.public.graphic.protect|dx.public.down.cpu',
-    mode: 0,
+    // display: 'gdi',
+    // mouse: 'windows',
+    // keypad: 'windows',
+    // api: 'dx.public.active.api',
+    // mode: 0,
 
     // display: 'dx2',
     // mouse: 'dx.mouse.position.lock.api|dx.mouse.api|dx.mouse.cursor',
     // keypad: 'dx.keypad.api',
     // api: 'dx.public.active.api|dx.public.hide.dll|dx.public.graphic.protect|dx.public.down.cpu',
-    // mode: 101,
+    // mode: 0,
+
+    display: 'dx2',
+    mouse: 'windows',
+    keypad: 'windows',
+    api: '',
+    mode: 1,
   };
 
   // 中文注释：获取已绑定的所有窗口记录
@@ -182,6 +185,7 @@ export class DamoBindingManager {
         // const hwndHex = hwnd.toString(16);
         // console.log('hwndHex', hwndHex);
         // const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
+        console.log('BindWindowEx', hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
         const ret = client.dm.BindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
 
         if (ret !== 1) {

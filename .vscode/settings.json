@@ -43,10 +43,10 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
 
-  // 中文注释：编辑器字体大小（像素）
-  "editor.fontSize": 24,
-  // 中文注释：编辑器行高（像素），适当增大便于中文可读性
-  "editor.lineHeight": 32,
-  // 中文注释：内置终端字体大小（像素）
-  "terminal.integrated.fontSize": 24
+  // // 中文注释：编辑器字体大小（像素）
+  // "editor.fontSize": 24,
+  // // 中文注释：编辑器行高（像素），适当增大便于中文可读性
+  // "editor.lineHeight": 32,
+  // // 中文注释：内置终端字体大小（像素）
+  // "terminal.integrated.fontSize": 24
 }
