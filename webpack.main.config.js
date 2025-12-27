@@ -13,7 +13,8 @@ module.exports = {
     extensions: ['.ts', '.tsx', '.js', '.json'],
   },
   // Avoid bundling native COM bridge; load at runtime from node_modules
+  // 中文注释：将 winax 声明为外部依赖，运行时从打包后的 node_modules 直接加载原生模块
   externals: {
-    winax: 'commonjs winax',
+      winax: 'commonjs winax', // 中文注释：不参与打包，保持 require('winax') 指向真实模块
   },
 };

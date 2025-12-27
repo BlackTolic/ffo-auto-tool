@@ -292,3 +292,129 @@ if (squirrel.handled) {
   // 中文注释：应用入口
   setupAppLifecycle();
 }
+
+// 中文注释：注册大漠 COM 的参数接口类型（独立抽出，字段含中文说明）
+interface DmRegisterOptions {
+  // 中文注释：dm.dll 的绝对路径（通常位于 resources\app\src\lib\dm.dll）
+  dmDllPath: string;
+  // 中文注释：是否优先使用 32 位 regsvr32（x64 系统需用 SysWOW64 以注册 32 位 COM）
+  prefer32bit: boolean;
+  // 中文注释：注册子进程的超时时间（毫秒）
+  timeoutMs: number;
+  // 中文注释：失败时的重试次数
+  retry: number;
+}
+
+// 中文注释：检测系统是否已注册 dm.dmsoft（返回布尔）
+function isDmRegistered(): boolean {
+  try {
+    // 中文注释：使用 winax 尝试创建 COM 对象，成功即表示已注册
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const winax = require('winax');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const obj = new winax.Object('dm.dmsoft');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// 中文注释：以管理员权限调用 regsvr32 注册 dm.dll（支持 32 位优先）
+async function elevatedRegisterDm(options: DmRegisterOptions): Promise<void> {
+  const path = require('path');
+  const { execFile } = require('child_process');
+
+  const regsvr32Path = options.prefer32bit
+    ? path.join(process.env['SystemRoot'] || 'C:\\Windows', 'SysWOW64', 'regsvr32.exe') // 中文注释：x64 系统上用于注册 32 位 COM
+    : path.join(process.env['SystemRoot'] || 'C:\\Windows', 'System32', 'regsvr32.exe'); // 中文注释：默认 regsvr32 路径
+
+  // 中文注释：用 PowerShell 提权执行 regsvr32（Start-Process -Verb RunAs）
+  const psArgs = [
+    '-NoProfile',
+    '-ExecutionPolicy', 'Bypass',
+    '-Command',
+    `Start-Process -FilePath '${regsvr32Path}' -ArgumentList '/s','"${options.dmDllPath}"' -Verb RunAs`
+  ];
+
+  await new Promise<void>((resolve, reject) => {
+    const child = execFile('powershell.exe', psArgs, { windowsHide: true }, (error: Error | null) => {
+      if (error) reject(error);
+      else resolve();
+    });
+    const timer = setTimeout(() => {
+      try { child.kill(); } catch {}
+      reject(new Error('注册 dm.dll 超时'));
+    }, options.timeoutMs);
+    child.on('exit', () => clearTimeout(timer));
+  });
+}
+
+// 中文注释：确保运行时已注册 dm.dmsoft（使用全局挂载，避免重复声明）
+// ... existing code ...
+
+// 中文注释：若全局尚未挂载函数，则进行一次性挂载；避免重复声明导致编译错误
+if (!(globalThis as any).ensureDmComRegisteredAtRuntime) {
+  (globalThis as any).ensureDmComRegisteredAtRuntime = async function ensureDmComRegisteredAtRuntime(): Promise<void> {
+    const path = require('path');
+    const fs = require('fs');
+
+    // 中文注释：定位打包后的 dm.dll 路径（resources\app\src\lib\dm.dll）
+    const dmDllPath = path.join(process.resourcesPath, 'app', 'src', 'lib', 'dm.dll');
+    if (!fs.existsSync(dmDllPath)) {
+      console.warn('[dm] 未找到 dm.dll ->', dmDllPath);
+      return;
+    }
+
+    // 中文注释：检测是否已注册，已注册则跳过（假定文件中已有 isDmRegistered 函数）
+    if (isDmRegistered()) {
+      console.log('[dm] 已检测到 dm.dmsoft 已注册，跳过');
+      return;
+    }
+
+    // 中文注释：注册参数（优先 32 位 regsvr32，适配 x64 系统注册 32 位 COM）
+    const opts: DmRegisterOptions = {
+      dmDllPath,
+      prefer32bit: true,
+      timeoutMs: 25_000,
+      retry: 1,
+    };
+
+    // 中文注释：尝试注册并按需重试（假定文件中已有 elevatedRegisterDm 函数）
+    try {
+      await elevatedRegisterDm(opts);
+      if (isDmRegistered()) {
+        console.log('[dm] 成功注册 dm.dmsoft');
+      } else {
+        console.warn('[dm] 注册完成仍无法创建 dm.dmsoft，请手动检查');
+      }
+    } catch (e) {
+      console.error('[dm] 注册 dm.dll 失败：', (e as Error)?.message || e);
+      if (opts.retry > 0) {
+        opts.retry -= 1;
+        console.log('[dm] 正在重试注册...');
+        try {
+          await elevatedRegisterDm(opts);
+          if (isDmRegistered()) console.log('[dm] 重试后成功注册 dm.dmsoft');
+        } catch (e2) {
+          console.error('[dm] 重试注册失败：', (e2 as Error)?.message || e2);
+        }
+      }
+    }
+  };
+}
+
+// 中文注释：在应用生命周期早期执行，确保后续使用 COM 时已完成注册
+(async () => {
+  try {
+    // 中文注释：直接调用全局挂载的函数，避免重复引用/声明
+    await (globalThis as any).ensureDmComRegisteredAtRuntime();
+  } catch (e) {
+    console.error('[dm] 运行时注册流程异常：', (e as Error)?.message || e);
+  }
+})();
+
+// 例如：在 app.whenReady() 之后创建窗口的现有逻辑保持不变
+// app.whenReady().then(() => {
+//   // ... existing code ...
+// });
+// ... existing code ...
