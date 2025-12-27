@@ -64,17 +64,20 @@ export class DamoBindingManager {
 
   // 中文注释：默认绑定配置（可被调用方覆盖）
   private defaultConfig: Required<BindConfig> = {
-    // display: 'gdi',
-    // mouse: 'windows',
-    // keypad: 'windows',
-    // api: 'dx.public.active.api',
-    // mode: 0,
+    display: 'gdi',
+    // display: 'dx2',
+    mouse: 'windows2',
+    // mouse: 'dx.mouse.position.lock.api|dx.mouse.api|dx.mouse.cursor',
+    keypad: 'windows',
+    api: 'dx.public.active.api',
+    // api: 'dx.public.active.api|dx.public.hide.dll|dx.public.graphic.protect|dx.public.down.cpu',
+    mode: 0,
 
-    display: 'dx2',
-    mouse: 'dx.mouse.position.lock.api|dx.mouse.api|dx.mouse.cursor',
-    keypad: 'dx.keypad.api',
-    api: 'dx.public.active.api|dx.public.hide.dll|dx.public.graphic.protect|dx.public.down.cpu',
-    mode: 101,
+    // display: 'dx2',
+    // mouse: 'dx.mouse.position.lock.api|dx.mouse.api|dx.mouse.cursor',
+    // keypad: 'dx.keypad.api',
+    // api: 'dx.public.active.api|dx.public.hide.dll|dx.public.graphic.protect|dx.public.down.cpu',
+    // mode: 101,
   };
 
   // 中文注释：获取已绑定的所有窗口记录
@@ -175,7 +178,12 @@ export class DamoBindingManager {
 
       try {
         // 中文注释：使用扩展绑定接口 BindWindowEx，以支持公共活跃 API 等参数
-        const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
+        // 转成十六进制
+        // const hwndHex = hwnd.toString(16);
+        // console.log('hwndHex', hwndHex);
+        // const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
+        const ret = client.dm.BindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
+
         if (ret !== 1) {
           // 中文注释：返回非 1 表示失败，抛错并通知事件
           throw new Error(`BindWindowEx 失败，返回值=${ret}, hwnd=${hwnd}, pid=${pid}`);

@@ -3,6 +3,7 @@ import { app, BrowserWindow, globalShortcut, ipcMain } from 'electron';
 import path from 'path';
 import { ensureDamo, registerDamoOnce } from './damo/damo';
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
+import { promptIfNotAdmin } from './init/admin-check'; // 中文注释：引入管理员权限检测与提示
 import { registerBoundEventHandlers } from './init/event-register';
 import { registerGlobalHotkeys } from './init/hotkey-register';
 import { registerIpcHandlers } from './init/ipc-handle-register'; // 中文注释：集中管理 IPC 注册的模块
@@ -37,9 +38,9 @@ function ensureDmComRegisteredAtRuntime(): DmRegRuntimeAttempt {
     // 中文注释：定位安装目录内的 dm.dll（基于已打包资源路径）
     const exeDir = path.dirname(process.execPath);
     const candidate1 = path.join(exeDir, 'resources', 'app', 'src', 'lib', 'dm.dll'); // 中文注释：常规路径（asar=false）
-    const candidate2 = path.join(exeDir, 'resources', 'src', 'lib', 'dm.dll');        // 中文注释：兜底路径
+    const candidate2 = path.join(exeDir, 'resources', 'src', 'lib', 'dm.dll'); // 中文注释：兜底路径
     const fs = require('fs');
-    const dllPath = fs.existsSync(candidate1) ? candidate1 : (fs.existsSync(candidate2) ? candidate2 : undefined);
+    const dllPath = fs.existsSync(candidate1) ? candidate1 : fs.existsSync(candidate2) ? candidate2 : undefined;
 
     if (!dllPath) {
       return { alreadyRegistered: false, dllFound: false, elevationStarted: false, message: '未找到 dm.dll（请检查打包阶段是否复制 src\\lib）' };
@@ -47,12 +48,7 @@ function ensureDmComRegisteredAtRuntime(): DmRegRuntimeAttempt {
 
     // 中文注释：以管理员提权调用 SysWOW64\\regsvr32.exe 注册 32 位 dm.dll
     // 注意：必须使用 SysWOW64 下的 regsvr32 以匹配 ia32 进程架构
-    const psArgs = [
-      '-NoProfile',
-      '-ExecutionPolicy', 'Bypass',
-      '-Command',
-      `Start-Process 'C:\\Windows\\SysWOW64\\regsvr32.exe' -ArgumentList @('"${dllPath}"') -Verb runAs`,
-    ];
+    const psArgs = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', `Start-Process 'C:\\Windows\\SysWOW64\\regsvr32.exe' -ArgumentList @('"${dllPath}"') -Verb runAs`];
     cp.spawn('powershell.exe', psArgs, { detached: true, stdio: 'ignore' }).unref();
 
     return {
@@ -72,7 +68,7 @@ function ensureDmComRegisteredAtRuntime(): DmRegRuntimeAttempt {
   }
 }
 
-const createWindow = () => {
+function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
@@ -81,11 +77,22 @@ const createWindow = () => {
     },
   });
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-  mainWindow.webContents.openDevTools();
-};
+  // 中文注释：默认不自动打开开发者工具；如需调试，可通过 Ctrl+Shift+I 手动打开
+  // const shouldOpenDevTools = process.env.OPEN_DEVTOOLS === '1'; // 中文注释：可选开关，设置为 1 时打开
+  // if (shouldOpenDevTools) {
+  //   mainWindow.webContents.openDevTools();
+  // }
+}
 
 function setupAppLifecycle() {
   app.on('ready', () => {
+    // 中文注释：应用启动后立即检测管理员权限；未提升则弹出中文提示框
+    promptIfNotAdmin({
+      title: '需要管理员权限',
+      message: '当前未以管理员权限运行',
+      detail: '部分功能（如大漠插件收费注册）需要管理员权限。\n\n请右键使用“管理员身份运行”启动，或以管理员权限打开终端再运行应用。',
+    });
+
     createWindow();
     console.log('[应用生命周期] 窗口创建完成');
     // 中文注释：IPC 注册已集中到 ipc-handle.ts，这里仅委托调用，避免重复注册与代码分散
@@ -263,24 +270,6 @@ function handleSquirrelEvents(): SquirrelEventResult {
   return { handled: false, event: 'none', message: '无 Squirrel 安装事件，继续正常启动' };
 }
 
-function getCurrentCursorPosition() {
-  //获取当前坐标位置
-  //  s = dm.Ocr(1241,110,1441,135,"e8f0e8-111111",1.0)
-  // s = dm.Ocr(287,483,340,523,"e8f0e8-111111",1.0)
-  // s = dm.Ocr(247,569,300,609,"e8f0e8-111111",1.0)
-  // s = dm.Ocr(919,791,972,831,"e8f0e8-111111",1.0)
-  // s = dm.Ocr(1298,766,1351,806,"e8f0e8-111111",1.0)
-  // s = dm.Ocr(784,807,837,847,"e8f0e8-111111",1.0)
-  // s = dm.Ocr(947,804,1000,844,"e8f0e8-111111",1.0)
-  // s = dm.Ocr(1200,775,1253,815,"e8f0e8-111111",1.0)
-  // s = dm.Ocr(965,759,1018,799,"e8f0e8-111111",1.0)
-  // s = dm.Ocr(261,694,314,734,"e8f0e8-111111",1.0)
-  // 二郎神杨戬 s = dm.Ocr(664,305,788,502,"00f000-111111",1.0)
-  // 选择面板s = dm.Ocr(583,426,844,521,"e8f0e8-111111",1.0)
-  // 查找面板 s = dm.Ocr(1106,851,1494,901,"a87848-111111|201010-000000",1.0)
-  // 桃溪 仓库145/51 ，飞机 151，17
-}
-
 // 中文注释：启动入口（优先处理 Squirrel 安装事件；如果已处理则退出，否则继续正常启动）
 const squirrel = handleSquirrelEvents();
 if (squirrel.handled) {
@@ -329,12 +318,7 @@ async function elevatedRegisterDm(options: DmRegisterOptions): Promise<void> {
     : path.join(process.env['SystemRoot'] || 'C:\\Windows', 'System32', 'regsvr32.exe'); // 中文注释：默认 regsvr32 路径
 
   // 中文注释：用 PowerShell 提权执行 regsvr32（Start-Process -Verb RunAs）
-  const psArgs = [
-    '-NoProfile',
-    '-ExecutionPolicy', 'Bypass',
-    '-Command',
-    `Start-Process -FilePath '${regsvr32Path}' -ArgumentList '/s','"${options.dmDllPath}"' -Verb RunAs`
-  ];
+  const psArgs = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', `Start-Process -FilePath '${regsvr32Path}' -ArgumentList '/s','"${options.dmDllPath}"' -Verb RunAs`];
 
   await new Promise<void>((resolve, reject) => {
     const child = execFile('powershell.exe', psArgs, { windowsHide: true }, (error: Error | null) => {
@@ -342,7 +326,9 @@ async function elevatedRegisterDm(options: DmRegisterOptions): Promise<void> {
       else resolve();
     });
     const timer = setTimeout(() => {
-      try { child.kill(); } catch {}
+      try {
+        child.kill();
+      } catch {}
       reject(new Error('注册 dm.dll 超时'));
     }, options.timeoutMs);
     child.on('exit', () => clearTimeout(timer));
@@ -350,71 +336,4 @@ async function elevatedRegisterDm(options: DmRegisterOptions): Promise<void> {
 }
 
 // 中文注释：确保运行时已注册 dm.dmsoft（使用全局挂载，避免重复声明）
-// ... existing code ...
-
-// 中文注释：若全局尚未挂载函数，则进行一次性挂载；避免重复声明导致编译错误
-if (!(globalThis as any).ensureDmComRegisteredAtRuntime) {
-  (globalThis as any).ensureDmComRegisteredAtRuntime = async function ensureDmComRegisteredAtRuntime(): Promise<void> {
-    const path = require('path');
-    const fs = require('fs');
-
-    // 中文注释：定位打包后的 dm.dll 路径（resources\app\src\lib\dm.dll）
-    const dmDllPath = path.join(process.resourcesPath, 'app', 'src', 'lib', 'dm.dll');
-    if (!fs.existsSync(dmDllPath)) {
-      console.warn('[dm] 未找到 dm.dll ->', dmDllPath);
-      return;
-    }
-
-    // 中文注释：检测是否已注册，已注册则跳过（假定文件中已有 isDmRegistered 函数）
-    if (isDmRegistered()) {
-      console.log('[dm] 已检测到 dm.dmsoft 已注册，跳过');
-      return;
-    }
-
-    // 中文注释：注册参数（优先 32 位 regsvr32，适配 x64 系统注册 32 位 COM）
-    const opts: DmRegisterOptions = {
-      dmDllPath,
-      prefer32bit: true,
-      timeoutMs: 25_000,
-      retry: 1,
-    };
-
-    // 中文注释：尝试注册并按需重试（假定文件中已有 elevatedRegisterDm 函数）
-    try {
-      await elevatedRegisterDm(opts);
-      if (isDmRegistered()) {
-        console.log('[dm] 成功注册 dm.dmsoft');
-      } else {
-        console.warn('[dm] 注册完成仍无法创建 dm.dmsoft，请手动检查');
-      }
-    } catch (e) {
-      console.error('[dm] 注册 dm.dll 失败：', (e as Error)?.message || e);
-      if (opts.retry > 0) {
-        opts.retry -= 1;
-        console.log('[dm] 正在重试注册...');
-        try {
-          await elevatedRegisterDm(opts);
-          if (isDmRegistered()) console.log('[dm] 重试后成功注册 dm.dmsoft');
-        } catch (e2) {
-          console.error('[dm] 重试注册失败：', (e2 as Error)?.message || e2);
-        }
-      }
-    }
-  };
-}
-
-// 中文注释：在应用生命周期早期执行，确保后续使用 COM 时已完成注册
-(async () => {
-  try {
-    // 中文注释：直接调用全局挂载的函数，避免重复引用/声明
-    await (globalThis as any).ensureDmComRegisteredAtRuntime();
-  } catch (e) {
-    console.error('[dm] 运行时注册流程异常：', (e as Error)?.message || e);
-  }
-})();
-
-// 例如：在 app.whenReady() 之后创建窗口的现有逻辑保持不变
-// app.whenReady().then(() => {
-//   // ... existing code ...
-// });
 // ... existing code ...

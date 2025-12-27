@@ -14,12 +14,7 @@
   "eslint.experimental.useFlatConfig": true,
   // 中文注释：启用 ESLint 并校验 TS/JS/JSX/TSX 文件
   "eslint.enable": true,
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact"
-  ],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   // 中文注释：自动发现工作目录（多包/子项目时同样适用）
   "eslint.workingDirectories": [{ "mode": "auto" }],
 
@@ -48,10 +43,10 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
 
-  // // 中文注释：编辑器字体大小（像素）
-  // "editor.fontSize": 24,
-  // // 中文注释：编辑器行高（像素），适当增大便于中文可读性
-  // "editor.lineHeight": 32,
-  // // 中文注释：内置终端字体大小（像素）
-  // "terminal.integrated.fontSize": 24
+  // 中文注释：编辑器字体大小（像素）
+  "editor.fontSize": 24,
+  // 中文注释：编辑器行高（像素），适当增大便于中文可读性
+  "editor.lineHeight": 32,
+  // 中文注释：内置终端字体大小（像素）
+  "terminal.integrated.fontSize": 24
 }

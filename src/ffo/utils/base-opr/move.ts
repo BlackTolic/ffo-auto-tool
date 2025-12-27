@@ -1,16 +1,22 @@
 import { ensureDamo } from '../../../damo/damo';
 
-// r(397,135,897,635,"e8f0e8-111111",1.0)
-// (397,125) (897,635)
-const x1 = 397;
-const y1 = 125;
-const x2 = 897;
-const y2 = 635;
+// const x1 = 397;
+// const y1 = 125;
+// const x2 = 897;
+// const y2 = 635;
+
+const x1 = 442;
+const y1 = 177;
+const x2 = 842;
+const y2 = 577;
 
 // 左移
 export const leftMoveTo = () => {
   const { dm } = ensureDamo();
-  dm.moveTo(x1, (y1 + y2) / 2);
+  // 496,351
+  // dm.moveTo(x1, (y1 + y2) / 2);
+  console.log('开始移动啦iiiiiiii');
+  dm.moveTo(496, 351);
   dm.leftClick();
 };
 
