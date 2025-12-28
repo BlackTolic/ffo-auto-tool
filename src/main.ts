@@ -103,6 +103,8 @@ function setupAppLifecycle() {
     // 中文注释：将全局快捷键注册集中到 hotkey-register.ts
     registerGlobalHotkeys();
     console.log('[应用生命周期] 全局快捷键注册完成');
+    // 设置默认窗口大小为 1600*900
+    (global as any).windowSize = '1600*900';
   });
 
   app.on('window-all-closed', () => {
@@ -298,7 +300,7 @@ interface DmRegisterOptions {
 function isDmRegistered(): boolean {
   try {
     // 中文注释：使用 winax 尝试创建 COM 对象，成功即表示已注册
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+
     const winax = require('winax');
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const obj = new winax.Object('dm.dmsoft');

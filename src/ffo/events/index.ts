@@ -76,11 +76,17 @@ export class DamoBindingManager {
     // api: 'dx.public.active.api|dx.public.hide.dll|dx.public.graphic.protect|dx.public.down.cpu',
     // mode: 0,
 
+    // display: 'dx2',
+    // mouse: 'windows',
+    // keypad: 'windows',
+    // api: '',
+    // mode: 1,
+
     display: 'dx2',
-    mouse: 'windows',
+    mouse: 'normal',
     keypad: 'windows',
     api: '',
-    mode: 1,
+    mode: 0,
   };
 
   // 中文注释：获取已绑定的所有窗口记录
@@ -180,13 +186,9 @@ export class DamoBindingManager {
       }
 
       try {
-        // 中文注释：使用扩展绑定接口 BindWindowEx，以支持公共活跃 API 等参数
-        // 转成十六进制
-        // const hwndHex = hwnd.toString(16);
-        // console.log('hwndHex', hwndHex);
-        // const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
-        console.log('BindWindowEx', hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
-        const ret = client.dm.BindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
+        const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
+        client.dm.delay(200);
+        // const ret = client.dm.BindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
 
         if (ret !== 1) {
           // 中文注释：返回非 1 表示失败，抛错并通知事件

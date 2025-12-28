@@ -1,7 +1,7 @@
 import { globalShortcut } from 'electron';
 import { ensureDamo } from '../damo/damo';
 import { damoBindingManager } from '../ffo/events';
-import { leftMoveTo } from '../ffo/utils/base-opr/move';
+import { formTo } from '../ffo/utils/base-opr/move';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { startRolePositionPolling } from '../ffo/utils/ocr-check/role-position';
 
@@ -143,13 +143,18 @@ export function registerGlobalHotkeys() {
         const posCallback = (pos: any) => {
           console.log(`[角色坐标] 轮询到坐标 | hwnd=${hwnd}`, pos);
           // upLeftMoveTo();
-          leftMoveTo(rec.ffoClient.dm);
+          // leftMoveTo(rec.ffoClient.dm);
+
+          formTo(rec.ffoClient.dm, pos.x, pos.y, 191, 90);
+          if (pos && pos.x === 191 && pos.y === 90) {
+            console.log(999999999999999999);
+            return;
+          }
           if (pos) {
             console.log(`[角色坐标] x=${pos.x} y=${pos.y} | text=${pos.text}`);
             // 中文注释：获取到角色坐标后，尝试移动到目标坐标
             if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
               // 中文注释：假设目标坐标为 (pos.x + 100, pos.y + 50)，可根据实际需求调整
-
               try {
                 // 中文注释：移动鼠标到目标坐标并点击
                 // leftMoveTo();
@@ -166,7 +171,7 @@ export function registerGlobalHotkeys() {
         };
 
         // 中文注释：启动每秒轮询角色坐
-        startRolePositionPolling(rec, posCallback, 1000);
+        startRolePositionPolling({ rec, onUpdate: posCallback, intervalMs: 1000 });
         console.log(`[快捷键] Alt+R 已启动坐标轮询 | hwnd=${hwnd}`);
       } catch (err) {
         console.warn('[快捷键] Alt+R 异常：', (err as any)?.message || err);

@@ -1,5 +1,14 @@
-// 地图名称
-export const DEFAULT_ADDRESS_NAME = { x1: 1166, y1: 2, x2: 1226, y2: 20 };
+import { BIND_WINDOW } from './base';
 
-// 角色坐标
-export const DEFAULT_ROLE_POSITION = { x1: 1482, y1: 34, x2: 1547, y2: 62 };
+BIND_WINDOW;
+
+// 地图名称
+export const DEFAULT_ADDRESS_NAME = {
+  '1200*900': { x1: 1166, y1: 2, x2: 1226, y2: 20 },
+  '1600*900': { x1: 1458, y1: 0, x2: 1563, y2: 20 },
+};
+
+// 角色坐标 { x1: 1163, y1: 41, x2: 1224, y2: 61 }
+export const DEFAULT_ROLE_POSITION = {
+  '1600*900': { x1: 1487, y1: 39, x2: 1551, y2: 59 },
+};
