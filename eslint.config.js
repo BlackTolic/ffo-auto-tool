@@ -24,7 +24,7 @@ module.exports = [
     rules: {
       'no-unused-vars': ['warn', { args: 'none' }],
       'no-console': 'off',
-      'prettier/prettier': 'warn',
+      'prettier/prettier': 'error', // 中文注释：以 Prettier 为准（格式问题直接作为错误）
     },
   },
   {
@@ -46,7 +46,7 @@ module.exports = [
     rules: {
       '@typescript-eslint/no-unused-vars': ['warn', { args: 'none' }],
       'no-console': 'off',
-      'prettier/prettier': 'warn',
+      'prettier/prettier': 'error', // 中文注释：以 Prettier 为准（格式问题直接作为错误）
     },
   },
 ];

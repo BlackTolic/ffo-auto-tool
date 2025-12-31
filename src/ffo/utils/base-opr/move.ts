@@ -79,7 +79,7 @@ export const getAngle = (x1: number, y1: number, x2: number, y2: number) => {
   return (Math.atan2(y, x) * 180) / Math.PI;
 };
 
-function getCirclePoint(angle) {
+function getCirclePoint(angle: number) {
   // 角度转弧度（JavaScript Math.sin/cos需弧度）
   const rad = (angle * Math.PI) / 180;
   const x = initX + radius * Math.cos(rad);
@@ -98,4 +98,11 @@ export const formTo = (dm: any, x1: number, y1: number, x2: number, y2: number) 
   dm.leftDown();
 };
 
-//
+// 从(x1,y1)移动到以(x2,y2)为中心,r为半径的范围内
+export const moveToNearAim = (dm: any, x1: number, y1: number, x2: number, y2: number, r: number) => {
+  const isArrive = (x1 - x2) ** 2 + (y1 - y2) ** 2 <= r ** 2;
+  if (isArrive) {
+    dm.leftDown();
+  }
+  return isArrive;
+};

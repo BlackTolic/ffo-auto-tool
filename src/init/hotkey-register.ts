@@ -1,7 +1,7 @@
 import { globalShortcut } from 'electron';
 import { ensureDamo } from '../damo/damo';
 import { damoBindingManager } from '../ffo/events';
-import { formTo } from '../ffo/utils/base-opr/move';
+import { formTo, moveToNearAim } from '../ffo/utils/base-opr/move';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { startRolePositionPolling } from '../ffo/utils/ocr-check/role-position';
 
@@ -146,8 +146,8 @@ export function registerGlobalHotkeys() {
           // leftMoveTo(rec.ffoClient.dm);
 
           formTo(rec.ffoClient.dm, pos.x, pos.y, 191, 90);
-          if (pos && pos.x === 191 && pos.y === 90) {
-            console.log(999999999999999999);
+          if (pos && moveToNearAim(rec.ffoClient.dm, pos.x, pos.y, 191, 90, 10)) {
+            console.log('已到达目的地：', pos);
             return;
           }
           if (pos) {
