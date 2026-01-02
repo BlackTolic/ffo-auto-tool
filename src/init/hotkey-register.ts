@@ -1,9 +1,9 @@
 import { globalShortcut } from 'electron';
 import { ensureDamo } from '../damo/damo';
 import { damoBindingManager } from '../ffo/events';
-import { formTo, moveToNearAim } from '../ffo/utils/base-opr/move';
+import { FeiJiToYangJian } from '../ffo/utils/auto-path/TianDu';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
-import { startRolePositionPolling } from '../ffo/utils/ocr-check/role-position';
+import { isRolePositionPolling, startRolePositionPolling, stopRolePositionPolling } from '../ffo/utils/ocr-check/role-position';
 
 // 中文注释：记录每个窗口当前是否开启了自动按键
 const autoKeyOnByHwnd = new Map<number, boolean>();
@@ -132,6 +132,14 @@ export function registerGlobalHotkeys() {
           console.log('[快捷键] Alt+R 失败 | 当前前台窗口未绑定');
           return;
         }
+
+        // 中文注释：若已在轮询中，按下 Alt+R 则停止轮询
+        if (isRolePositionPolling(hwnd)) {
+          stopRolePositionPolling(hwnd);
+          console.log(`[快捷键] Alt+R 已停止坐标轮询 | hwnd=${hwnd}`);
+          return;
+        }
+
         console.log(`[快捷键] Alt+R 开始轮询 | hwnd=${hwnd}`);
         const rec = damoBindingManager.get(hwnd);
 
@@ -144,34 +152,38 @@ export function registerGlobalHotkeys() {
           console.log(`[角色坐标] 轮询到坐标 | hwnd=${hwnd}`, pos);
           // upLeftMoveTo();
           // leftMoveTo(rec.ffoClient.dm);
+          if (!pos) {
+            console.log(`[角色坐标] 未识别到坐标 | hwnd=${hwnd}`);
+            return;
+          }
 
-          formTo(rec.ffoClient.dm, pos.x, pos.y, 191, 90);
-          if (pos && moveToNearAim(rec.ffoClient.dm, pos.x, pos.y, 191, 90, 10)) {
+          // formTo(rec.ffoClient.dm, { x: pos.x, y: pos.y }, { x: 337, y: 125 });
+          if (pos && FeiJiToYangJian(rec.ffoClient.dm, { x: pos.x, y: pos.y })) {
             console.log('已到达目的地：', pos);
             return;
           }
-          if (pos) {
-            console.log(`[角色坐标] x=${pos.x} y=${pos.y} | text=${pos.text}`);
-            // 中文注释：获取到角色坐标后，尝试移动到目标坐标
-            if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
-              // 中文注释：假设目标坐标为 (pos.x + 100, pos.y + 50)，可根据实际需求调整
-              try {
-                // 中文注释：移动鼠标到目标坐标并点击
-                // leftMoveTo();
-                console.log(`[角色坐标] 已移动到目标坐标 | x=${pos.x} y=${pos.y}`);
-              } catch (moveErr) {
-                console.warn('[角色坐标] 移动失败：', (moveErr as any)?.message || moveErr);
-              }
-            } else {
-              console.warn('[角色坐标] 坐标无效，无法移动');
-            }
-          } else {
-            console.warn('[角色坐标] 未识别到坐标');
-          }
+          // if (pos) {
+          //   console.log(`[角色坐标] x=${pos.x} y=${pos.y} | text=${pos.text}`);
+          //   // 中文注释：获取到角色坐标后，尝试移动到目标坐标
+          //   if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+          //     // 中文注释：假设目标坐标为 (pos.x + 100, pos.y + 50)，可根据实际需求调整
+          //     try {
+          //       // 中文注释：移动鼠标到目标坐标并点击
+          //       // leftMoveTo();
+          //       console.log(`[角色坐标] 已移动到目标坐标 | x=${pos.x} y=${pos.y}`);
+          //     } catch (moveErr) {
+          //       console.warn('[角色坐标] 移动失败：', (moveErr as any)?.message || moveErr);
+          //     }
+          //   } else {
+          //     console.warn('[角色坐标] 坐标无效，无法移动');
+          //   }
+          // } else {
+          //   console.warn('[角色坐标] 未识别到坐标');
+          // }
         };
 
-        // 中文注释：启动每秒轮询角色坐
-        startRolePositionPolling({ rec, onUpdate: posCallback, intervalMs: 1000 });
+        // 中文注释：启动每秒轮询角色坐标
+        startRolePositionPolling({ rec, onUpdate: posCallback, intervalMs: 200 });
         console.log(`[快捷键] Alt+R 已启动坐标轮询 | hwnd=${hwnd}`);
       } catch (err) {
         console.warn('[快捷键] Alt+R 异常：', (err as any)?.message || err);

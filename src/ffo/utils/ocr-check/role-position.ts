@@ -29,7 +29,7 @@ function parseRolePositionFromText(text: string): RolePosition | null {
 // 获取当前角色的坐标位置（一次性，需提供已绑定窗口记录）
 export function getCurrentRolePosition(
   rec: DamoClientRecord,
-  region: { x1: number; y1: number; x2: number; y2: number } = DEFAULT_ROLE_POSITION[global.windowSize],
+  region: { x1: number; y1: number; x2: number; y2: number } = DEFAULT_ROLE_POSITION[global.windowSize as keyof typeof DEFAULT_ROLE_POSITION],
   color: string = DEFAULT_COLOR,
   sim: number = DEFAULT_SIM
 ): RolePosition | null {
@@ -79,10 +79,21 @@ export function startRolePositionPolling(params: StartRolePositionProps): Return
         onUpdate(null);
       }
     },
-    Math.max(5000, intervalMs)
+    Math.max(200, intervalMs)
   ); // 中文注释：最小间隔 200ms，避免过于频繁
   pollTimers.set(hwnd, timer);
   return timer;
+}
+
+// 中文注释：轮询状态查询参数接口（用于判断某个窗口是否处于轮询中）
+export interface RolePollingQuery {
+  hwnd: number; // 中文注释：窗口句柄（与绑定记录中的 hwnd 一致）
+}
+
+// 中文注释：判断指定窗口是否正在进行角色坐标轮询
+export function isRolePositionPolling(query: number | RolePollingQuery): boolean {
+  const hwnd = typeof query === 'number' ? query : query.hwnd;
+  return pollTimers.has(hwnd);
 }
 
 // 停止角色坐标的轮询（按窗口句柄）

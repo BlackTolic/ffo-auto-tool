@@ -103,8 +103,8 @@ function setupAppLifecycle() {
     // 中文注释：将全局快捷键注册集中到 hotkey-register.ts
     registerGlobalHotkeys();
     console.log('[应用生命周期] 全局快捷键注册完成');
-    // 设置默认窗口大小为 1600*900
-    (global as any).windowSize = '1600*900';
+    // 设置默认窗口大小为 1600*900 1280*800
+    (global as any).windowSize = '1280*800';
   });
 
   app.on('window-all-closed', () => {
@@ -149,7 +149,7 @@ function setupAppLifecycle() {
         'ffo:bindForeground',
         'damo:register', // 中文注释：新增手动注册通道的清理
       ];
-      channels.forEach((ch) => ipcMain.removeHandler(ch));
+      channels.forEach(ch => ipcMain.removeHandler(ch));
     } catch (e) {
       console.warn('[退出清理] 移除 IPC 失败:', String((e as any)?.message || e));
     }
