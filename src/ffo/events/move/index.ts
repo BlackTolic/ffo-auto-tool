@@ -1,5 +1,5 @@
 import { ORIGIN_POSITION } from '../../constant/OCR-pos';
-import { Role } from '../../events/rolyer';
+import { Role } from '../rolyer';
 
 export interface Pos {
   x: number;

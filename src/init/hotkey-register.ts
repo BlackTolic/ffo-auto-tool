@@ -2,8 +2,8 @@ import { globalShortcut } from 'electron';
 import { ensureDamo } from '../damo/damo';
 import { damoBindingManager } from '../ffo/events';
 import { Conversation } from '../ffo/events/conversation';
-import { FeiJiToYangJian } from '../ffo/utils/auto-path/TianDu';
-import { MoveActions } from '../ffo/utils/base-opr/move';
+import { MoveActions } from '../ffo/events/move';
+import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 
 // 中文注释：记录每个窗口当前是否开启了自动按键
@@ -123,10 +123,13 @@ export function registerGlobalHotkeys() {
   try {
     const okRole = globalShortcut.register('Alt+R', () => {
       // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
-      const ret = toggleAutoRoute({
-        path: FeiJiToYangJian,
-      });
-      const msg = ret.ok ? `[快捷键] Alt+R 切换自动寻路成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换自动寻路失败 | ${ret.message}`;
+      // const ret = toggleAutoRoute({
+      //   path: FeiJiToYangJian,
+      // });
+
+      // 自动打怪
+      const ret = toggleAutoAttack();
+      const msg = ret.ok ? `[快捷键] Alt+R 切换自动打怪成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换自动打怪失败 | ${ret.message}`;
       console.log(msg);
     });
     if (!okRole) console.warn('[快捷键] Alt+R 注册失败');
@@ -137,6 +140,9 @@ export function registerGlobalHotkeys() {
 
 // 中文注释：记录每个窗口的自动寻路操作实例（用于 Alt+R 开/关切换）
 const autoRouteActionsByHwnd = new Map<number, MoveActions>();
+
+// 中文注释：记录每个窗口的自动打怪操作实例（用于 Alt+R 开/关切换）
+const autoAttackActionsByHwnd = new Map<number, AttackActions>();
 
 // 中文注释：自动寻路启动参数接口
 export interface AutoRouteStartOptions {
@@ -195,6 +201,43 @@ export const toggleAutoRoute = (opts?: AutoRouteStartOptions): AutoRouteToggleRe
         conversation.YangJian();
       }, 1000);
     });
+    return { ok: true, hwnd, running: true };
+  } catch (err) {
+    return { ok: false, message: String((err as any)?.message || err) };
+  }
+};
+
+export const toggleAutoAttack = () => {
+  try {
+    const dm = ensureDamo();
+    const hwnd = dm.getForegroundWindow();
+    if (!hwnd || hwnd <= 0) {
+      return { ok: false, message: '未检测到前台窗口' };
+    }
+    if (!damoBindingManager.isBound(hwnd)) {
+      return { ok: false, hwnd, message: '当前前台窗口未绑定' };
+    }
+
+    const role = damoBindingManager.getRole(hwnd);
+    if (!role) {
+      return { ok: false, hwnd, message: `找不到角色记录：hwnd=${hwnd}` };
+    }
+
+    // 中文注释：获取或创建持久化的 AttackActions 实例
+    let actions = autoAttackActionsByHwnd.get(hwnd);
+    if (!actions) {
+      actions = new AttackActions(role);
+      autoAttackActionsByHwnd.set(hwnd, actions);
+    }
+
+    // 中文注释：若已有定时器在运行，则本次切换为“关闭”
+    if (actions.timer) {
+      actions.stopAutoSkill();
+      return { ok: true, hwnd, running: false };
+    }
+
+    // 中文注释：否则启动自动打怪
+    actions.attackNearestMonster({});
     return { ok: true, hwnd, running: true };
   } catch (err) {
     return { ok: false, message: String((err as any)?.message || err) };

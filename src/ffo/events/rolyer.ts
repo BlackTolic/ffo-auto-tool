@@ -1,8 +1,8 @@
 import { damoBindingManager } from '.';
 import { ensureDamo } from '../../damo/damo';
 import { DEFAULT_ADDRESS_NAME, DEFAULT_ROLE_POSITION } from '../constant/OCR-pos';
-import { MoveActions } from '../utils/base-opr/move';
 import { parseRolePositionFromText } from '../utils/common';
+import { MoveActions } from './move';
 
 export type Pos = {
   x: number;

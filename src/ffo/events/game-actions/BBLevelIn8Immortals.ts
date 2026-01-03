@@ -1,5 +1,3 @@
-import { Damo } from "../../../damo/damo";
+import { Damo } from '../../../damo/damo';
 
-export const BBLevelIn8Immortals = (damo:Damo) => {
-
-}
+export const BBLevelIn8Immortals = (damo: Damo) => {};
