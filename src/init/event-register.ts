@@ -22,8 +22,8 @@ export const registerBoundEventHandlers = () => {
     lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄（供其他逻辑参考，不参与快捷键切换）
     const rec = damoBindingManager.get(hwnd);
     const ad = new Role();
-    // 注册角色信息
-    ad.registerRole('1280*800');
+    // 注册角色信息 1280*800  1600*900
+    ad.registerRole('1600*900');
     // 中文注释：设置角色信息
     damoBindingManager.setRole(hwnd, ad);
 

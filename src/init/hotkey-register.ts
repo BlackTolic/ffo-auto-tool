@@ -189,9 +189,11 @@ export const toggleAutoRoute = (opts?: AutoRouteStartOptions): AutoRouteToggleRe
     ];
     const path = opts?.path?.length ? opts.path : defaultPath;
     actions.startAutoFindPath(path).then(res => {
-      console.log('完成跑步后对话');
-      const conversation = new Conversation(role);
-      conversation.YangJian();
+      setTimeout(() => {
+        console.log('完成跑步后对话', role.position);
+        const conversation = new Conversation(role);
+        conversation.YangJian();
+      }, 1000);
     });
     return { ok: true, hwnd, running: true };
   } catch (err) {

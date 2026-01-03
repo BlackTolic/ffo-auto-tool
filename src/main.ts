@@ -104,7 +104,7 @@ function setupAppLifecycle() {
     registerGlobalHotkeys();
     console.log('[应用生命周期] 全局快捷键注册完成');
     // 设置默认窗口大小为 1600*900 1280*800
-    (global as any).windowSize = '1280*800';
+    (global as any).windowSize = '1600*900';
   });
 
   app.on('window-all-closed', () => {

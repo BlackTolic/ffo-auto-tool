@@ -90,16 +90,16 @@ export class MoveActions {
       this.timer = setInterval(() => {
         if (this.role.position) {
           isArrive = this.fromTo(this.role.position, toPos);
-          console.log('开始寻路拉！！', isArrive);
+          // console.log('开始寻路拉！！', isArrive);
         }
         if (isArrive) {
           this.timer && clearInterval(this.timer);
           this.timer = null;
           this.recordAimPosIndex = 0;
           console.log('[角色信息] 已关闭自动寻路');
-          res(isArrive);
+          res(this.role.position);
         }
-      }, 500); // 中文注释：最小间隔 200ms，避免过于频繁
+      }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
     });
   }
 
@@ -115,35 +115,3 @@ export class MoveActions {
     console.log('[角色信息] 已关闭自动寻路');
   }
 }
-
-// 从当前位置移动到指定位置 146/115； 191/90
-// export const formTo = (dm: any, curPos: Pos, aimPos: Pos[] | Pos) => {
-//   if (!Array.isArray(aimPos)) {
-//     aimPos = [aimPos];
-//   }
-//   if (recordAimPosIndex === 0 && !isArriveAimNear(curPos, aimPos[aimPos.length - 1])) {
-//     const curAimPos = aimPos[recordAimPosIndex];
-//     const angle = getAngle(curPos.x, curPos.y, curAimPos.x, curAimPos.y);
-//     const { x, y } = getCirclePoint(angle);
-//     dm.MoveTo(x, y);
-//     dm.leftDown();
-//   } else {
-//     const curAimPos = aimPos[recordAimPosIndex];
-//     const angle = getAngle(curPos.x, curPos.y, curAimPos.x, curAimPos.y);
-//     const { x, y } = getCirclePoint(angle);
-//     dm.MoveTo(x, y);
-//   }
-//   if (isArriveAimNear(curPos, aimPos[recordAimPosIndex]) && recordAimPosIndex < aimPos.length) {
-//     recordAimPosIndex++;
-//     return formTo(dm, curPos, aimPos);
-//   }
-
-//   if (isArriveAimNear(curPos, aimPos[recordAimPosIndex]) && recordAimPosIndex === aimPos.length - 1) {
-//     dm.LeftClick();
-//     console.log('目标已到达指定位置');
-//     recordAimPosIndex = 0;
-//     return true;
-//   }
-//   console.log('持续移动中！！！');
-//   return false;
-// };
