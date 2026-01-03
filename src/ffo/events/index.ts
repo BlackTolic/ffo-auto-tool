@@ -6,6 +6,7 @@
 
 import { EventEmitter } from 'events';
 import { Damo } from '../../damo/damo';
+import { Role } from './rolyer';
 
 // 中文注释：绑定配置（可按需覆盖默认值）
 export interface BindConfig {
@@ -62,6 +63,8 @@ export class DamoBindingManager {
   // 中文注释：以窗口句柄为 key 的客户端映射
   private clientsByHwnd: Map<number, DamoClientRecord> = new Map();
 
+  private roleByHwnd: Map<number, Role> = new Map();
+
   // 中文注释：默认绑定配置（可被调用方覆盖）
   private defaultConfig: Required<BindConfig> = {
     // display: 'gdi',
@@ -88,6 +91,14 @@ export class DamoBindingManager {
     api: '',
     mode: 0,
   };
+
+  setRole(hwnd: number, role: Role) {
+    this.roleByHwnd.set(hwnd, role);
+  }
+
+  getRole(hwnd: number): Role | undefined {
+    return this.roleByHwnd.get(hwnd);
+  }
 
   // 中文注释：获取已绑定的所有窗口记录
   list(): DamoClientRecord[] {
@@ -140,15 +151,15 @@ export class DamoBindingManager {
       // 8=顶级窗口，16=可见窗口；优先取可见顶级
       const visTop = String(dmRaw.EnumWindowByProcessId(pid, '', '', 8 + 16) || '')
         .split(',')
-        .map((s) => parseInt(s))
-        .filter((n) => Number.isFinite(n) && n > 0);
+        .map(s => parseInt(s))
+        .filter(n => Number.isFinite(n) && n > 0);
       results.push(...visTop);
       if (results.length === 0) {
         // 回退仅顶级（可能当前不可见）
         const topOnly = String(dmRaw.EnumWindowByProcessId(pid, '', '', 8) || '')
           .split(',')
-          .map((s) => parseInt(s))
-          .filter((n) => Number.isFinite(n) && n > 0);
+          .map(s => parseInt(s))
+          .filter(n => Number.isFinite(n) && n > 0);
         results.push(...topOnly);
       }
     } catch (err) {

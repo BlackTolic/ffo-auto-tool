@@ -3,12 +3,13 @@ import fs from 'fs'; // 中文注释：读取字典文件
 import path from 'path'; // 中文注释：处理文件路径
 import { OCR_FONT_PATH, SCREENSHOT_PATH } from '../constant/config';
 import { damoBindingManager, ffoEvents } from '../ffo/events';
+import { Role } from '../ffo/events/rolyer';
 import { stopAutoCombat } from '../ffo/utils/auto-combat';
 import { stopKeyPress } from '../ffo/utils/key-press';
 
 // 中文注释：向所有渲染进程广播字库信息更新
 export const broadcastDictInfoUpdated = (hwnd: number, info: any) => {
-  BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('damo:dictInfoUpdated', { hwnd, info }));
+  BrowserWindow.getAllWindows().forEach(w => w.webContents.send('damo:dictInfoUpdated', { hwnd, info }));
 };
 
 // 中文注释：记录最近绑定成功的窗口句柄（供部分逻辑使用）
@@ -20,6 +21,12 @@ export const registerBoundEventHandlers = () => {
     new Notification({ title: '绑定成功', body: `PID=${pid} HWND=${hwnd}` }).show();
     lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄（供其他逻辑参考，不参与快捷键切换）
     const rec = damoBindingManager.get(hwnd);
+    const ad = new Role();
+    // 注册角色信息
+    ad.registerRole('1280*800');
+    // 中文注释：设置角色信息
+    damoBindingManager.setRole(hwnd, ad);
+
     if (!rec) return;
     try {
       const dm = rec?.ffoClient?.dm;

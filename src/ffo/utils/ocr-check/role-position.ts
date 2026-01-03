@@ -2,6 +2,7 @@
 // 中文注释：该模块提供一次性获取与每秒轮询两种调用方式，基于已绑定窗口对应的大漠实例。
 import { DEFAULT_ADDRESS_NAME, DEFAULT_ROLE_POSITION } from '../../constant/OCR-pos';
 import type { DamoClientRecord } from '../../events';
+import { parseRolePositionFromText } from '../common';
 const DEFAULT_COLOR = 'e8f0e8-111111';
 const DEFAULT_SIM = 1.0;
 
@@ -12,18 +13,6 @@ export interface RolePosition {
   x: number; // 中文注释：角色 X 坐标
   y: number; // 中文注释：角色 Y 坐标
   text: string; // 中文注释：OCR 原始文本（便于调试）
-}
-
-// 中文注释：从文本中解析坐标，兼容常见格式，例如：
-function parseRolePositionFromText(text: string): RolePosition | null {
-  const s = String(text || '').trim();
-  if (!s) return null;
-  // 中文注释：找出文本中的两个整数或浮点数（允许逗号/空格/分隔符）
-  const numbers = s.match(/[-+]?\d+(?:\.\d+)?/g);
-  if (!numbers || numbers.length < 2) return null;
-  const x = Math.round(Number(numbers[0]) || 0);
-  const y = Math.round(Number(numbers[1]) || 0);
-  return { x, y, text: s };
 }
 
 // 获取当前角色的坐标位置（一次性，需提供已绑定窗口记录）
