@@ -35,7 +35,7 @@ function getCirclePoint(angle: number) {
   const x = initX + radius * Math.cos(rad);
   const y = initY + radius * Math.sin(rad);
   // 四舍五入为整数（适配鼠标坐标）
-  return { x: Math.round(x), y: Math.round(y) };
+  return { x, y };
 }
 
 export class MoveActions {
@@ -54,52 +54,64 @@ export class MoveActions {
     if (!Array.isArray(toPos)) {
       toPos = [toPos];
     }
+    // 第一次寻路开启连续点击
     if (this.recordAimPosIndex === 0 && !isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
       const curAimPos = toPos[this.recordAimPosIndex];
       const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
       const { x, y } = getCirclePoint(angle);
       this.dm.MoveTo(x, y);
-      this.dm.leftDown();
-    } else {
+      // 中文注释：按下左键以触发移动（修正大小写）
+      this.dm.LeftDown();
+    }
+    // 不是第一次，不需要再连续点击
+    if (this.recordAimPosIndex > 0 && !isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
       const curAimPos = toPos[this.recordAimPosIndex];
       const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
       const { x, y } = getCirclePoint(angle);
       this.dm.MoveTo(x, y);
     }
-    if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex < toPos.length) {
+    if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex < toPos.length - 1) {
       this.recordAimPosIndex++;
       return this.fromTo(fromPos, toPos);
     }
-
+    //  { x: 335, y: 126 }
     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex === toPos.length - 1) {
       this.dm.LeftClick();
       console.log('目标已到达指定位置');
-      this.recordAimPosIndex = 0;
       return true;
     }
-    console.log('持续移动中！！！');
     return false;
   }
 
   startAutoFindPath(toPos: Pos[] | Pos) {
-    this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
-    let isArrive: boolean | undefined;
-    this.timer = setInterval(() => {
-      if (this.role.position) {
-        isArrive = this.fromTo(this.role.position, toPos);
-        console.log('开始寻路拉！！', isArrive);
-      }
-      if (isArrive) {
-        this.timer && clearInterval(this.timer);
-        this.timer = null;
-        console.log('[角色信息] 已关闭自动寻路');
-      }
-    }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
+    return new Promise((res, rej) => {
+      this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
+      let isArrive: boolean | undefined;
+      this.timer = setInterval(() => {
+        if (this.role.position) {
+          isArrive = this.fromTo(this.role.position, toPos);
+          console.log('开始寻路拉！！', isArrive);
+        }
+        if (isArrive) {
+          this.timer && clearInterval(this.timer);
+          this.timer = null;
+          this.recordAimPosIndex = 0;
+          console.log('[角色信息] 已关闭自动寻路');
+          res(isArrive);
+        }
+      }, 500); // 中文注释：最小间隔 200ms，避免过于频繁
+    });
   }
 
   stopAutoFindPath() {
     this.timer && clearInterval(this.timer);
     this.timer = null;
+    // 中文注释：停止寻路时释放鼠标左键，避免卡住按下状态
+    try {
+      if (this.dm && typeof this.dm.LeftUp === 'function') {
+        this.dm.LeftUp();
+      }
+    } catch {}
     console.log('[角色信息] 已关闭自动寻路');
   }
 }

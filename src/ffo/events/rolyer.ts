@@ -50,7 +50,7 @@ export class Role {
         const addressName = bindDm.Ocr(map.x1, map.y1, map.x2, map.y2, map.color, map.sim);
         this.map = addressName;
         this.position = pos;
-        console.log('[角色信息] 地图名称:', `${this.map}:${this.position?.x},${this.position?.y}`);
+        // console.log('[角色信息] 地图名称:', `${this.map}:${this.position?.x},${this.position?.y}`);
       } catch (err) {
         console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
       }

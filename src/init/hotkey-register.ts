@@ -1,6 +1,8 @@
 import { globalShortcut } from 'electron';
 import { ensureDamo } from '../damo/damo';
 import { damoBindingManager } from '../ffo/events';
+import { Conversation } from '../ffo/events/conversation';
+import { FeiJiToYangJian } from '../ffo/utils/auto-path/TianDu';
 import { MoveActions } from '../ffo/utils/base-opr/move';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 
@@ -120,49 +122,79 @@ export function registerGlobalHotkeys() {
   // 中文注释：Alt+R 启动当前前台窗口的角色坐标轮询（每秒一次）
   try {
     const okRole = globalShortcut.register('Alt+R', () => {
-      try {
-        const dm = ensureDamo();
-        const hwnd = dm.getForegroundWindow();
-        if (!hwnd || hwnd <= 0) {
-          console.log('[快捷键] Alt+R 失败 | 未检测到前台窗口', hwnd);
-          return;
-        }
-        if (!damoBindingManager.isBound(hwnd)) {
-          console.log('[快捷键] Alt+R 失败 | 当前前台窗口未绑定');
-          return;
-        }
-
-        const role = damoBindingManager.getRole(hwnd);
-        if (!role) {
-          console.log(`[快捷键] Alt+R 失败 | 找不到角色记录 | hwnd=${hwnd}`);
-          return;
-        }
-        const move = new MoveActions(role);
-
-        // 中文注释：若已在轮询中，按下 Alt+R 则停止轮询
-        if (move.timer) {
-          move.stopAutoFindPath();
-          console.log(`[快捷键] Alt+R 已停止坐标轮询 | hwnd=${hwnd}`);
-          return;
-        }
-
-        console.log(`[快捷键] Alt+R 开始轮询 | hwnd=${hwnd}`);
-        const rec = damoBindingManager.get(hwnd);
-
-        if (!rec) {
-          console.log(`[快捷键] Alt+R 失败 | 找不到绑定记录 | hwnd=${hwnd}`);
-          return;
-        }
-        const pos1 = { x: 305, y: 72 };
-        const pos2 = { x: 335, y: 126 };
-        move.startAutoFindPath([pos1, pos2]);
-        console.log(`[快捷键] Alt+R 已启动坐标轮询 | hwnd=${hwnd}`);
-      } catch (err) {
-        console.warn('[快捷键] Alt+R 异常：', (err as any)?.message || err);
-      }
+      // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
+      const ret = toggleAutoRoute({
+        path: FeiJiToYangJian,
+      });
+      const msg = ret.ok ? `[快捷键] Alt+R 切换自动寻路成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换自动寻路失败 | ${ret.message}`;
+      console.log(msg);
     });
     if (!okRole) console.warn('[快捷键] Alt+R 注册失败');
   } catch (e) {
     console.warn('[快捷键] Alt+R 注册异常：', (e as any)?.message || e);
   }
 }
+
+// 中文注释：记录每个窗口的自动寻路操作实例（用于 Alt+R 开/关切换）
+const autoRouteActionsByHwnd = new Map<number, MoveActions>();
+
+// 中文注释：自动寻路启动参数接口
+export interface AutoRouteStartOptions {
+  path?: Array<{ x: number; y: number }>; // 中文注释：寻路目标点数组（客户区坐标），默认使用两个示例点
+  intervalMs?: number; // 中文注释：轮询间隔（毫秒），用于内部调用（当前实现固定 300ms）
+}
+
+// 中文注释：自动寻路切换返回结果
+export interface AutoRouteToggleResult {
+  ok: boolean; // 中文注释：操作是否成功
+  running?: boolean; // 中文注释：当前是否处于运行状态
+  hwnd?: number; // 中文注释：本次操作作用的窗口句柄
+  message?: string; // 中文注释：失败或提示信息
+}
+
+// 中文注释：切换自动寻路（第一次开启，第二次关闭）
+export const toggleAutoRoute = (opts?: AutoRouteStartOptions): AutoRouteToggleResult => {
+  try {
+    const dm = ensureDamo();
+    const hwnd = dm.getForegroundWindow();
+    if (!hwnd || hwnd <= 0) {
+      return { ok: false, message: '未检测到前台窗口' };
+    }
+    if (!damoBindingManager.isBound(hwnd)) {
+      return { ok: false, hwnd, message: '当前前台窗口未绑定' };
+    }
+
+    const role = damoBindingManager.getRole(hwnd);
+    if (!role) {
+      return { ok: false, hwnd, message: `找不到角色记录：hwnd=${hwnd}` };
+    }
+
+    // 中文注释：获取或创建持久化的 MoveActions 实例
+    let actions = autoRouteActionsByHwnd.get(hwnd);
+    if (!actions) {
+      actions = new MoveActions(role);
+      autoRouteActionsByHwnd.set(hwnd, actions);
+    }
+
+    // 中文注释：若已有定时器在运行，则本次切换为“关闭”
+    if (actions.timer) {
+      actions.stopAutoFindPath();
+      return { ok: true, hwnd, running: false };
+    }
+
+    // 中文注释：否则启动自动寻路
+    const defaultPath = [
+      { x: 305, y: 72 },
+      { x: 335, y: 126 },
+    ];
+    const path = opts?.path?.length ? opts.path : defaultPath;
+    actions.startAutoFindPath(path).then(res => {
+      console.log('完成跑步后对话');
+      const conversation = new Conversation(role);
+      conversation.YangJian();
+    });
+    return { ok: true, hwnd, running: true };
+  } catch (err) {
+    return { ok: false, message: String((err as any)?.message || err) };
+  }
+};
