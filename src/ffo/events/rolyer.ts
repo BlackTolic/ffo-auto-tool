@@ -1,6 +1,6 @@
 import { damoBindingManager } from '.';
 import { ensureDamo } from '../../damo/damo';
-import { DEFAULT_ADDRESS_NAME, DEFAULT_ROLE_POSITION } from '../constant/OCR-pos';
+import { DEFAULT_ADDRESS_NAME, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION } from '../constant/OCR-pos';
 import { parseRolePositionFromText } from '../utils/common';
 import { MoveActions } from './move';
 
@@ -21,6 +21,7 @@ export class Role {
   private bindWindowSize: string = ''; // 绑定窗口的尺寸
   private moveActions: MoveActions | null = null; // 移动操作类
   private pollTimers = new Map<number, ReturnType<typeof setInterval>>(); // 记录轮询定时器
+  public selectMonster = ''; // 已选中怪物
 
   constructor() {}
 
@@ -29,6 +30,7 @@ export class Role {
     this.bindWindowSize = bindWindowSize;
     const map = DEFAULT_ADDRESS_NAME[bindWindowSize];
     const rolePos = DEFAULT_ROLE_POSITION[bindWindowSize];
+    const monsterPos = DEFAULT_MONSTER_NAME[bindWindowSize];
 
     const dm = ensureDamo();
     // 中文注释：获取当前前台窗口句柄
@@ -48,6 +50,9 @@ export class Role {
         const raw: string = String(bindDm.Ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, rolePos.color, rolePos.sim) || '').trim();
         const pos = parseRolePositionFromText(raw);
         const addressName = bindDm.Ocr(map.x1, map.y1, map.x2, map.y2, map.color, map.sim);
+        const monsterName = bindDm.Ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
+
+        this.selectMonster = monsterName;
         this.map = addressName;
         this.position = pos;
         // console.log('[角色信息] 地图名称:', `${this.map}:${this.position?.x},${this.position?.y}`);

@@ -9,3 +9,9 @@ export const parseRolePositionFromText = (text: string) => {
   const y = Math.round(Number(numbers[1]) || 0);
   return { x, y, text: s };
 };
+
+export const parseTextPos = (text: string) => {
+  if (!text) return null;
+  const pos = text.split('|');
+  return { x: Number(pos[1]), y: Number(pos[2]) };
+};

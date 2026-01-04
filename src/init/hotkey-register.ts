@@ -1,7 +1,6 @@
 import { globalShortcut } from 'electron';
 import { ensureDamo } from '../damo/damo';
 import { damoBindingManager } from '../ffo/events';
-import { Conversation } from '../ffo/events/conversation';
 import { MoveActions } from '../ffo/events/move';
 import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
@@ -124,13 +123,36 @@ export function registerGlobalHotkeys() {
     const okRole = globalShortcut.register('Alt+R', () => {
       // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
       // const ret = toggleAutoRoute({
-      //   path: FeiJiToYangJian,
+      //   // path: FeiJiToYangJian,
+      //   path: [
+      //     // { x: 106, y: 48 },
+      //     // { x: 127, y: 57 },
+      //     // { x: 144, y: 49 },
+      //     // { x: 123, y: 38 },
+      //     // 天泉
+      //     { x: 169, y: 73 },
+      //     { x: 193, y: 111 },
+      //     { x: 140, y: 117 },
+      //     { x: 93, y: 73 },
+      //     { x: 101, y: 55 },
+      //     { x: 155, y: 37 },
+      //     { x: 231, y: 71 },
+      //     { x: 247, y: 62 },
+      //     { x: 222, y: 42 },
+      //     { x: 190, y: 30 },
+      //     { x: 183, y: 21 },
+      //     { x: 135, y: 18 },
+      //     { x: 86, y: 39 },
+      //     { x: 52, y: 66 },
+      //     { x: 65, y: 91 },
+      //     { x: 73, y: 96 },
+      //   ],
       // });
-
+      // {193 12}
       // 自动打怪
-      const ret = toggleAutoAttack();
-      const msg = ret.ok ? `[快捷键] Alt+R 切换自动打怪成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换自动打怪失败 | ${ret.message}`;
-      console.log(msg);
+      // const ret = toggleAutoAttack();
+      // const msg = ret.ok ? `[快捷键] Alt+R 切换自动打怪成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换自动打怪失败 | ${ret.message}`;
+      // console.log(msg);
     });
     if (!okRole) console.warn('[快捷键] Alt+R 注册失败');
   } catch (e) {
@@ -189,16 +211,23 @@ export const toggleAutoRoute = (opts?: AutoRouteStartOptions): AutoRouteToggleRe
     }
 
     // 中文注释：否则启动自动寻路
-    const defaultPath = [
-      { x: 305, y: 72 },
-      { x: 335, y: 126 },
-    ];
-    const path = opts?.path?.length ? opts.path : defaultPath;
-    actions.startAutoFindPath(path).then(res => {
+    // const defaultPath = [
+    //   { x: 305, y: 72 },
+    //   { x: 335, y: 126 },
+    // ];
+    const path = opts?.path?.length ? opts.path : [];
+    const active = new AttackActions(role);
+    actions.startAutoFindPath(path, active).then(res => {
       setTimeout(() => {
         console.log('完成跑步后对话', role.position);
-        const conversation = new Conversation(role);
-        conversation.YangJian();
+        // const conversation = new Conversation(role);
+        // conversation.YangJian();
+        active.scanMonster().then(res => {
+          console.log('当前已经没有怪物了', role.position);
+          setTimeout(() => {
+            console.log('回城', role.position);
+          }, 1000);
+        });
       }, 1000);
     });
     return { ok: true, hwnd, running: true };
@@ -233,11 +262,12 @@ export const toggleAutoAttack = () => {
     // 中文注释：若已有定时器在运行，则本次切换为“关闭”
     if (actions.timer) {
       actions.stopAutoSkill();
+      console.log('[快捷键] Alt+R 停止自动打怪');
       return { ok: true, hwnd, running: false };
     }
 
     // 中文注释：否则启动自动打怪
-    actions.attackNearestMonster({});
+    actions.attackNearestMonster();
     return { ok: true, hwnd, running: true };
   } catch (err) {
     return { ok: false, message: String((err as any)?.message || err) };

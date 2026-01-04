@@ -48,22 +48,27 @@ export function startKeyPress(keyName: keyof typeof VK_F = 'F1', intervalMs: num
     running: true,
     intervalId: null,
   };
-  states.set(hwnd, state);
 
-  // 中文注释：定时按键（使用大漠插件 KeyPress）
-  state.intervalId = setInterval(() => {
-    if (!state.running) return;
-    try {
-      // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
-      dm.KeyPress(String(VK_F[keyName]));
-    } catch (err) {
-      // 中文注释：按键失败后立即退出定时器并清理状态
-      console.warn('[自动按键] 按键失败，自动停止：', String((err as any)?.message || err));
-      stopKeyPress(hwnd);
-    }
-  }, periodMs);
-
-  console.log(`[自动按键] 已启动：hwnd=${hwnd} | key=${keyName} | 间隔=${periodMs}ms | 频率约=${(1000 / periodMs).toFixed(2)} 次/秒`);
+  if (intervalMs) {
+    states.set(hwnd, state);
+    // 中文注释：定时按键（使用大漠插件 KeyPress）
+    state.intervalId = setInterval(() => {
+      if (!state.running) return;
+      try {
+        // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
+        dm.KeyPress(String(VK_F[keyName]));
+      } catch (err) {
+        // 中文注释：按键失败后立即退出定时器并清理状态
+        console.warn('[自动按键x] 按键失败，自动停止：', String((err as any)?.message || err));
+        stopKeyPress(hwnd);
+      }
+    }, periodMs);
+    console.log(`[自动按键x] 已启动：hwnd=${hwnd} | key=${keyName} | 间隔=${periodMs}ms | 频率约=${(1000 / periodMs).toFixed(2)} 次/秒`);
+  } else {
+    // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
+    dm.KeyPress(String(VK_F[keyName]));
+    console.log(`[自动按键x] 已启动：hwnd=${hwnd} | key=${keyName} | 无间隔（单次按键）`);
+  }
 }
 
 // 中文注释：停止自动按键（清理定时器并移除状态）

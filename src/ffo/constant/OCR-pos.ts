@@ -1,4 +1,5 @@
 const DEFAULT_COLOR = 'e8f0e8-111111';
+const DEFAULT_MONSTER_COLOR = 'a8a8a0-111111';
 const DEFAULT_SIM = 1.0;
 
 // 地图名称
@@ -18,4 +19,10 @@ export const DEFAULT_ROLE_POSITION = {
 export const ORIGIN_POSITION = {
   '1600*900': { x: 800, y: 450, r: 300, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
   '1280*800': { x: 640, y: 400, r: 300, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+};
+
+// 怪物名称
+export const DEFAULT_MONSTER_NAME = {
+  '1600*900': { x1: 95, y1: 109, x2: 200, y2: 144, color: DEFAULT_MONSTER_COLOR, sim: DEFAULT_SIM },
+  '1280*800': { x1: 95, y1: 109, x2: 200, y2: 144, color: DEFAULT_MONSTER_COLOR, sim: DEFAULT_SIM },
 };

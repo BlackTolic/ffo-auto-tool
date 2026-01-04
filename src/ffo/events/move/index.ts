@@ -1,5 +1,6 @@
 import { ORIGIN_POSITION } from '../../constant/OCR-pos';
 import { Role } from '../rolyer';
+import { AttackActions } from '../skills';
 
 export interface Pos {
   x: number;
@@ -19,7 +20,7 @@ export const getAngle = (x1: number, y1: number, x2: number, y2: number) => {
 };
 
 // 从(x1,y1)移动到以(x2,y2)为中心,r为半径的范围内
-export const isArriveAimNear = (initPos: Pos, aimPos: Pos, r: number = 5) => {
+export const isArriveAimNear = (initPos: Pos, aimPos: Pos, r: number = 2) => {
   const { x: x1, y: y1 } = initPos;
   const { x: x2, y: y2 } = aimPos;
   return (x1 - x2) ** 2 + (y1 - y2) ** 2 <= r ** 2;
@@ -44,6 +45,7 @@ export class MoveActions {
   private finalPos: Pos | null = null;
   private role;
   public timer: NodeJS.Timeout | null = null;
+  private actions?: AttackActions | null = null; // 赶路过程中的其他行为
 
   constructor(role: Role) {
     this.dm = role.bindDm;
@@ -54,13 +56,16 @@ export class MoveActions {
     if (!Array.isArray(toPos)) {
       toPos = [toPos];
     }
+    console.log('开始移动了：', fromPos, toPos[this.recordAimPosIndex]);
     // 第一次寻路开启连续点击
+    console.log('第一次寻路开启连续点击', isArriveAimNear(fromPos, toPos[toPos.length - 1]));
     if (this.recordAimPosIndex === 0 && !isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
       const curAimPos = toPos[this.recordAimPosIndex];
       const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
       const { x, y } = getCirclePoint(angle);
       this.dm.MoveTo(x, y);
       // 中文注释：按下左键以触发移动（修正大小写）
+      this.dm.delay(200);
       this.dm.LeftDown();
     }
     // 不是第一次，不需要再连续点击
@@ -69,6 +74,9 @@ export class MoveActions {
       const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
       const { x, y } = getCirclePoint(angle);
       this.dm.MoveTo(x, y);
+      this.dm.delay(200);
+      // 嵌入攻击后
+      this.actions && this.dm.LeftDown();
     }
     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex < toPos.length - 1) {
       this.recordAimPosIndex++;
@@ -83,14 +91,15 @@ export class MoveActions {
     return false;
   }
 
-  startAutoFindPath(toPos: Pos[] | Pos) {
+  startAutoFindPath(toPos: Pos[] | Pos, actions?: AttackActions) {
+    this.actions = actions;
     return new Promise((res, rej) => {
       this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
       let isArrive: boolean | undefined;
       this.timer = setInterval(() => {
         if (this.role.position) {
           isArrive = this.fromTo(this.role.position, toPos);
-          // console.log('开始寻路拉！！', isArrive);
+          // console.log('开始寻路拉！！', this.role.position, toPos, isArrive);
         }
         if (isArrive) {
           this.timer && clearInterval(this.timer);
@@ -98,6 +107,11 @@ export class MoveActions {
           this.recordAimPosIndex = 0;
           console.log('[角色信息] 已关闭自动寻路');
           res(this.role.position);
+        }
+        // 开启自动攻击
+        // && this.actions?.currentAttackTargetPos
+        if (actions) {
+          actions.attackNearestMonster();
         }
       }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
     });
