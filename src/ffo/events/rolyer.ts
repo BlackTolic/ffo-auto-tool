@@ -1,8 +1,10 @@
 import { damoBindingManager } from '.';
+import { getVerifyCodeAiRes } from '../../AI/request';
 import { VERIFY_CODE_PATH } from '../../constant/config';
 import { ensureDamo } from '../../damo/damo';
-import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE } from '../constant/OCR-pos';
+import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { parseRolePositionFromText, parseTextPos } from '../utils/common';
+import { readVerifyCodeImage } from '../utils/common/read-file';
 import { MoveActions } from './move';
 
 export type Pos = {
@@ -28,6 +30,7 @@ export class Role {
   public menusPos = DEFAULT_MENUS_POS['1600*900'];
   public isPauseActive: boolean = false; // 暂停所有行为
   private openCapture: boolean = true; // 是否开启截图
+  private lastVerifyCaptureTs: number = 0;
 
   constructor() {}
 
@@ -59,21 +62,49 @@ export class Role {
         const pos = parseRolePositionFromText(raw);
         const addressName = bindDm.Ocr(map.x1, map.y1, map.x2, map.y2, map.color, map.sim);
         const monsterName = bindDm.Ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
+        // 截图
+        // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
         const verifyCode = bindDm.FindStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
         const verifyCodeTextPos = parseTextPos(verifyCode);
         console.log(verifyCodeTextPos, 'verifyCodeTextPos');
-        if (this.openCapture && verifyCodeTextPos) {
-          // 截图
-          const verifyCodeImg = bindDm.CapturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}/${hwnd}严重.png`);
-          console.log(verifyCodeImg);
-          // 成功截图到内存中
-          if (String(verifyCodeImg) === '1') {
-            this.verifyCode = verifyCodeImg;
+        if (verifyCodeTextPos) {
+          const now = Date.now();
+          if (this.openCapture || now - this.lastVerifyCaptureTs >= 10000) {
+            const checkPos = DEFAULT_VERIFY_CODE_TEXT[this.bindWindowSize as keyof typeof DEFAULT_VERIFY_CODE_TEXT];
+            const verifyCodeImg = bindDm.CapturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}/${hwnd}验证码.png`);
+            console.log(verifyCodeImg);
+            if (String(verifyCodeImg) === '1') {
+              const safeCheckPos: VerifyCodeTextPos = checkPos;
+              // 调用AI识别验证码
+              // this.verifyCode = verifyCodeImg;
+              const url = readVerifyCodeImage(hwnd);
+              if (!url) {
+                return;
+              }
+              getVerifyCodeAiRes(url).then(res => {
+                if (!res) {
+                  this.openCapture = false;
+                  this.lastVerifyCaptureTs = now;
+                  return;
+                }
+                console.log(res, 'resssss');
+                const I = { x: verifyCodeTextPos.x + safeCheckPos.I.x, y: verifyCodeTextPos.y + safeCheckPos.I.y };
+                const II = { x: verifyCodeTextPos.x + safeCheckPos.II.x, y: verifyCodeTextPos.y + safeCheckPos.II.y };
+                const III = { x: verifyCodeTextPos.x + safeCheckPos.III.x, y: verifyCodeTextPos.y + safeCheckPos.III.y };
+                const map = { I, II, III };
+                const answerPos = map[res as keyof typeof map];
+                bindDm.MoveTo(answerPos.x, answerPos.y);
+                bindDm.LeftClick();
+                console.log('AI 识别结果', res);
+                this.openCapture = false;
+                this.lastVerifyCaptureTs = now;
+                console.log('关闭截图啦', this.openCapture);
+                // this.verifyCode = res;
+              });
+            }
           }
-          // 关闭截图
-          this.openCapture = false;
-          console.log('关闭截图啦', this.openCapture);
-          // 添加防抖操作 截图成功后，立即关机截图功能，30秒后重新开启
+        } else {
+          this.openCapture = true;
         }
 
         console.log('[角色信息] 验证码:', verifyCode);
@@ -84,7 +115,7 @@ export class Role {
       } catch (err) {
         console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
       }
-    }, 10000); // 中文注释：最小间隔 200ms，避免过于频繁
+    }, 5000); // 中文注释：最小间隔 200ms，避免过于频繁
   }
 
   // 开启自动寻路
@@ -112,3 +143,7 @@ export class Role {
     }
   }
 }
+
+// 66 72 78 84 90 96 102 6次机会
+// 66 120J  102 40J  80J =》 15J + 15J = 30J 一次机会
+// 320J

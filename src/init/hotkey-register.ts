@@ -235,6 +235,13 @@ export const toggleAutoRoute = (opts?: AutoRouteStartOptions): AutoRouteToggleRe
         });
       }, 1000);
     });
+
+    // const url = readVerifyCodeImage(hwnd);
+    // console.log('验证码图片 base64url', url);
+    // // 测试AI
+    // getVerifyCodeAiRes(url).then(res => {
+    //   console.log('AI xxxxx', res);
+    // });
     return { ok: true, hwnd, running: true };
   } catch (err) {
     return { ok: false, message: String((err as any)?.message || err) };

@@ -29,8 +29,20 @@ export const DEFAULT_MONSTER_NAME = {
 
 // 神医验证码
 export const DEFAULT_VERIFY_CODE = {
-  '1600*900': { x1: 131, y1: 113, x2: 1426, y2: 835, color: 'e80000-111111', sim: DEFAULT_SIM },
+  '1600*900': { x1: 0, y1: 113, x2: 1598, y2: 835, color: 'e80000-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 185, y1: 97, x2: 1444, y2: 826, color: 'e80000-111111', sim: DEFAULT_SIM },
+};
+
+export interface VerifyCodeTextPos {
+  I: { x: number; y: number };
+  II: { x: number; y: number };
+  III: { x: number; y: number };
+}
+
+// 验证码文本坐标
+export const DEFAULT_VERIFY_CODE_TEXT: Record<string, VerifyCodeTextPos> = {
+  '1600*900': { I: { x: 180, y: 47 }, II: { x: 180, y: 67 }, III: { x: 180, y: 87 } },
+  '1280*800': { I: { x: 185, y: 97 }, II: { x: 185, y: 117 }, III: { x: 186, y: 137 } },
 };
 
 // 菜单栏坐标
