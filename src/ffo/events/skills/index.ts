@@ -43,7 +43,6 @@ export class AttackActions {
   public timerMapList: Map<string, NodeJS.Timeout> = new Map();
   private skillPropsList: KeyPressOptions[] = [];
   private ocrMonster = { ...OCR_MONSTER, string: MONSTER_FEATURE['精英|头目'] };
-  private enablUseSkill = '';
   // 技能组
   private cdController: Map<keyof typeof VK_F, boolean> = new Map([
     ['F1', false],
@@ -61,9 +60,9 @@ export class AttackActions {
 
   // 自动跑路加打怪
   autoRunAndAttack({ path = [], attackRange = 100 }: AttackOptions) {
-    this.bindDm.KeyDownChar('W');
-    this.bindDm.delay(200);
-    this.bindDm.KeyUpChar('W');
+    // this.bindDm.KeyDownChar('W');
+    // this.bindDm.delay(200);
+    // this.bindDm.KeyUpChar('W');
   }
 
   findMonsterPos() {
@@ -89,7 +88,7 @@ export class AttackActions {
     const pos = this.findMonsterPos();
     if (!pos) return;
     const { x, y } = pos;
-    console.log('怪物坐标', pos);
+
     this.bindDm.MoveTo(x, y);
     !this.currentAttackTargetPos && this.bindDm.RightClick();
     // 开启技能组
@@ -97,7 +96,7 @@ export class AttackActions {
 
     // console.log(freeSkill, 'freeSkill');
     const monsterName = this.role.selectMonster;
-    console.log(monsterName, 'monsterName');
+    console.log('怪物坐标', pos, '名字', monsterName);
     // && monsterName
     if (freeSkill) {
       this.useSkill(freeSkill.key, freeSkill.interval || 0);

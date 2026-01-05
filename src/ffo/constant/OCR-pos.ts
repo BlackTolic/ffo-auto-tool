@@ -27,6 +27,12 @@ export const DEFAULT_MONSTER_NAME = {
   '1280*800': { x1: 95, y1: 109, x2: 200, y2: 144, color: DEFAULT_MONSTER_COLOR, sim: DEFAULT_SIM },
 };
 
+// 神医验证码
+export const DEFAULT_VERIFY_CODE = {
+  '1600*900': { x1: 131, y1: 113, x2: 1426, y2: 835, color: 'e80000-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 185, y1: 97, x2: 1444, y2: 826, color: 'e80000-111111', sim: DEFAULT_SIM },
+};
+
 // 菜单栏坐标
 export const DEFAULT_MENUS_POS = {
   '1600*900': {

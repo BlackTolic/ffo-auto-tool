@@ -40,10 +40,27 @@ export class MoveActions {
   private role;
   public timer: NodeJS.Timeout | null = null;
   private actions?: AttackActions | null = null; // 赶路过程中的其他行为
+  private isPause = false; // 是否暂停移动
 
   constructor(role: Role) {
     this.dm = role.bindDm;
     this.role = role;
+  }
+
+  async move(fromPos: Pos, curAimPos: Pos) {
+    // 改成每次移动前进行攻击
+    if (this.actions) {
+      this.actions.attackNearestMonster();
+    }
+    await new Promise(res => {
+      const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
+      const { x, y } = getCirclePoint(angle);
+      this.dm.MoveTo(x, y);
+      // 中文注释：按下左键以触发移动（修正大小写）
+      this.dm.delay(200);
+      this.dm.LeftDown();
+      res(this.role.position);
+    });
   }
 
   fromTo(fromPos: Pos, toPos: Pos[] | Pos): boolean {
@@ -52,26 +69,21 @@ export class MoveActions {
     }
     console.log('开始移动了：', fromPos, toPos[this.recordAimPosIndex]);
     // 第一次寻路开启连续点击
-    console.log('第一次寻路开启连续点击', isArriveAimNear(fromPos, toPos[toPos.length - 1]));
-    if (this.recordAimPosIndex === 0 && !isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
+    if (!isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
       const curAimPos = toPos[this.recordAimPosIndex];
-      const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
-      const { x, y } = getCirclePoint(angle);
-      this.dm.MoveTo(x, y);
-      // 中文注释：按下左键以触发移动（修正大小写）
-      this.dm.delay(200);
-      this.dm.LeftDown();
+      !this.isPause && this.move(fromPos, curAimPos);
     }
     // 不是第一次，不需要再连续点击
-    if (this.recordAimPosIndex > 0 && !isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
-      const curAimPos = toPos[this.recordAimPosIndex];
-      const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
-      const { x, y } = getCirclePoint(angle);
-      this.dm.MoveTo(x, y);
-      this.dm.delay(200);
-      // 嵌入攻击后
-      this.actions && this.dm.LeftDown();
-    }
+    // if (this.recordAimPosIndex > 0 && !isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
+    //   const curAimPos = toPos[this.recordAimPosIndex];
+    //   // const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
+    //   // const { x, y } = getCirclePoint(angle);
+    //   // this.dm.MoveTo(x, y);
+    //   // this.dm.delay(200);
+    //   // // 嵌入攻击后
+    //   // this.actions && this.dm.LeftDown();
+    //   this.move(fromPos, curAimPos);
+    // }
     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex < toPos.length - 1) {
       this.recordAimPosIndex++;
       return this.fromTo(fromPos, toPos);
@@ -104,10 +116,10 @@ export class MoveActions {
         }
         // 开启自动攻击
         // && this.actions?.currentAttackTargetPos
-        if (actions) {
-          actions.attackNearestMonster();
-        }
-      }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
+        // if (actions) {
+        //   actions.attackNearestMonster();
+        // }
+      }, 400); // 中文注释：最小间隔 200ms，避免过于频繁
     });
   }
 
@@ -121,5 +133,15 @@ export class MoveActions {
       }
     } catch {}
     console.log('[角色信息] 已关闭自动寻路');
+  }
+
+  // 暂停移动
+  pauseMove() {
+    this.isPause = true;
+  }
+
+  // 恢复移动
+  resumeMove() {
+    this.isPause = false;
   }
 }

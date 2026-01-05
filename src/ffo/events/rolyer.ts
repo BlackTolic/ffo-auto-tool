@@ -1,7 +1,8 @@
 import { damoBindingManager } from '.';
+import { VERIFY_CODE_PATH } from '../../constant/config';
 import { ensureDamo } from '../../damo/damo';
-import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION } from '../constant/OCR-pos';
-import { parseRolePositionFromText } from '../utils/common';
+import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE } from '../constant/OCR-pos';
+import { parseRolePositionFromText, parseTextPos } from '../utils/common';
 import { MoveActions } from './move';
 
 export type Pos = {
@@ -15,6 +16,8 @@ export class Role {
   private name: string = ''; // 当前控制的角色名称
   public position: Pos | null = { x: 0, y: 0 }; // 当前角色所在坐标
   public map: string = ''; // 当前所在地图名称
+  // 验证码
+  private verifyCode: string = '';
   private isOpenAutoRoute: boolean = false; // 是否开启自动寻路
   private bloodStatus: string = ''; // 血量状态
   private isDead: boolean = false; // 是否死亡
@@ -23,15 +26,18 @@ export class Role {
   private pollTimers = new Map<number, ReturnType<typeof setInterval>>(); // 记录轮询定时器
   public selectMonster = ''; // 已选中怪物
   public menusPos = DEFAULT_MENUS_POS['1600*900'];
+  public isPauseActive: boolean = false; // 暂停所有行为
+  private openCapture: boolean = true; // 是否开启截图
 
   constructor() {}
 
   // 需要先绑定之后再注册角色信息
-  registerRole(bindWindowSize: '1600*900' | '1280*800') {
+  public registerRole(bindWindowSize: '1600*900' | '1280*800') {
     this.bindWindowSize = bindWindowSize;
     const map = DEFAULT_ADDRESS_NAME[bindWindowSize];
     const rolePos = DEFAULT_ROLE_POSITION[bindWindowSize];
     const monsterPos = DEFAULT_MONSTER_NAME[bindWindowSize];
+    const verifyCodePos = DEFAULT_VERIFY_CODE[bindWindowSize];
     this.menusPos = DEFAULT_MENUS_POS[bindWindowSize as keyof typeof DEFAULT_MENUS_POS];
 
     const dm = ensureDamo();
@@ -53,7 +59,24 @@ export class Role {
         const pos = parseRolePositionFromText(raw);
         const addressName = bindDm.Ocr(map.x1, map.y1, map.x2, map.y2, map.color, map.sim);
         const monsterName = bindDm.Ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
+        const verifyCode = bindDm.FindStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
+        const verifyCodeTextPos = parseTextPos(verifyCode);
+        console.log(verifyCodeTextPos, 'verifyCodeTextPos');
+        if (this.openCapture && verifyCodeTextPos) {
+          // 截图
+          const verifyCodeImg = bindDm.CapturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}/${hwnd}严重.png`);
+          console.log(verifyCodeImg);
+          // 成功截图到内存中
+          if (String(verifyCodeImg) === '1') {
+            this.verifyCode = verifyCodeImg;
+          }
+          // 关闭截图
+          this.openCapture = false;
+          console.log('关闭截图啦', this.openCapture);
+          // 添加防抖操作 截图成功后，立即关机截图功能，30秒后重新开启
+        }
 
+        console.log('[角色信息] 验证码:', verifyCode);
         this.selectMonster = monsterName;
         this.map = addressName;
         this.position = pos;
@@ -61,7 +84,7 @@ export class Role {
       } catch (err) {
         console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
       }
-    }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
+    }, 10000); // 中文注释：最小间隔 200ms，避免过于频繁
   }
 
   // 开启自动寻路
