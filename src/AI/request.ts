@@ -13,7 +13,10 @@ export async function getVerifyCodeAiRes(url: string) {
             role: 'user',
             content: [
               { type: 'image_url', image_url: { url } },
-              { type: 'text', text: '帮我识别图中左边的验证码，根据左边识别的内容选择右边的选项，如果选择第一个选择输出“I”，如果选择第二个选择输出“II”，如果选择第三个选择输出“III”,只能输出1个字符' },
+              {
+                type: 'text',
+                text: '帮我识别图中左边的验证码，根据左边识别的内容选择右边的选项，如果选择第一个选择输出“I”，如果选择第二个选择输出“II”，如果选择第三个选择输出“III”,只能输出I、II、III这3个字符中的一个',
+              },
             ],
           },
         ],

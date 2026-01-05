@@ -66,13 +66,13 @@ export class Role {
         // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
         const verifyCode = bindDm.FindStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
         const verifyCodeTextPos = parseTextPos(verifyCode);
-        console.log(verifyCodeTextPos, 'verifyCodeTextPos');
+        // console.log(verifyCodeTextPos, 'verifyCodeTextPos');
         if (verifyCodeTextPos) {
           const now = Date.now();
           if (this.openCapture || now - this.lastVerifyCaptureTs >= 10000) {
             const checkPos = DEFAULT_VERIFY_CODE_TEXT[this.bindWindowSize as keyof typeof DEFAULT_VERIFY_CODE_TEXT];
             const verifyCodeImg = bindDm.CapturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}/${hwnd}验证码.png`);
-            console.log(verifyCodeImg);
+            // console.log(verifyCodeImg);
             if (String(verifyCodeImg) === '1') {
               const safeCheckPos: VerifyCodeTextPos = checkPos;
               // 调用AI识别验证码
@@ -82,24 +82,22 @@ export class Role {
                 return;
               }
               getVerifyCodeAiRes(url).then(res => {
+                console.log(res, 'resssss');
                 if (!res) {
                   this.openCapture = false;
                   this.lastVerifyCaptureTs = now;
                   return;
                 }
-                console.log(res, 'resssss');
                 const I = { x: verifyCodeTextPos.x + safeCheckPos.I.x, y: verifyCodeTextPos.y + safeCheckPos.I.y };
                 const II = { x: verifyCodeTextPos.x + safeCheckPos.II.x, y: verifyCodeTextPos.y + safeCheckPos.II.y };
                 const III = { x: verifyCodeTextPos.x + safeCheckPos.III.x, y: verifyCodeTextPos.y + safeCheckPos.III.y };
                 const map = { I, II, III };
                 const answerPos = map[res as keyof typeof map];
                 bindDm.MoveTo(answerPos.x, answerPos.y);
-                bindDm.LeftClick();
-                console.log('AI 识别结果', res);
+                // bindDm.LeftClick();
                 this.openCapture = false;
                 this.lastVerifyCaptureTs = now;
                 console.log('关闭截图啦', this.openCapture);
-                // this.verifyCode = res;
               });
             }
           }
@@ -115,7 +113,7 @@ export class Role {
       } catch (err) {
         console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
       }
-    }, 5000); // 中文注释：最小间隔 200ms，避免过于频繁
+    }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
   }
 
   // 开启自动寻路
