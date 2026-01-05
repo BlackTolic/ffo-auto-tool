@@ -1,6 +1,8 @@
 export const MONSTER_FEATURE = {
   QQ糖: 'QQ糖',
   精英: '精英',
+  头目: '头目',
+  '精英|头目': '精英|头目',
 };
 
 export const TianQuanRange = { x1: 574, y1: 236, x2: 1026, y2: 578 };

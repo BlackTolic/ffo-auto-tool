@@ -1,6 +1,6 @@
 import { damoBindingManager } from '.';
 import { ensureDamo } from '../../damo/damo';
-import { DEFAULT_ADDRESS_NAME, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION } from '../constant/OCR-pos';
+import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION } from '../constant/OCR-pos';
 import { parseRolePositionFromText } from '../utils/common';
 import { MoveActions } from './move';
 
@@ -13,7 +13,7 @@ export class Role {
   public bindDm: any = null; // 大漠类
   private timer: NodeJS.Timeout | null = null; // 定时器
   private name: string = ''; // 当前控制的角色名称
-  public position: Pos | null = { x: 0, y: 0 }; // 当前所在坐标
+  public position: Pos | null = { x: 0, y: 0 }; // 当前角色所在坐标
   public map: string = ''; // 当前所在地图名称
   private isOpenAutoRoute: boolean = false; // 是否开启自动寻路
   private bloodStatus: string = ''; // 血量状态
@@ -22,6 +22,7 @@ export class Role {
   private moveActions: MoveActions | null = null; // 移动操作类
   private pollTimers = new Map<number, ReturnType<typeof setInterval>>(); // 记录轮询定时器
   public selectMonster = ''; // 已选中怪物
+  public menusPos = DEFAULT_MENUS_POS['1600*900'];
 
   constructor() {}
 
@@ -31,6 +32,7 @@ export class Role {
     const map = DEFAULT_ADDRESS_NAME[bindWindowSize];
     const rolePos = DEFAULT_ROLE_POSITION[bindWindowSize];
     const monsterPos = DEFAULT_MONSTER_NAME[bindWindowSize];
+    this.menusPos = DEFAULT_MENUS_POS[bindWindowSize as keyof typeof DEFAULT_MENUS_POS];
 
     const dm = ensureDamo();
     // 中文注释：获取当前前台窗口句柄

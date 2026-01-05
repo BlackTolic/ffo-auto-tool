@@ -1,6 +1,7 @@
 import { globalShortcut } from 'electron';
 import { ensureDamo } from '../damo/damo';
 import { damoBindingManager } from '../ffo/events';
+import { BaseAction } from '../ffo/events/base-action';
 import { MoveActions } from '../ffo/events/move';
 import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
@@ -122,32 +123,32 @@ export function registerGlobalHotkeys() {
   try {
     const okRole = globalShortcut.register('Alt+R', () => {
       // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
-      // const ret = toggleAutoRoute({
-      //   // path: FeiJiToYangJian,
-      //   path: [
-      //     // { x: 106, y: 48 },
-      //     // { x: 127, y: 57 },
-      //     // { x: 144, y: 49 },
-      //     // { x: 123, y: 38 },
-      //     // 天泉
-      //     { x: 169, y: 73 },
-      //     { x: 193, y: 111 },
-      //     { x: 140, y: 117 },
-      //     { x: 93, y: 73 },
-      //     { x: 101, y: 55 },
-      //     { x: 155, y: 37 },
-      //     { x: 231, y: 71 },
-      //     { x: 247, y: 62 },
-      //     { x: 222, y: 42 },
-      //     { x: 190, y: 30 },
-      //     { x: 183, y: 21 },
-      //     { x: 135, y: 18 },
-      //     { x: 86, y: 39 },
-      //     { x: 52, y: 66 },
-      //     { x: 65, y: 91 },
-      //     { x: 73, y: 96 },
-      //   ],
-      // });
+      const ret = toggleAutoRoute({
+        // path: FeiJiToYangJian,
+        path: [
+          // { x: 106, y: 48 },
+          // { x: 127, y: 57 },
+          // { x: 144, y: 49 },
+          // { x: 123, y: 38 },
+          // 天泉
+          { x: 169, y: 73 },
+          { x: 193, y: 111 },
+          { x: 140, y: 117 },
+          { x: 93, y: 73 },
+          { x: 101, y: 55 },
+          { x: 155, y: 37 },
+          { x: 231, y: 71 },
+          { x: 251, y: 69 },
+          { x: 227, y: 48 },
+          { x: 190, y: 30 },
+          { x: 183, y: 21 },
+          { x: 135, y: 18 },
+          { x: 86, y: 39 },
+          { x: 52, y: 66 },
+          { x: 65, y: 91 },
+          { x: 72, y: 92 },
+        ],
+      });
       // {193 12}
       // 自动打怪
       // const ret = toggleAutoAttack();
@@ -217,6 +218,10 @@ export const toggleAutoRoute = (opts?: AutoRouteStartOptions): AutoRouteToggleRe
     // ];
     const path = opts?.path?.length ? opts.path : [];
     const active = new AttackActions(role);
+
+    // 测试回城
+    // new BaseAction(role).backCity({ x: 291, y: 124 });
+
     actions.startAutoFindPath(path, active).then(res => {
       setTimeout(() => {
         console.log('完成跑步后对话', role.position);
@@ -225,7 +230,7 @@ export const toggleAutoRoute = (opts?: AutoRouteStartOptions): AutoRouteToggleRe
         active.scanMonster().then(res => {
           console.log('当前已经没有怪物了', role.position);
           setTimeout(() => {
-            console.log('回城', role.position);
+            new BaseAction(role).backCity({ x: 291, y: 124 });
           }, 1000);
         });
       }, 1000);

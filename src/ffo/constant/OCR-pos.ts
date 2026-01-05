@@ -26,3 +26,27 @@ export const DEFAULT_MONSTER_NAME = {
   '1600*900': { x1: 95, y1: 109, x2: 200, y2: 144, color: DEFAULT_MONSTER_COLOR, sim: DEFAULT_SIM },
   '1280*800': { x1: 95, y1: 109, x2: 200, y2: 144, color: DEFAULT_MONSTER_COLOR, sim: DEFAULT_SIM },
 };
+
+// 菜单栏坐标
+export const DEFAULT_MENUS_POS = {
+  '1600*900': {
+    // 角色栏
+    roles: { x: 1245, y: 858, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+    // 物品栏
+    items: { x: 1290, y: 862, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+    // 交友
+    friend: { x: 1328, y: 861, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+    // 家族
+    family: { x: 1371, y: 857, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+    //技能
+    skill: { x: 1415, y: 861, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+    // 任务
+    task: { x: 1452, y: 859, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+    // 信件
+    letter: { x: 1496, y: 862, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+    // 货架
+    shelf: { x: 1542, y: 862, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+    // 设置
+    setting: { x: 1581, y: 860, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  },
+};

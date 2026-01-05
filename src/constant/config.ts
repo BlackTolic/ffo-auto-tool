@@ -6,3 +6,6 @@ export const OCR_FONT_PATH = path.join(process.cwd(), '/src/lib/font/0_ffo.txt')
 export const SCREENSHOT_PATH = path.join(process.cwd(), '/public/screenshot/');
 // 绑定的窗口
 export const BIND_WINDOW_NAME = 'FFO';
+
+// 回城卷轴图片路径
+export const BACK_CITY_PNG_PATH = path.join(process.cwd(), '/src/lib/bmp/回城卷轴.bmp');

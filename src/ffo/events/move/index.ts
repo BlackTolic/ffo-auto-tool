@@ -1,4 +1,5 @@
 import { ORIGIN_POSITION } from '../../constant/OCR-pos';
+import { isArriveAimNear } from '../../utils/common';
 import { Role } from '../rolyer';
 import { AttackActions } from '../skills';
 
@@ -17,13 +18,6 @@ export const getAngle = (x1: number, y1: number, x2: number, y2: number) => {
   const x = x2 - x1;
   const y = y2 - y1;
   return (Math.atan2(y, x) * 180) / Math.PI;
-};
-
-// 从(x1,y1)移动到以(x2,y2)为中心,r为半径的范围内
-export const isArriveAimNear = (initPos: Pos, aimPos: Pos, r: number = 2) => {
-  const { x: x1, y: y1 } = initPos;
-  const { x: x2, y: y2 } = aimPos;
-  return (x1 - x2) ** 2 + (y1 - y2) ** 2 <= r ** 2;
 };
 
 function getCirclePoint(angle: number) {

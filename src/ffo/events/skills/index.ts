@@ -42,7 +42,7 @@ export class AttackActions {
   public timer: NodeJS.Timeout | null = null;
   public timerMapList: Map<string, NodeJS.Timeout> = new Map();
   private skillPropsList: KeyPressOptions[] = [];
-  private ocrMonster = { ...OCR_MONSTER, string: MONSTER_FEATURE['精英'] };
+  private ocrMonster = { ...OCR_MONSTER, string: MONSTER_FEATURE['精英|头目'] };
   private enablUseSkill = '';
   // 技能组
   private cdController: Map<keyof typeof VK_F, boolean> = new Map([
@@ -69,7 +69,6 @@ export class AttackActions {
   findMonsterPos() {
     const { x1, y1, x2, y2, string, color, sim } = this.ocrMonster;
     const result = this.bindDm.FindStrFastE(x1, y1, x2, y2, string, color, sim);
-    console.log('OCR结果', result);
     // console.log('OCR结果', result);
     // 识别怪物
     const pos = parseTextPos(result);
@@ -112,7 +111,7 @@ export class AttackActions {
     this.bindDm.KeyDownChar(key);
     this.bindDm.delay(500);
     this.bindDm.KeyUpChar(key);
-    this.bindDm.delay(song || 300);
+    this.bindDm.delay(200);
     this.bindDm.LeftClick();
     this.cdController.set(key, true);
     setTimeout(() => {
@@ -194,14 +193,20 @@ export class AttackActions {
 
   scanMonster() {
     return new Promise((resolve, reject) => {
+      let counter = 0;
       let timer: NodeJS.Timeout | null = setInterval(() => {
         this.attackNearestMonster();
         const findMonsterPos = this.findMonsterPos();
-        if (!findMonsterPos) {
-          resolve(findMonsterPos);
+        if (findMonsterPos) {
+          counter = 0;
+        }
+        console.log('counter', counter, findMonsterPos);
+        if (!findMonsterPos && counter > 5) {
           timer && clearInterval(timer);
           timer = null;
+          resolve(findMonsterPos);
         }
+        counter++;
       }, 1000);
     });
   }

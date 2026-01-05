@@ -1,3 +1,5 @@
+export const MAIN_CITY = ['天都', '楼兰', '龙城'];
+
 export const LongCity = {};
 
 export const WuLeiCity = {};
