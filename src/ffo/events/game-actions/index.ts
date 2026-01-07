@@ -1,4 +1,4 @@
-import { Damo } from '../../../damo/damo';
+import { Damo } from '../../../auto-plugin/Damo/damo';
 import { BBLevelIn8Immortals } from './BBLevelIn8Immortals';
 
 /**

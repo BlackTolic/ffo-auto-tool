@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { DamoRegResult } from './damo/damo'; // 中文注释：引入一次性注册的返回类型，便于渲染层类型提示
+import type { DamoRegResult } from './auto-plugin/Damo/damo'; // 中文注释：引入一次性注册的返回类型，便于渲染层类型提示
 
 // 中文注释：向渲染进程暴露用于操作大漠插件的 API
 const damo = {

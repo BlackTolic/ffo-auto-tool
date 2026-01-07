@@ -1,7 +1,7 @@
 import { damoBindingManager } from '.';
 import { getVerifyCodeAiRes } from '../../AI/request';
+import { ensureDamo } from '../../auto-plugin/Damo/damo';
 import { VERIFY_CODE_PATH } from '../../constant/config';
-import { ensureDamo } from '../../damo/damo';
 import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { isArriveAimNear, parseRolePositionFromText, parseTextPos } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';

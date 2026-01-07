@@ -5,7 +5,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { Damo } from '../../damo/damo';
+import { Damo } from '../../auto-plugin/Damo/damo';
 import { Role } from './rolyer';
 
 // 中文注释：绑定配置（可按需覆盖默认值）

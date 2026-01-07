@@ -1,7 +1,7 @@
 // 刷天泉
 
 import { damoBindingManager } from '..';
-import { ensureDamo } from '../../../damo/damo';
+import { ensureDamo } from '../../../auto-plugin/Damo/damo';
 import { TianDu } from '../../constant/NPC_position';
 import { isArriveAimNear } from '../../utils/common';
 import { Conversation } from '../conversation';
