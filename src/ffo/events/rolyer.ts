@@ -3,7 +3,7 @@ import { getVerifyCodeAiRes } from '../../AI/request';
 import { VERIFY_CODE_PATH } from '../../constant/config';
 import { ensureDamo } from '../../damo/damo';
 import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
-import { parseRolePositionFromText, parseTextPos } from '../utils/common';
+import { isArriveAimNear, parseRolePositionFromText, parseTextPos } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
 import { MoveActions } from './move';
 
@@ -31,6 +31,8 @@ export class Role {
   public isPauseActive: boolean = false; // 暂停所有行为
   private openCapture: boolean = true; // 是否开启截图
   private lastVerifyCaptureTs: number = 0;
+  private lastTaskActionTs: number = 0;
+  private task: { name: string; pos: Pos; action: () => void } | null = null;
 
   constructor() {}
 
@@ -105,30 +107,21 @@ export class Role {
           this.openCapture = true;
         }
 
-        console.log('[角色信息] 验证码:', verifyCode);
+        // console.log('[角色信息] 验证码:', verifyCode);
         this.selectMonster = monsterName;
         this.map = addressName;
         this.position = pos;
+        if (this.task && isArriveAimNear(pos as Pos, this.task.pos, 10)) {
+          const now = Date.now();
+          if (now - this.lastTaskActionTs >= 10000) {
+            console.log(`[角色信息] 已到达任务位置 ${this.task.name}`);
+            this.task.action();
+            this.lastTaskActionTs = now;
+          }
+        }
         // console.log('[角色信息] 地图名称:', `${this.map}:${this.position?.x},${this.position?.y}`);
       } catch (err) {
         console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
-      }
-    }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
-  }
-
-  // 开启自动寻路
-  startAutoFindRoute(cb: (dm: any, pos: Pos) => boolean | undefined) {
-    this.isOpenAutoRoute = true;
-    let isArrive: boolean | undefined;
-    let timer: NodeJS.Timeout | null = setInterval(() => {
-      if (this.position) {
-        isArrive = cb(this.bindDm, this.position);
-        console.log('开始寻路拉！！', isArrive);
-      }
-      if (isArrive) {
-        timer && clearInterval(timer);
-        timer = null;
-        console.log('[角色信息] 已关闭自动寻路');
       }
     }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
   }
@@ -140,8 +133,21 @@ export class Role {
       console.log('[角色信息] 已解除角色轮询');
     }
   }
+
+  addIntervalActive(task: string, pos: Pos, call: () => void) {
+    this.task = { name: task, pos, action: call };
+    this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
+  }
+
+  clearIntervalActive() {
+    this.task = null;
+  }
+
+  hasActiveTask() {
+    return !!this.task;
+  }
 }
 
 // 66 72 78 84 90 96 102 6次机会
 // 66 120J  102 40J  80J =》 15J + 15J = 30J 一次机会
-// 320J
+// 320

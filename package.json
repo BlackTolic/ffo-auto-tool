@@ -21,7 +21,12 @@
     "env:check": "set ENV_CHECK_ONLY=1 && electron-forge start",
     "env:check:ps": "powershell -ExecutionPolicy Bypass -File scripts/env_check.ps1",
     "env:check:js": "node scripts/env_check.js",
-    "generate:icon": "node scripts\\generate_icon.js"
+    "generate:icon": "node scripts\\generate_icon.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:restart": "pm2 restart ecosystem.config.js",
+    "pm2:delete": "pm2 delete ecosystem.config.js",
+    "pm2:logs": "pm2 logs"
   },
   "keywords": [],
   "author": {
@@ -53,6 +58,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "jimp": "^1.6.0",
     "node-loader": "^2.1.0",
+    "pm2": "^6.0.14",
     "prettier": "^3.7.4",
     "style-loader": "^3.3.4",
     "to-ico": "^1.1.5",
