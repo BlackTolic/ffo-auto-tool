@@ -1,6 +1,6 @@
 import { damoBindingManager } from '.';
 import { getVerifyCodeAiRes } from '../../AI/request';
-import { ensureDamo } from '../../auto-plugin/Damo/damo';
+import { AutoT, ensureDamo } from '../../auto-plugin/index';
 import { VERIFY_CODE_PATH } from '../../constant/config';
 import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { isArriveAimNear, parseRolePositionFromText, parseTextPos } from '../utils/common';
@@ -56,24 +56,24 @@ export class Role {
       console.log('[角色信息] 当前前台窗口未绑定');
       return;
     }
-    const bindDm = rec?.ffoClient.dm;
+    const bindDm = rec?.ffoClient as AutoT;
     this.bindDm = rec?.ffoClient.dm;
     this.timer = setInterval(() => {
       try {
-        const raw: string = String(bindDm.Ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, rolePos.color, rolePos.sim) || '').trim();
+        const raw: string = String(bindDm.ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, rolePos.color, rolePos.sim) || '').trim();
         const pos = parseRolePositionFromText(raw);
-        const addressName = bindDm.Ocr(map.x1, map.y1, map.x2, map.y2, map.color, map.sim);
-        const monsterName = bindDm.Ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
+        const addressName = bindDm.ocr(map.x1, map.y1, map.x2, map.y2, map.color, map.sim);
+        const monsterName = bindDm.ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
         // 截图
         // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
-        const verifyCode = bindDm.FindStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
+        const verifyCode = bindDm.findStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
         const verifyCodeTextPos = parseTextPos(verifyCode);
         // console.log(verifyCodeTextPos, 'verifyCodeTextPos');
         if (verifyCodeTextPos) {
           const now = Date.now();
           if (this.openCapture || now - this.lastVerifyCaptureTs >= 10000) {
             const checkPos = DEFAULT_VERIFY_CODE_TEXT[this.bindWindowSize as keyof typeof DEFAULT_VERIFY_CODE_TEXT];
-            const verifyCodeImg = bindDm.CapturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}/${hwnd}验证码.png`);
+            const verifyCodeImg = bindDm.capturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}/${hwnd}验证码.png`);
             // console.log(verifyCodeImg);
             if (String(verifyCodeImg) === '1') {
               const safeCheckPos: VerifyCodeTextPos = checkPos;
@@ -95,7 +95,7 @@ export class Role {
                 const III = { x: verifyCodeTextPos.x + safeCheckPos.III.x, y: verifyCodeTextPos.y + safeCheckPos.III.y };
                 const map = { I, II, III };
                 const answerPos = map[res as keyof typeof map];
-                bindDm.MoveTo(answerPos.x, answerPos.y);
+                bindDm.moveTo(answerPos.x, answerPos.y);
                 // bindDm.LeftClick();
                 this.openCapture = false;
                 this.lastVerifyCaptureTs = now;

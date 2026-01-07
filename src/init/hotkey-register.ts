@@ -1,5 +1,5 @@
 import { globalShortcut } from 'electron';
-import { ensureDamo } from '../auto-plugin/Damo/damo';
+import { ensureDamo } from '../auto-plugin/index';
 import { damoBindingManager } from '../ffo/events';
 import { toggleTianquan } from '../ffo/events/game-actions/tian-quan';
 import { AttackActions } from '../ffo/events/skills';

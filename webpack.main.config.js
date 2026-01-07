@@ -12,9 +12,20 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json'],
   },
+  // todo 使用天使插件才这样用
+  // plugins: [
+  //   new (require('copy-webpack-plugin'))({
+  //     patterns: [
+  //       {
+  //         from: 'src/auto-plugin/TianShi/lib',
+  //         to: 'lib',
+  //       },
+  //     ],
+  //   }),
+  // ],
   // Avoid bundling native COM bridge; load at runtime from node_modules
   // 中文注释：将 winax 声明为外部依赖，运行时从打包后的 node_modules 直接加载原生模块
   externals: {
-      winax: 'commonjs winax', // 中文注释：不参与打包，保持 require('winax') 指向真实模块
+    winax: 'commonjs winax', // 中文注释：不参与打包，保持 require('winax') 指向真实模块
   },
 };

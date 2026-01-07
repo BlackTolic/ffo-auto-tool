@@ -31,18 +31,39 @@ import {
 import { TSInstance } from './types/plugin';
 
 export default class TSPlug {
-  private ts: TSInstance;
+  public ts: TSInstance;
+  public dm: TSInstance;
 
   constructor() {
     this.ts = TSPlug.init('ts.tssoft');
+    this.dm = TSPlug.init('ts.tssoft');
   }
 
   private static init(COM: string): TSInstance {
     try {
-      return new winax.Object(COM);
+      const x = new winax.Object(COM);
+      // console.log('创建 COM 对象成功', COM);
+      try {
+        // 尝试调用 Ver() 来验证插件是否真正可用 (通常插件都有这个方法)
+        if (typeof x.Ver === 'function') {
+          console.log(`插件 ${COM} 版本: ${x.Ver()}`);
+        }
+      } catch (e) {
+        console.warn(`插件 ${COM} 版本获取失败`, e);
+      }
+      return x;
     } catch {
-      execSync(`regsvr32 ${resolve(__dirname, '../lib/TSPlug.dll')}`);
-      return new winax.Object(COM);
+      try {
+        const dllPath = resolve(__dirname, './lib/TSPlug.dll');
+        console.log(`尝试注册 TSPlug.dll: ${dllPath}`);
+        execSync(`regsvr32 /s "${dllPath}"`);
+        const x = new winax.Object(COM);
+        console.log(`注册后创建 COM 对象成功: ${COM}`);
+        return x;
+      } catch (e) {
+        console.error('注册 TSPlug.dll 失败或创建 COM 对象失败', e);
+        throw e;
+      }
     }
   }
 
@@ -211,7 +232,17 @@ export default class TSPlug {
     return this.ts.BindWindow(hWnd, display, mouse, keypad, mode);
   }
 
-  unBindWindow(): TsRet {
+  // 兼容大漠
+  BindWindowEx(hWnd: number, display: displayMode, mouse: mouseMode, keypad: keypadMode, mode: BindWindowMode): TsRet {
+    return this.ts.BindWindow(hWnd, display, mouse, keypad, mode);
+  }
+
+  // 兼容大漠
+  BindWindow(hWnd: number, display: displayMode, mouse: mouseMode, keypad: keypadMode, mode: BindWindowMode): TsRet {
+    return this.ts.BindWindow(hWnd, display, mouse, keypad, mode);
+  }
+
+  unbindWindow(): TsRet {
     return this.ts.UnBindWindow();
   }
 
@@ -614,16 +645,21 @@ export default class TSPlug {
   }
 
   // 文字
-  ocr<T = number>(color: string, sim: T, x1: T, y1: T, x2: T, y2: T): string;
-  ocr<T = number>(color: string, sim: T, { x1, y1, x2, y2 }: Area): string;
-  ocr(color: string, sim: number, ...args: number[] | Area[]): string {
-    let [x1, y1, x2, y2] = [] as number[];
-    if (args.length > 1) {
-      [x1, y1, x2, y2] = args as number[];
-    } else {
-      ({ x1, y1, x2, y2 } = args[0] as Area);
-    }
-    return this.ts.Ocr(x1, y1, x2, y2, color, sim);
+  // ocr<T = number | string>(color: string, sim: T, x1: T, y1: T, x2: T, y2: T): string;
+  // ocr<T = number | string>(color: string, sim: T, { x1, y1, x2, y2 }: Area): string;
+
+  // ocr(color: string, sim: number, ...args: number[] | Area[]): string {
+  //   let [x1, y1, x2, y2] = [] as number[];
+  //   if (args.length > 1) {
+  //     [x1, y1, x2, y2] = args as number[];
+  //   } else {
+  //     ({ x1, y1, x2, y2 } = args[0] as Area);
+  //   }
+  //   return this.ts.Ocr(x1, y1, x2, y2, color, sim);
+  // }
+
+  ocr(x: number, y: number, w: number, h: number, color: string, sim: number): string {
+    return this.ts.Ocr(x, y, w, h, color, sim);
   }
 
   ocrEx<T = number>(color: string, sim: T, x1: T, y1: T, x2: T, y2: T): string;
@@ -702,6 +738,11 @@ export default class TSPlug {
     }
     const ret = this.ts.FindStrFast(x1, y1, x2, y2, str, color, sim, x, y);
     return { ret, x: Number(x), y: Number(y) };
+  }
+
+  findStrFastE(x1: number, y1: number, x2: number, y2: number, str: string, color: string, sim: number): number {
+    const [x, y] = [new winax.Variant(-1, 'byref'), new winax.Variant(-1, 'byref')];
+    return this.ts.FindStrFast(x1, y1, x2, y2, str, color, sim, x, y);
   }
 
   findStrFastS<T = number, K = string>(str: K, color: K, sim: T, x1: T, y1: T, x2: T, y2: T): VariantPointerParams;
@@ -944,5 +985,25 @@ export default class TSPlug {
 
   freeProcessMemory(hWnd: number): TsRet {
     return this.ts.FreeProcessMemory(hWnd);
+  }
+
+  // 模拟大漠的 EnumWindowByProcessId
+  EnumWindowByProcessId(pid: number, title: string, className: string, filter: number): string {
+    // 1. 获取所有满足 title, className, filter 的窗口
+    const allWindowsStr = this.ts.EnumWindow(0, title, className, filter);
+    if (!allWindowsStr) return '';
+
+    const allWindows = allWindowsStr.split(',');
+    const result: string[] = [];
+
+    // 2. 遍历并筛选 PID 匹配的窗口
+    for (const hwndStr of allWindows) {
+      const hwnd = parseInt(hwndStr);
+      if (this.ts.GetWindowProcessId(hwnd) === pid) {
+        result.push(hwndStr);
+      }
+    }
+
+    return result.join(',');
   }
 }
