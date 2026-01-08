@@ -1,7 +1,7 @@
 import cp from 'child_process';
 import { app, BrowserWindow, globalShortcut, ipcMain } from 'electron';
 import path from 'path';
-import { ensureDamo, registerDamoOnce } from './damo/damo';
+import { ensureDamo, registerDamoOnce } from './auto-plugin/index';
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
 import { promptIfNotAdmin } from './init/admin-check'; // 中文注释：引入管理员权限检测与提示
 import { registerBoundEventHandlers } from './init/event-register';

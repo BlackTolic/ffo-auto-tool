@@ -1,8 +1,7 @@
 import { globalShortcut } from 'electron';
-import { ensureDamo } from '../damo/damo';
+import { ensureDamo } from '../auto-plugin/index';
 import { damoBindingManager } from '../ffo/events';
-import { BaseAction } from '../ffo/events/base-action';
-import { MoveActions } from '../ffo/events/move';
+import { toggleTianquan } from '../ffo/events/game-actions/tian-quan';
 import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 
@@ -123,37 +122,9 @@ export function registerGlobalHotkeys() {
   try {
     const okRole = globalShortcut.register('Alt+R', () => {
       // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
-      const ret = toggleAutoRoute({
-        // path: FeiJiToYangJian,
-        path: [
-          // { x: 106, y: 48 },
-          // { x: 127, y: 57 },
-          // { x: 144, y: 49 },
-          // { x: 123, y: 38 },
-          // 天泉
-          { x: 169, y: 73 },
-          { x: 193, y: 111 },
-          { x: 140, y: 117 },
-          { x: 93, y: 73 },
-          { x: 101, y: 55 },
-          { x: 155, y: 37 },
-          { x: 231, y: 71 },
-          { x: 251, y: 69 },
-          { x: 227, y: 48 },
-          { x: 190, y: 30 },
-          { x: 183, y: 21 },
-          { x: 135, y: 18 },
-          { x: 86, y: 39 },
-          { x: 52, y: 66 },
-          { x: 65, y: 91 },
-          { x: 72, y: 92 },
-        ],
-      });
-      // {193 12}
-      // 自动打怪
-      // const ret = toggleAutoAttack();
-      // const msg = ret.ok ? `[快捷键] Alt+R 切换自动打怪成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换自动打怪失败 | ${ret.message}`;
-      // console.log(msg);
+      const ret = toggleTianquan();
+      const msg = ret.ok ? `[快捷键] Alt+R 切换天泉副本成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换自动打怪失败 | ${ret.message}`;
+      console.log(msg);
     });
     if (!okRole) console.warn('[快捷键] Alt+R 注册失败');
   } catch (e) {
@@ -161,92 +132,8 @@ export function registerGlobalHotkeys() {
   }
 }
 
-// 中文注释：记录每个窗口的自动寻路操作实例（用于 Alt+R 开/关切换）
-const autoRouteActionsByHwnd = new Map<number, MoveActions>();
-
 // 中文注释：记录每个窗口的自动打怪操作实例（用于 Alt+R 开/关切换）
 const autoAttackActionsByHwnd = new Map<number, AttackActions>();
-
-// 中文注释：自动寻路启动参数接口
-export interface AutoRouteStartOptions {
-  path?: Array<{ x: number; y: number }>; // 中文注释：寻路目标点数组（客户区坐标），默认使用两个示例点
-  intervalMs?: number; // 中文注释：轮询间隔（毫秒），用于内部调用（当前实现固定 300ms）
-}
-
-// 中文注释：自动寻路切换返回结果
-export interface AutoRouteToggleResult {
-  ok: boolean; // 中文注释：操作是否成功
-  running?: boolean; // 中文注释：当前是否处于运行状态
-  hwnd?: number; // 中文注释：本次操作作用的窗口句柄
-  message?: string; // 中文注释：失败或提示信息
-}
-
-// 中文注释：切换自动寻路（第一次开启，第二次关闭）
-export const toggleAutoRoute = (opts?: AutoRouteStartOptions): AutoRouteToggleResult => {
-  try {
-    const dm = ensureDamo();
-    const hwnd = dm.getForegroundWindow();
-    if (!hwnd || hwnd <= 0) {
-      return { ok: false, message: '未检测到前台窗口' };
-    }
-    if (!damoBindingManager.isBound(hwnd)) {
-      return { ok: false, hwnd, message: '当前前台窗口未绑定' };
-    }
-
-    const role = damoBindingManager.getRole(hwnd);
-    if (!role) {
-      return { ok: false, hwnd, message: `找不到角色记录：hwnd=${hwnd}` };
-    }
-
-    // 中文注释：获取或创建持久化的 MoveActions 实例
-    let actions = autoRouteActionsByHwnd.get(hwnd);
-    if (!actions) {
-      actions = new MoveActions(role);
-      autoRouteActionsByHwnd.set(hwnd, actions);
-    }
-
-    // 中文注释：若已有定时器在运行，则本次切换为“关闭”
-    if (actions.timer) {
-      actions.stopAutoFindPath();
-      return { ok: true, hwnd, running: false };
-    }
-
-    // 中文注释：否则启动自动寻路
-    // const defaultPath = [
-    //   { x: 305, y: 72 },
-    //   { x: 335, y: 126 },
-    // ];
-    const path = opts?.path?.length ? opts.path : [];
-    const active = new AttackActions(role);
-
-    // 测试回城
-    // new BaseAction(role).backCity({ x: 291, y: 124 });
-
-    actions.startAutoFindPath(path, active).then(res => {
-      setTimeout(() => {
-        console.log('完成跑步后对话', role.position);
-        // const conversation = new Conversation(role);
-        // conversation.YangJian();
-        active.scanMonster().then(res => {
-          console.log('当前已经没有怪物了', role.position);
-          setTimeout(() => {
-            new BaseAction(role).backCity({ x: 291, y: 124 });
-          }, 1000);
-        });
-      }, 1000);
-    });
-
-    // const url = readVerifyCodeImage(hwnd);
-    // console.log('验证码图片 base64url', url);
-    // // 测试AI
-    // getVerifyCodeAiRes(url).then(res => {
-    //   console.log('AI xxxxx', res);
-    // });
-    return { ok: true, hwnd, running: true };
-  } catch (err) {
-    return { ok: false, message: String((err as any)?.message || err) };
-  }
-};
 
 export const toggleAutoAttack = () => {
   try {

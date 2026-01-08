@@ -25,7 +25,8 @@ interface Pos {
 }
 
 // 从(x1,y1)移动到以(x2,y2)为中心,r为半径的范围内
-export const isArriveAimNear = (initPos: Pos, aimPos: Pos, r: number = 2) => {
+export const isArriveAimNear = (initPos: Pos | null, aimPos: Pos, r: number = 2) => {
+  if (!initPos) return false;
   const { x: x1, y: y1 } = initPos;
   const { x: x2, y: y2 } = aimPos;
   return (x1 - x2) ** 2 + (y1 - y2) ** 2 <= r ** 2;

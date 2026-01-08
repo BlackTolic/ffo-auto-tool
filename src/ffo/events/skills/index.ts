@@ -58,13 +58,6 @@ export class AttackActions {
     this.bindDm = role.bindDm;
   }
 
-  // 自动跑路加打怪
-  autoRunAndAttack({ path = [], attackRange = 100 }: AttackOptions) {
-    // this.bindDm.KeyDownChar('W');
-    // this.bindDm.delay(200);
-    // this.bindDm.KeyUpChar('W');
-  }
-
   findMonsterPos() {
     const { x1, y1, x2, y2, string, color, sim } = this.ocrMonster;
     const result = this.bindDm.FindStrFastE(x1, y1, x2, y2, string, color, sim);

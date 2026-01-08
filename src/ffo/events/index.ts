@@ -5,7 +5,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { Damo } from '../../damo/damo';
+import { AutoT } from '../../auto-plugin';
 import { Role } from './rolyer';
 
 // 中文注释：绑定配置（可按需覆盖默认值）
@@ -55,7 +55,7 @@ export const ffoEvents = new EventEmitter();
 export interface DamoClientRecord {
   pid: number; // 进程 ID
   hwnd: number; // 窗口句柄
-  ffoClient: Damo; // 对应的大漠实例（每个窗口一个）
+  ffoClient: AutoT; // 对应的大漠实例（每个窗口一个）
 }
 
 // 中文注释：大漠绑定管理器（多窗口）
@@ -149,14 +149,14 @@ export class DamoBindingManager {
     const results: number[] = [];
     try {
       // 8=顶级窗口，16=可见窗口；优先取可见顶级
-      const visTop = String(dmRaw.EnumWindowByProcessId(pid, '', '', 8 + 16) || '')
+      const visTop = String(dmRaw.enumWindowByProcessId(pid, '', '', 8 + 16) || '')
         .split(',')
         .map(s => parseInt(s))
         .filter(n => Number.isFinite(n) && n > 0);
       results.push(...visTop);
       if (results.length === 0) {
         // 回退仅顶级（可能当前不可见）
-        const topOnly = String(dmRaw.EnumWindowByProcessId(pid, '', '', 8) || '')
+        const topOnly = String(dmRaw.enumWindowByProcessId(pid, '', '', 8) || '')
           .split(',')
           .map(s => parseInt(s))
           .filter(n => Number.isFinite(n) && n > 0);
@@ -173,34 +173,39 @@ export class DamoBindingManager {
   async bindWindowsForPid(pid: number, config?: BindConfig): Promise<number> {
     const cfg = { ...this.defaultConfig, ...(config || {}) };
     // 中文注释：使用探测实例进行枚举（与真正绑定实例分离，确保每个窗口独立实例）
-    let probe: Damo | null = null;
+    let probe: AutoT | null = null;
     try {
-      probe = new Damo();
+      probe = new AutoT();
     } catch (err) {
       ffoEvents.emit('error', { pid, error: err } as ErrorPayload);
       return 0;
     }
 
     // 中文注释：枚举窗口句柄
-    const hwnds = this.enumerateWindowsByPid(probe.dm, pid);
+    // const hwnds = this.enumerateWindowsByPid(probe.dm, pid);
+    // 天使
+    const hwnds = this.enumerateWindowsByPid(probe, pid);
+
     let successCount = 0;
 
     for (const hwnd of hwnds) {
       // 中文注释：跳过已绑定的窗口，避免重复
       if (this.isBound(hwnd)) continue;
-      let client: Damo;
+      let client: AutoT;
       try {
-        client = new Damo();
+        client = new AutoT();
       } catch (err) {
         ffoEvents.emit('error', { pid, hwnd, error: err } as ErrorPayload);
         continue;
       }
 
       try {
-        const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
-        client.dm.delay(200);
-        // const ret = client.dm.BindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
-
+        // const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
+        console.log(client.dm.Ver(), 'client.dm');
+        // const ret = 2;
+        const ret = client.dm.BindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
+        // client.dm.delay(200);
+        console.log('BindWindow 结果', ret, hwnd, pid);
         if (ret !== 1) {
           // 中文注释：返回非 1 表示失败，抛错并通知事件
           throw new Error(`BindWindowEx 失败，返回值=${ret}, hwnd=${hwnd}, pid=${pid}`);

@@ -49,19 +49,42 @@ export class MoveActions {
 
   async move(fromPos: Pos, curAimPos: Pos) {
     // 改成每次移动前进行攻击
-    if (this.actions) {
-      this.actions.attackNearestMonster();
-    }
-    await new Promise(res => {
-      const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
-      const { x, y } = getCirclePoint(angle);
-      this.dm.MoveTo(x, y);
-      // 中文注释：按下左键以触发移动（修正大小写）
-      this.dm.delay(200);
-      this.dm.LeftDown();
-      res(this.role.position);
-    });
+    // if (this.actions) {
+    //   this.actions.attackNearestMonster();
+    // }
+    const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
+    const { x, y } = getCirclePoint(angle);
+    this.dm.MoveTo(x, y);
+    // 中文注释：按下左键以触发移动（修正大小写）
+    this.dm.delay(200);
+    this.dm.LeftDown();
   }
+
+  // async asyncFormTo(fromPos: Pos, toPos: Pos[] | Pos): Promise<Pos> {
+  //   return new Promise((res, rej) => {
+  //     if (!Array.isArray(toPos)) {
+  //       toPos = [toPos];
+  //     }
+  //     console.log('当前位置', toPos);
+  //     console.log('目标位置', toPos[toPos.length - 1]);
+  //     // 第一次寻路开启连续点击
+  //     if (!isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
+  //       const curAimPos = toPos[this.recordAimPosIndex];
+  //       !this.isPause && this.move(fromPos, curAimPos);
+  //     }
+
+  //     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex < toPos.length - 1) {
+  //       this.recordAimPosIndex++;
+  //       return this.asyncFormTo(fromPos, toPos);
+  //     }
+  //     //  { x: 335, y: 126 }
+  //     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex === toPos.length - 1) {
+  //       this.dm.LeftClick();
+  //       console.log('目标已到达指定位置');
+  //       res(toPos[this.recordAimPosIndex]);
+  //     }
+  //   });
+  // }
 
   fromTo(fromPos: Pos, toPos: Pos[] | Pos): boolean {
     if (!Array.isArray(toPos)) {
@@ -98,11 +121,16 @@ export class MoveActions {
   }
 
   startAutoFindPath(toPos: Pos[] | Pos, actions?: AttackActions) {
-    this.actions = actions;
+    if (actions) {
+      this.actions = actions;
+    }
+    console.log('startAutoFindPath执行了');
     return new Promise((res, rej) => {
       this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
       let isArrive: boolean | undefined;
+      console.log('开启第一步');
       this.timer = setInterval(() => {
+        console.log('定时器启动 --这个位置是否存在', this.role.position);
         if (this.role.position) {
           isArrive = this.fromTo(this.role.position, toPos);
           // console.log('开始寻路拉！！', this.role.position, toPos, isArrive);
@@ -116,10 +144,11 @@ export class MoveActions {
         }
         // 开启自动攻击
         // && this.actions?.currentAttackTargetPos
-        // if (actions) {
-        //   actions.attackNearestMonster();
-        // }
-      }, 400); // 中文注释：最小间隔 200ms，避免过于频繁
+        if (actions) {
+          actions.attackNearestMonster();
+        }
+      }, 400); // 中文注释：最小间隔 200ms，避免过于频繁\
+      console.log('注册定时器');
     });
   }
 

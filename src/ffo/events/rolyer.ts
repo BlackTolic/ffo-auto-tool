@@ -1,9 +1,9 @@
 import { damoBindingManager } from '.';
 import { getVerifyCodeAiRes } from '../../AI/request';
+import { AutoT, ensureDamo } from '../../auto-plugin/index';
 import { VERIFY_CODE_PATH } from '../../constant/config';
-import { ensureDamo } from '../../damo/damo';
 import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
-import { parseRolePositionFromText, parseTextPos } from '../utils/common';
+import { isArriveAimNear, parseRolePositionFromText, parseTextPos } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
 import { MoveActions } from './move';
 
@@ -31,6 +31,8 @@ export class Role {
   public isPauseActive: boolean = false; // 暂停所有行为
   private openCapture: boolean = true; // 是否开启截图
   private lastVerifyCaptureTs: number = 0;
+  private lastTaskActionTs: number = 0;
+  private task: { name: string; pos: Pos; action: () => void } | null = null;
 
   constructor() {}
 
@@ -54,24 +56,24 @@ export class Role {
       console.log('[角色信息] 当前前台窗口未绑定');
       return;
     }
-    const bindDm = rec?.ffoClient.dm;
+    const bindDm = rec?.ffoClient as AutoT;
     this.bindDm = rec?.ffoClient.dm;
     this.timer = setInterval(() => {
       try {
-        const raw: string = String(bindDm.Ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, rolePos.color, rolePos.sim) || '').trim();
+        const raw: string = String(bindDm.ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, rolePos.color, rolePos.sim) || '').trim();
         const pos = parseRolePositionFromText(raw);
-        const addressName = bindDm.Ocr(map.x1, map.y1, map.x2, map.y2, map.color, map.sim);
-        const monsterName = bindDm.Ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
+        const addressName = bindDm.ocr(map.x1, map.y1, map.x2, map.y2, map.color, map.sim);
+        const monsterName = bindDm.ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
         // 截图
         // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
-        const verifyCode = bindDm.FindStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
+        const verifyCode = bindDm.findStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
         const verifyCodeTextPos = parseTextPos(verifyCode);
         // console.log(verifyCodeTextPos, 'verifyCodeTextPos');
         if (verifyCodeTextPos) {
           const now = Date.now();
           if (this.openCapture || now - this.lastVerifyCaptureTs >= 10000) {
             const checkPos = DEFAULT_VERIFY_CODE_TEXT[this.bindWindowSize as keyof typeof DEFAULT_VERIFY_CODE_TEXT];
-            const verifyCodeImg = bindDm.CapturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}/${hwnd}验证码.png`);
+            const verifyCodeImg = bindDm.capturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}/${hwnd}验证码.png`);
             // console.log(verifyCodeImg);
             if (String(verifyCodeImg) === '1') {
               const safeCheckPos: VerifyCodeTextPos = checkPos;
@@ -93,7 +95,7 @@ export class Role {
                 const III = { x: verifyCodeTextPos.x + safeCheckPos.III.x, y: verifyCodeTextPos.y + safeCheckPos.III.y };
                 const map = { I, II, III };
                 const answerPos = map[res as keyof typeof map];
-                bindDm.MoveTo(answerPos.x, answerPos.y);
+                bindDm.moveTo(answerPos.x, answerPos.y);
                 // bindDm.LeftClick();
                 this.openCapture = false;
                 this.lastVerifyCaptureTs = now;
@@ -105,30 +107,21 @@ export class Role {
           this.openCapture = true;
         }
 
-        console.log('[角色信息] 验证码:', verifyCode);
+        // console.log('[角色信息] 验证码:', verifyCode);
         this.selectMonster = monsterName;
         this.map = addressName;
         this.position = pos;
+        if (this.task && isArriveAimNear(pos as Pos, this.task.pos, 10)) {
+          const now = Date.now();
+          if (now - this.lastTaskActionTs >= 10000) {
+            console.log(`[角色信息] 已到达任务位置 ${this.task.name}`);
+            this.task.action();
+            this.lastTaskActionTs = now;
+          }
+        }
         // console.log('[角色信息] 地图名称:', `${this.map}:${this.position?.x},${this.position?.y}`);
       } catch (err) {
         console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
-      }
-    }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
-  }
-
-  // 开启自动寻路
-  startAutoFindRoute(cb: (dm: any, pos: Pos) => boolean | undefined) {
-    this.isOpenAutoRoute = true;
-    let isArrive: boolean | undefined;
-    let timer: NodeJS.Timeout | null = setInterval(() => {
-      if (this.position) {
-        isArrive = cb(this.bindDm, this.position);
-        console.log('开始寻路拉！！', isArrive);
-      }
-      if (isArrive) {
-        timer && clearInterval(timer);
-        timer = null;
-        console.log('[角色信息] 已关闭自动寻路');
       }
     }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
   }
@@ -140,8 +133,21 @@ export class Role {
       console.log('[角色信息] 已解除角色轮询');
     }
   }
+
+  addIntervalActive(task: string, pos: Pos, call: () => void) {
+    this.task = { name: task, pos, action: call };
+    this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
+  }
+
+  clearIntervalActive() {
+    this.task = null;
+  }
+
+  hasActiveTask() {
+    return !!this.task;
+  }
 }
 
 // 66 72 78 84 90 96 102 6次机会
 // 66 120J  102 40J  80J =》 15J + 15J = 30J 一次机会
-// 320J
+// 320
