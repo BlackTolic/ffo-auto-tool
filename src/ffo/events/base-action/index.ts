@@ -16,6 +16,24 @@ export class BaseAction {
     this.dm = role.bindDm;
   }
 
+  // 屏蔽所有玩家
+  blockAllPlayers() {
+    this.dm.KeyDownChar('F11');
+    this.dm.delay(300);
+    this.dm.KeyUpChar('F11');
+    this.dm.delay(300);
+
+    this.dm.KeyDownChar('F11');
+    this.dm.delay(300);
+    this.dm.KeyUpChar('F11');
+    this.dm.delay(300);
+
+    this.dm.KeyDownChar('F11');
+    this.dm.delay(300);
+    this.dm.KeyUpChar('F11');
+    this.dm.delay(300);
+  }
+
   // 回城
   backCity(fixPos?: { x: number; y: number }) {
     const { items } = this.role?.menusPos ?? {};
@@ -42,6 +60,7 @@ export class BaseAction {
             this.dm.LeftDoubleClick();
           }
         }, 4000);
+        this.blockAllPlayers();
         return;
       }
       if (MAIN_CITY.includes(this.role?.map ?? '')) {

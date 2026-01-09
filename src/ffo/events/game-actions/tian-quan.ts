@@ -4,8 +4,10 @@ import { damoBindingManager } from '..';
 import { ensureDamo } from '../../../auto-plugin/index';
 import { TianDu } from '../../constant/NPC_position';
 import { isArriveAimNear } from '../../utils/common';
+import { BaseAction } from '../base-action';
 import { Conversation } from '../conversation';
 import { MoveActions } from '../move';
+import { Role } from '../rolyer';
 import { AttackActions } from '../skills';
 
 const pos = [
@@ -28,15 +30,6 @@ const pos = [
   { x: 72, y: 92 },
 ];
 
-// 中文注释：记录每个窗口的自动寻路操作实例（用于 Alt+R 开/关切换）
-const autoRouteActionsByHwnd = new Map<number, MoveActions>();
-
-// 中文注释：自动寻路启动参数接口
-export interface AutoRouteStartOptions {
-  path?: Array<{ x: number; y: number }>; // 中文注释：寻路目标点数组（客户区坐标），默认使用两个示例点
-  intervalMs?: number; // 中文注释：轮询间隔（毫秒），用于内部调用（当前实现固定 300ms）
-}
-
 // 中文注释：自动寻路切换返回结果
 export interface AutoRouteToggleResult {
   ok: boolean; // 中文注释：操作是否成功
@@ -45,91 +38,100 @@ export interface AutoRouteToggleResult {
   message?: string; // 中文注释：失败或提示信息
 }
 
+export class TianQuanAction {
+  private static instanceMap = new Map<number, TianQuanAction>();
+  private role: Role;
+  private actions: MoveActions;
+  private active: AttackActions;
+
+  constructor(role: Role) {
+    this.role = role;
+    this.actions = new MoveActions(role);
+    this.active = new AttackActions(role);
+  }
+
+  public static getInstance(hwnd: number): TianQuanAction | null {
+    if (!damoBindingManager.isBound(hwnd)) {
+      return null;
+    }
+    const role = damoBindingManager.getRole(hwnd);
+    if (!role) {
+      return null;
+    }
+
+    if (!this.instanceMap.has(hwnd)) {
+      this.instanceMap.set(hwnd, new TianQuanAction(role));
+    }
+    return this.instanceMap.get(hwnd)!;
+  }
+
+  public start() {
+    // 在仓库管理员处进行循环
+    this.role.addIntervalActive('刷天泉', { x: 291, y: 124 }, () => {
+      console.log('开始跑步', this.role.position);
+      new MoveActions(this.role).startAutoFindPath(TianDu.杨戬).then(() => {
+        if (isArriveAimNear(this.role.position, TianDu.杨戬)) {
+          console.log('到达位置杨戬位置', this.role.position);
+          new Conversation(this.role).YangJian().then(res => {
+            console.log('完成与杨戬的对话');
+            this.actions.startAutoFindPath(pos, this.active).then(res => {
+              setTimeout(() => {
+                this.active.scanMonster().then(res => {
+                  console.log('当前已经没有怪物了', this.role.position);
+                  setTimeout(() => {
+                    new BaseAction(this.role).backCity({ x: 291, y: 124 });
+                  }, 1000);
+                });
+              }, 1000);
+            });
+          });
+        }
+      });
+    });
+  }
+
+  public stop() {
+    this.role.clearIntervalActive();
+    this.actions.stopAutoFindPath();
+  }
+
+  public isRunning(): boolean {
+    return !!(this.actions.timer || this.role.hasActiveTask());
+  }
+
+  public pause() {
+    this.actions.stopAutoFindPath();
+  }
+
+  public restart() {
+    this.actions.startAutoFindPath(pos, this.active);
+  }
+}
+
+let curAction: TianQuanAction | null = null;
+
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
 export const toggleTianquan = (): AutoRouteToggleResult => {
   try {
     const dm = ensureDamo();
     const hwnd = dm.getForegroundWindow();
-    if (!hwnd || hwnd <= 0) {
-      return { ok: false, message: '未检测到前台窗口' };
-    }
-    if (!damoBindingManager.isBound(hwnd)) {
-      return { ok: false, hwnd, message: '当前前台窗口未绑定' };
-    }
-
-    const role = damoBindingManager.getRole(hwnd);
-    if (!role) {
-      return { ok: false, hwnd, message: `找不到角色记录：hwnd=${hwnd}` };
-    }
-
-    // 中文注释：获取或创建持久化的 MoveActions 实例
-    let actions = autoRouteActionsByHwnd.get(hwnd);
-    if (!actions) {
-      actions = new MoveActions(role);
-      autoRouteActionsByHwnd.set(hwnd, actions);
-    }
-
-    // 中文注释：若已有定时器在运行，则本次切换为“关闭”
-    if (actions.timer || role.hasActiveTask()) {
-      // 暂停
-      actions.stopAutoFindPath();
-      role.clearIntervalActive();
+    curAction = TianQuanAction.getInstance(hwnd);
+    if (curAction?.isRunning()) {
+      curAction.stop();
       return { ok: true, hwnd, running: false };
+    } else {
+      curAction?.start();
+      return { ok: true, hwnd, running: true };
     }
-
-    const active = new AttackActions(role);
-
-    // 测试回城
-    // new BaseAction(role).backCity({ x: 291, y: 124 });
-
-    // 在仓库管理员处进行循环
-    role.addIntervalActive('刷天泉', { x: 291, y: 124 }, () => {
-      console.log('开始跑步', role.position);
-      new MoveActions(role).startAutoFindPath(TianDu.杨戬).then(() => {
-        if (isArriveAimNear(role.position, TianDu.杨戬)) {
-          console.log('到达位置杨戬位置', role.position);
-          new Conversation(role).YangJian();
-          console.log('完成与杨戬的对话');
-          // actions.startAutoFindPath(pos, active).then(res => {
-          //   setTimeout(() => {
-          //     console.log('完成跑步后对话', role.position);
-          //     // const conversation = new Conversation(role);
-          //     // conversation.YangJian();
-          //     active.scanMonster().then(res => {
-          //       console.log('当前已经没有怪物了', role.position);
-          //       setTimeout(() => {
-          //         new BaseAction(role).backCity({ x: 291, y: 124 });
-          //       }, 1000);
-          //     });
-          //   }, 1000);
-          // });
-        }
-      });
-      // dm.dm.delay(5000);
-    });
-
-    // actions.startAutoFindPath(pos, active).then(res => {
-    //   setTimeout(() => {
-    //     console.log('完成跑步后对话', role.position);
-    //     // const conversation = new Conversation(role);
-    //     // conversation.YangJian();
-    //     active.scanMonster().then(res => {
-    //       console.log('当前已经没有怪物了', role.position);
-    //       setTimeout(() => {
-    //         new BaseAction(role).backCity({ x: 291, y: 124 });
-    //       }, 1000);
-    //     });
-    //   }, 1000);
-    // });
-
-    // const url = readVerifyCodeImage(hwnd);
-    // console.log('验证码图片 base64url', url);
-    // // 测试AI
-    // getVerifyCodeAiRes(url).then(res => {
-    //   console.log('AI xxxxx', res);
-    // });
-    return { ok: true, hwnd, running: true };
   } catch (err) {
     return { ok: false, message: String((err as any)?.message || err) };
   }
+};
+
+export const pauseCurActive = () => {
+  curAction?.pause();
+};
+
+export const restartCurActive = () => {
+  curAction?.restart();
 };

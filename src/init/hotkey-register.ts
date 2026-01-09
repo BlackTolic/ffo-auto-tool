@@ -1,7 +1,7 @@
 import { globalShortcut } from 'electron';
 import { ensureDamo } from '../auto-plugin/index';
 import { damoBindingManager } from '../ffo/events';
-import { toggleTianquan } from '../ffo/events/game-actions/tian-quan';
+import { pauseCurActive, restartCurActive, toggleTianquan } from '../ffo/events/game-actions/tian-quan';
 import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 
@@ -129,6 +129,27 @@ export function registerGlobalHotkeys() {
     if (!okRole) console.warn('[快捷键] Alt+R 注册失败');
   } catch (e) {
     console.warn('[快捷键] Alt+R 注册异常：', (e as any)?.message || e);
+  }
+
+  // 中文注释：Alt+R 启动当前前台窗口的角色坐标轮询（每秒一次）
+  try {
+    const okRole = globalShortcut.register('Alt+1', () => {
+      // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
+      pauseCurActive();
+    });
+    if (!okRole) console.warn('[快捷键] Alt+1 注册失败');
+  } catch (e) {
+    console.warn('[快捷键] Alt+1 注册异常：', (e as any)?.message || e);
+  }
+
+  try {
+    const okRole = globalShortcut.register('Alt+2', () => {
+      // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
+      restartCurActive();
+    });
+    if (!okRole) console.warn('[快捷键] Alt+2 注册失败');
+  } catch (e) {
+    console.warn('[快捷键] Alt+1 注册异常：', (e as any)?.message || e);
   }
 }
 

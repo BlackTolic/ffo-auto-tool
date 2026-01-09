@@ -147,7 +147,7 @@ export class MoveActions {
         if (actions) {
           actions.attackNearestMonster();
         }
-      }, 400); // 中文注释：最小间隔 200ms，避免过于频繁\
+      }, 300); // 中文注释：最小间隔 200ms，避免过于频繁\
       console.log('注册定时器');
     });
   }

@@ -23,12 +23,13 @@ export class Role {
   private isOpenAutoRoute: boolean = false; // 是否开启自动寻路
   private bloodStatus: string = ''; // 血量状态
   private isDead: boolean = false; // 是否死亡
-  private bindWindowSize: string = ''; // 绑定窗口的尺寸
+  public bindWindowSize: string = ''; // 绑定窗口的尺寸
   private moveActions: MoveActions | null = null; // 移动操作类
   private pollTimers = new Map<number, ReturnType<typeof setInterval>>(); // 记录轮询定时器
   public selectMonster = ''; // 已选中怪物
   public menusPos = DEFAULT_MENUS_POS['1600*900'];
-  public isPauseActive: boolean = false; // 暂停所有行为
+  public isPauseAllActive: boolean = false; // 暂停所有行为
+  public isPauseCurActive: boolean = false; // 暂停当前行为
   private openCapture: boolean = true; // 是否开启截图
   private lastVerifyCaptureTs: number = 0;
   private lastTaskActionTs: number = 0;
@@ -141,6 +142,10 @@ export class Role {
 
   clearIntervalActive() {
     this.task = null;
+  }
+
+  pauseCurActive() {
+    this.isPauseCurActive = true;
   }
 
   hasActiveTask() {

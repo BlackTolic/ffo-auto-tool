@@ -5,6 +5,11 @@ import cp from 'child_process';
 import fs from 'fs'; // 中文注释：用于从文件系统读取字典内容
 import path from 'path'; // 中文注释：用于处理字典文件路径
 
+// 注册码
+const registerCode = 'mh84909b3bf80d45c618136887775ccc90d27d7';
+// 附加码
+const attachCode = 'mt0plzvti09xyhw7';
+
 // 新增：判断当前进程是否以管理员运行（中文注释）
 export const isElevated = (): boolean => {
   try {
@@ -56,7 +61,7 @@ export class Damo {
       return code;
     }
     // 执行收费注册（示例：使用你的用户名与附加码）
-    const regCode = this.dm.Reg('yonghufd83601c96660b0709d34423d3bad506', 'yk3112313');
+    const regCode = this.dm.Reg(registerCode, attachCode);
     console.log('大漠插件注册返回值: ', regCode, this.describeRegResult(regCode));
     console.log('大漠插件版本：', this.dm.Ver());
     console.log('大漠插件路径：', this.dm.GetBasePath());
