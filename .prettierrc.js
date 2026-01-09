@@ -5,7 +5,7 @@ module.exports = {
   tabWidth: 2, // 缩进 2 空格
   printWidth: 200, // 单行最大长度 200
   trailingComma: 'es5', // ES5 兼容的尾随逗号
-  // endOfLine: 'lf', // 统一换行符为 LF
+  endOfLine: 'auto', // 统一换行符为
   arrowParens: 'avoid', // 箭头函数单个参数省略括号
   bracketSpacing: true, // 对象字面量保留空格
   jsxBracketSameLine: false, // JSX 右括号另起一行
