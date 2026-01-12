@@ -17,7 +17,7 @@ export interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ items }) => {
   return (
     <aside className="sidebar">
-      <div className="brand">GW</div>
+      {/* <div className="brand">GW</div> */}
       <nav className="nav">
         {items.map(item => (
           <div key={item.id} className={`nav-item ${item.active ? 'active' : ''}`}>
@@ -25,9 +25,9 @@ const Sidebar: React.FC<SidebarProps> = ({ items }) => {
           </div>
         ))}
       </nav>
-      <div className="sidebar-footer">
+      {/* <div className="sidebar-footer">
         <button className="btn ghost">仪表盘</button>
-      </div>
+      </div> */}
     </aside>
   );
 };
