@@ -1,5 +1,5 @@
 import cp from 'child_process';
-import { app, BrowserWindow, globalShortcut, ipcMain } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu } from 'electron';
 import path from 'path';
 import { ensureDamo, registerDamoOnce } from './auto-plugin/index';
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
@@ -76,16 +76,23 @@ function createWindow() {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
   });
+  // 中文注释：隐藏窗口菜单栏，并设置为自动隐藏（防止 Alt 键临时显示）
+  mainWindow.setMenuBarVisibility(false);
+  mainWindow.setAutoHideMenuBar(true);
+
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
   // 中文注释：默认不自动打开开发者工具；如需调试，可通过 Ctrl+Shift+I 手动打开
   // const shouldOpenDevTools = process.env.OPEN_DEVTOOLS === '1'; // 中文注释：可选开关，设置为 1 时打开
   // if (shouldOpenDevTools) {
-  //   mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
   // }
 }
 
 function setupAppLifecycle() {
   app.on('ready', () => {
+    // 中文注释：移除应用级菜单，彻底去掉 Windows/Linux 上的菜单栏
+    Menu.setApplicationMenu(null);
+
     // 中文注释：应用启动后立即检测管理员权限；未提升则弹出中文提示框
     promptIfNotAdmin({
       title: '需要管理员权限',

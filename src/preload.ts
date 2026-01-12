@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { DamoRegResult } from './auto-plugin/Damo/damo';
 
 // 中文注释：向渲染进程暴露用于操作大漠插件的 API
 const damo = {
@@ -29,7 +28,7 @@ const damo = {
   ): Promise<{ ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string }> => ipcRenderer.invoke('autoKey:toggle', keyName, intervalMs),
 
   // 中文注释：手动触发一次“收费注册”，仅首次真正执行，后续返回上次结果
-  register: (): Promise<DamoRegResult> => ipcRenderer.invoke('damo:register'),
+  // register: (): Promise<DamoRegResult> => ipcRenderer.invoke('damo:register'),
 };
 
 // 新增：环境校验 API，渲染进程可调用展示结果
@@ -37,5 +36,6 @@ const env = {
   check: (): Promise<any> => ipcRenderer.invoke('env:check'),
 };
 
+// 中文注释：向渲染进程暴露用于操作大漠插件的 API
 contextBridge.exposeInMainWorld('damo', damo);
 contextBridge.exposeInMainWorld('env', env);

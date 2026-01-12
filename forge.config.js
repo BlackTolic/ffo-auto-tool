@@ -56,7 +56,7 @@ function copyDirectory(task) {
 function getEnvFlags() {
   // 中文注释：Forge 在 start 时通常会设置 NODE_ENV=development；同时根据命令行参数进行兜底判断
   const isDev = process.env.NODE_ENV === 'development';
-  const isStart = isDev || process.argv.some((arg) => /electron-forge-start|electron-forge start/i.test(arg)) || process.env.FORGE_START === 'true';
+  const isStart = isDev || process.argv.some(arg => /electron-forge-start|electron-forge start/i.test(arg)) || process.env.FORGE_START === 'true';
 
   return { isDev, isStart };
 }
@@ -105,7 +105,7 @@ module.exports = {
           entryPoints: [
             {
               html: './src/index.html',
-              js: './src/renderer.ts',
+              js: './src/renderer.tsx', // 👈 这里指向的是 renderer.tsx
               name: 'main_window',
               preload: { js: './src/preload.ts' },
             },
