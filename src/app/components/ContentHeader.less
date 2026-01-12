@@ -1,0 +1,47 @@
+/* 中文注释：顶部渐变统计区样式（Less） */
+.content-header {
+  border-radius: 18px;
+  padding: 18px 20px;
+  background: linear-gradient(180deg, rgba(121, 134, 199, 0.35) 0%, rgba(221, 227, 244, 0.65) 100%);
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  display: grid;
+  place-items: center;
+}
+.stat-text .stat-sub {
+  color: var(--muted);
+  font-size: 13px;
+}
+.stat-text .stat-main {
+  font-size: 22px;
+  font-weight: 700;
+}
+.stat-text .unit {
+  color: var(--text-600);
+  font-size: 14px;
+}
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+.icon-btn {
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}

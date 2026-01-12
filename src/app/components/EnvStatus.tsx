@@ -1,4 +1,5 @@
 import React from 'react';
+import './EnvStatus.less'; // 中文注释：引入环境状态组件样式（Less）
 
 // 中文注释：环境校验项的接口类型
 export interface EnvItem {

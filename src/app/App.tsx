@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import BindForegroundButton from './components/BindForegroundButton'; // 中文注释：绑定前台窗口按钮组件
 import ContentHeader from './components/ContentHeader'; // 中文注释：顶部统计区组件
 import Sidebar from './components/Sidebar'; // 中文注释：侧边栏组件
+import './App.less'; // 中文注释：引入 App 组件专属样式（Less）
+import '../styles/global.less'; // 中文注释：引入全局基础样式与通用样式（Less）
 
 // 中文注释：侧边导航项接口类型
 export interface NavItem {
@@ -44,9 +46,12 @@ export const App: React.FC<AppProps> = () => {
 
   // 中文注释：侧边导航静态项（仅示意）
   const navItems: NavItem[] = [
-    { id: 'home', label: '首页', active: true },
-    { id: 'account', label: '个人中心' },
-    { id: 'settings', label: '设置' },
+    { id: 'home', label: '首页', active: true }, // 中文注释：默认选中首页
+    { id: 'basic', label: '基本配置' }, // 中文注释：基础设置与参数
+    { id: 'field', label: '野外刷怪' }, // 中文注释：野外自动打怪
+    { id: 'dungeon', label: '副本' }, // 中文注释：副本相关操作
+    { id: 'pet', label: '抓宠' }, // 中文注释：宠物抓捕功能
+    { id: 'reputation', label: '名誉' }, // 中文注释：名誉任务与状态
   ];
 
   // 中文注释：检测当前是否在 Electron 环境（存在 preload 暴露的 API）

@@ -1,4 +1,5 @@
 import React from 'react';
+import './Card.less'; // 中文注释：引入通用卡片组件样式（Less）
 
 // 中文注释：通用卡片组件属性接口
 export interface CardProps {

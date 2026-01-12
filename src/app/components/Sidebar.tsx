@@ -1,4 +1,5 @@
 import React from 'react';
+import './Sidebar.less'; // 中文注释：引入侧边栏组件样式（Less）
 
 // 中文注释：侧边栏导航项接口（供 Sidebar 使用）
 export interface SidebarNavItem {

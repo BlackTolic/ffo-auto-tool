@@ -58,6 +58,8 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.4",
     "jimp": "^1.6.0",
+    "less": "^4.5.1",
+    "less-loader": "^12.3.0",
     "node-loader": "^2.1.0",
     "pm2": "^6.0.14",
     "prettier": "^3.7.4",

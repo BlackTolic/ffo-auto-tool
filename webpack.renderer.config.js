@@ -1,8 +1,19 @@
 const rules = require('./webpack.rules');
 
+// 中文注释：为 .css 文件配置样式加载
 rules.push({
   test: /\.css$/,
   use: [{ loader: 'style-loader' }, { loader: 'css-loader' }],
+});
+
+// 中文注释：新增 Less 支持（渲染进程）
+rules.push({
+  test: /\.less$/,
+  use: [
+    { loader: 'style-loader' }, // 中文注释：将样式以 <style> 注入页面
+    { loader: 'css-loader' }, // 中文注释：解析 @import、url() 等
+    { loader: 'less-loader' }, // 中文注释：编译 Less 为 CSS
+  ],
 });
 
 module.exports = {

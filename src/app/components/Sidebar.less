@@ -1,0 +1,36 @@
+/* 中文注释：侧边栏组件样式（Less） */
+.sidebar {
+  background: linear-gradient(180deg, var(--brand-600) 0%, var(--brand-200) 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  border-radius: 18px; /* 中文注释：新增圆角，统一侧边栏视觉 */
+  overflow: hidden; /* 中文注释：裁剪内部溢出，确保圆角干净 */
+}
+.brand {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nav-item {
+  padding: 10px 12px;
+  border-radius: 12px; /* 中文注释：更柔和的圆角，匹配侧边栏整体风格 */
+  opacity: 0.9;
+  cursor: default;
+}
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+  backdrop-filter: blur(8px);
+}
+.sidebar-footer {
+  margin-top: auto;
+  padding: 8px 4px;
+}

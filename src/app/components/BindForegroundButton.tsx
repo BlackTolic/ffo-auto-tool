@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './BindForegroundButton.less'; // 中文注释：引入绑定按钮组件样式（Less）
 
 // 中文注释：绑定结果接口类型
 export interface BindResult {

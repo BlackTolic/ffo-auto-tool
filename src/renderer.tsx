@@ -1,7 +1,7 @@
 // 中文注释：React 入口，挂载根组件到页面
 import { createRoot } from 'react-dom/client';
 import App from './app/App.tsx';
-import './index.css';
+// import './index.css'; // 中文注释：已迁移为各组件单独引入 Less，不再全局引入 CSS
 
 // 新增：字库信息接口定义（中文注释）
 interface DictSourceInfo {
