@@ -276,6 +276,9 @@ export class Damo {
   enumWindowByProcessId(pid: number, title: string, class_name: string, filter: number): number {
     return this.dm.EnumWindowByProcessId(pid, title, class_name, filter);
   }
+  leftClick(): number {
+    return this.dm.LeftClick();
+  }
 }
 
 // 中文注释：返回码中文映射（与类内私有描述保持一致，便于外部展示）

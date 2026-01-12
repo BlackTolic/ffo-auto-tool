@@ -10,15 +10,12 @@ const path = require('path');
  */
 export function readVerifyCodeImage(hwnd: string | number): string {
   const targetFile = path.join(VERIFY_CODE_PATH, `${hwnd}验证码.png`);
-  console.log('targetFile', targetFile);
   const exists = fs.existsSync(targetFile);
-  console.log('exists', exists);
   if (!exists) {
     console.log('验证码图片不存在');
     return '';
   }
   const mime = 'png';
   const buffer = fs.readFileSync(targetFile);
-  console.log('buffer', buffer);
   return `data:image/${mime};base64,${buffer.toString('base64')}`;
 }

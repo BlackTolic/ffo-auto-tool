@@ -1,5 +1,5 @@
 import cp from 'child_process';
-import { dialog, app } from 'electron';
+import { dialog } from 'electron';
 
 // 中文注释：管理员检测结果接口
 export interface AdminCheckResult {
@@ -32,8 +32,7 @@ export async function promptIfNotAdmin(options?: Partial<AdminPromptOptions>): P
   const title = options?.title ?? '需要管理员权限';
   const message = options?.message ?? '当前未以管理员权限运行';
   const detail =
-    options?.detail ??
-    '部分功能（如大漠插件收费注册）需要管理员权限。\n\n请关闭当前程序后，右键以“管理员身份运行”启动，或在命令行以管理员权限运行。\n示例：以管理员权限打开 PowerShell，再执行应用。';
+    options?.detail ?? '部分功能（如大漠插件收费注册）需要管理员权限。\n\n请关闭当前程序后，右键以“管理员身份运行”启动，或在命令行以管理员权限运行。\n示例：以管理员权限打开 PowerShell，再执行应用。';
 
   try {
     await dialog.showMessageBox({

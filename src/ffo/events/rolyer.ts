@@ -75,7 +75,7 @@ export class Role {
           if (this.openCapture || now - this.lastVerifyCaptureTs >= 10000) {
             const checkPos = DEFAULT_VERIFY_CODE_TEXT[this.bindWindowSize as keyof typeof DEFAULT_VERIFY_CODE_TEXT];
             const verifyCodeImg = bindDm.capturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}/${hwnd}验证码.png`);
-            // console.log(verifyCodeImg);
+            console.log(verifyCodeImg);
             if (String(verifyCodeImg) === '1') {
               const safeCheckPos: VerifyCodeTextPos = checkPos;
               // 调用AI识别验证码
@@ -85,7 +85,7 @@ export class Role {
                 return;
               }
               getVerifyCodeAiRes(url).then(res => {
-                console.log(res, 'resssss');
+                console.log('验证码识别结果', res);
                 if (!res) {
                   this.openCapture = false;
                   this.lastVerifyCaptureTs = now;
@@ -96,8 +96,9 @@ export class Role {
                 const III = { x: verifyCodeTextPos.x + safeCheckPos.III.x, y: verifyCodeTextPos.y + safeCheckPos.III.y };
                 const map = { I, II, III };
                 const answerPos = map[res as keyof typeof map];
+                console.log('answerPos', answerPos);
                 bindDm.moveTo(answerPos.x, answerPos.y);
-                // bindDm.LeftClick();
+                // bindDm.leftClick();
                 this.openCapture = false;
                 this.lastVerifyCaptureTs = now;
                 console.log('关闭截图啦', this.openCapture);
