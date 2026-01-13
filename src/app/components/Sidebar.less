@@ -23,7 +23,9 @@
   padding: 10px 12px;
   border-radius: 12px; /* 中文注释：更柔和的圆角，匹配侧边栏整体风格 */
   opacity: 0.9;
-  cursor: default;
+  cursor: pointer; /* 中文注释：指针样式，提示可点击 */
+  text-decoration: none; /* 中文注释：去除链接默认下划线 */
+  display: block; /* 中文注释：扩大可点击区域至整行 */
 }
 .nav-item.active {
   background: rgba(255, 255, 255, 0.28);

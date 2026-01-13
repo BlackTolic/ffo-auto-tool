@@ -5,6 +5,7 @@ import './Sidebar.less'; // 中文注释：引入侧边栏组件样式（Less）
 export interface SidebarNavItem {
   id: string; // 中文注释：导航项唯一标识
   label: string; // 中文注释：导航显示文案
+  href?: string; // 中文注释：导航链接地址（哈希路由）
   active?: boolean; // 中文注释：是否为当前选中项（可选）
 }
 
@@ -20,9 +21,13 @@ const Sidebar: React.FC<SidebarProps> = ({ items }) => {
       {/* <div className="brand">GW</div> */}
       <nav className="nav">
         {items.map(item => (
-          <div key={item.id} className={`nav-item ${item.active ? 'active' : ''}`}>
+          <a
+            key={item.id}
+            href={item.href || `#/${item.id}`}
+            className={`nav-item ${item.active ? 'active' : ''}`}
+          >
             {item.label}
-          </div>
+          </a>
         ))}
       </nav>
       {/* <div className="sidebar-footer">
