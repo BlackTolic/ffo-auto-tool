@@ -21,11 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ items }) => {
       {/* <div className="brand">GW</div> */}
       <nav className="nav">
         {items.map(item => (
-          <a
-            key={item.id}
-            href={item.href || `#/${item.id}`}
-            className={`nav-item ${item.active ? 'active' : ''}`}
-          >
+          <a key={item.id} href={item.href || `#/${item.id}`} className={`nav-item ${item.active ? 'active' : ''}`}>
             {item.label}
           </a>
         ))}

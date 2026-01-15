@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import BindForegroundButton from './components/BindForegroundButton'; // 中文注释：绑定前台窗口按钮组件
-import ContentHeader from './components/ContentHeader'; // 中文注释：顶部统计区组件
-import Sidebar, { SidebarNavItem } from './components/Sidebar'; // 中文注释：侧边栏组件与导航项类型
-import './App.less'; // 中文注释：引入 App 组件专属样式（Less）
 import '../styles/global.less'; // 中文注释：引入全局基础样式与通用样式（Less）
-import BasicConfigView from './views/BasicConfig'; // 中文注释：基本配置视图
-import FieldView from './views/Field'; // 中文注释：野外刷怪视图
-import DungeonView from './views/Dungeon'; // 中文注释：副本视图
-import PetView from './views/Pet'; // 中文注释：抓宠视图
-import ReputationView from './views/Reputation'; // 中文注释：名誉视图
+import './App.less'; // 中文注释：引入 App 组件专属样式（Less）
+import BindForegroundButton from './components/bind-foreground-button/BindForegroundButton'; // 中文注释：绑定前台窗口按钮组件
+import ContentHeader from './components/content-header/ContentHeader'; // 中文注释：顶部统计区组件
+import Sidebar, { SidebarNavItem } from './components/sider/Sidebar'; // 中文注释：侧边栏组件与导航项类型
+import BasicConfigView from './views/basic-config'; // 中文注释：基本配置视图
+import DungeonView from './views/dungeon'; // 中文注释：副本视图
+import FieldView from './views/field'; // 中文注释：野外刷怪视图
+import PetView from './views/pet'; // 中文注释：抓宠视图
+import ReputationView from './views/reputation'; // 中文注释：名誉视图
 
 // 中文注释：侧边导航项接口类型
 export interface NavItem {
@@ -39,6 +39,14 @@ export interface BindResult {
   message?: string; // 失败或提示信息
 }
 
+// 中文注释：路由项接口类型定义
+export interface RouteItem {
+  id: string; // 中文注释：路由唯一标识
+  label: string; // 中文注释：菜单显示文案
+  path: string; // 中文注释：哈希路由地址
+  Component?: React.FC; // 中文注释：对应渲染的视图组件（首页可缺省）
+}
+
 // 中文注释：App 组件的属性接口（当前为空，预留扩展）
 export interface AppProps {}
 
@@ -48,14 +56,6 @@ export const App: React.FC<AppProps> = () => {
   const [env, setEnv] = useState<EnvCheckResult | null>(null); // 环境校验结果
   const [binding, setBinding] = useState<boolean>(false); // 环境校验结果
   const [bindText, setBindText] = useState<string>(''); // 绑定结果文案
-
-  // 中文注释：路由项接口类型定义
-  export interface RouteItem {
-    id: string; // 中文注释：路由唯一标识
-    label: string; // 中文注释：菜单显示文案
-    path: string; // 中文注释：哈希路由地址
-    Component?: React.FC; // 中文注释：对应渲染的视图组件（首页可缺省）
-  }
 
   // 中文注释：当前路由 id 状态（默认首页）
   const [currentRouteId, setCurrentRouteId] = useState<string>('home');
