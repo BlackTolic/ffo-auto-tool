@@ -10,4 +10,4 @@ export const VERIFY_CODE_PATH = path.join(process.cwd(), '/public/verify-code/')
 export const BIND_WINDOW_NAME = 'FFO';
 
 // 回城卷轴图片路径
-export const BACK_CITY_PNG_PATH = path.join(process.cwd(), '/src/lib/bmp/回城卷轴.bmp');
+export const BACK_CITY_PNG_PATH = path.join(process.cwd(), '/src/lib/bmp/back_city.bmp');

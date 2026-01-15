@@ -60,6 +60,21 @@ export class Damo {
       console.warn('提示：右键以管理员身份运行终端，再执行 npm run start:utf8');
       return code;
     }
+    // 当前时间是否在2026年2月15号之前
+    // 中文注释：判断当前时间是否在2026年2月15号之前
+    const now = new Date();
+    const deadline = new Date('2026-02-15T00:00:00');
+    if (now >= deadline) {
+      // 使用系统弹框提示
+      // dialog.showMessageBoxSync({
+      //   type: 'warning',
+      //   title: '大漠插件注册提示',
+      //   message: '大漠收费注册未执行：当前时间已超过2026年2月15日，注册功能已关闭。',
+      //   buttons: ['确定'],
+      // });
+      console.warn('当前时间已超过2026年2月15号，已过期');
+      return -1;
+    }
     // 执行收费注册（示例：使用你的用户名与附加码）
     const regCode = this.dm.Reg(registerCode, attachCode);
     console.log('大漠插件注册返回值: ', regCode, this.describeRegResult(regCode));
