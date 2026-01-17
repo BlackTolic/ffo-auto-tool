@@ -28,6 +28,11 @@ export class Damo {
   // 中文注释：最近一次 SetDict 的来源信息（inline=内存字符串，file=文件）
   private dictSource: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null = null;
 
+  // 中文注释：类内私有映射调用导出的 describeReg，避免重复维护
+  private describeRegResult(code: number): string {
+    return describeReg(code);
+  }
+
   constructor() {
     if (!winax) {
       // 中文提示：引导安装 winax 及其构建依赖
@@ -47,77 +52,6 @@ export class Damo {
       }
       // 其他错误原样抛出，便于定位具体问题
       throw err;
-    }
-  }
-
-  reg() {
-    // 中文注释：大漠收费注册（Reg/RegEx）需管理员权限，否则返回 -2
-    const elevated = isElevated();
-    if (!elevated) {
-      // 非管理员时，不强制抛错，返回 -2 并给出中文提示，避免影响免费功能
-      const code = -2;
-      console.warn('大漠收费注册未执行：当前进程非管理员(-2)。请以管理员运行或关闭UAC后重试。');
-      console.warn('提示：右键以管理员身份运行终端，再执行 npm run start:utf8');
-      return code;
-    }
-    // 当前时间是否在2026年2月15号之前
-    // 中文注释：判断当前时间是否在2026年2月15号之前
-    const now = new Date();
-    const deadline = new Date('2026-02-15T00:00:00');
-    if (now >= deadline) {
-      // 使用系统弹框提示
-      // dialog.showMessageBoxSync({
-      //   type: 'warning',
-      //   title: '大漠插件注册提示',
-      //   message: '大漠收费注册未执行：当前时间已超过2026年2月15日，注册功能已关闭。',
-      //   buttons: ['确定'],
-      // });
-      console.warn('当前时间已超过2026年2月15号，已过期');
-      return -1;
-    }
-    // 执行收费注册（示例：使用你的用户名与附加码）
-    const regCode = this.dm.Reg(registerCode, attachCode);
-    console.log('大漠插件注册返回值: ', regCode, this.describeRegResult(regCode));
-    console.log('大漠插件版本：', this.dm.Ver());
-    console.log('大漠插件路径：', this.dm.GetBasePath());
-    return regCode;
-  }
-
-  // 新增：返回码中文含义（汇总常见结果，便于快速定位问题）
-  private describeRegResult(code: number): string {
-    switch (code) {
-      case 1:
-        return '成功';
-      case 0:
-        return '失败(未知错误)';
-      case -1:
-        return '无法连接网络/可能防火墙拦截或IP暂封';
-      case -2:
-        return '进程未以管理员运行(UAC 导致)';
-      case 2:
-        return '余额不足';
-      case 3:
-        return '绑定了本机器，但账户余额不足50元';
-      case 4:
-        return '注册码错误';
-      case 5:
-        return '机器或IP在黑名单/不在白名单';
-      case 6:
-        return '非法使用插件/系统语言非中文简体可能触发';
-      case 7:
-        return '帐号因非法使用被封禁';
-      case 8:
-        return '附加码不在白名单中';
-      case 77:
-        return '机器码或IP因非法使用被封禁(全局封禁)';
-      case 777:
-        return '同一机器码注册次数超限，暂时封禁';
-      case -8:
-        return '版本附加信息长度超过20';
-      case -9:
-        return '版本附加信息包含非法字符';
-      default:
-        return '未知返回码';
     }
   }
 
@@ -268,6 +202,7 @@ export class Damo {
     };
   }
 
+  // 中文注释：快速找字/识别/截图等常用方法
   findStrFastEx(hwnd: number, x: number, y: number, w: number, h: number, str: string, mode: number): number {
     return this.dm.FindStrFastEx(hwnd, x, y, w, h, str, mode);
   }
@@ -288,15 +223,58 @@ export class Damo {
     return this.dm.CapturePng(x, y, w, h, filePath);
   }
 
+  // 新增：枚举窗口（全局或指定父窗口），返回逗号分隔的句柄字符串（中文注释）
+  enumWindow(parent: number, title: string, class_name: string, filter: number): string {
+    return String(this.dm.EnumWindow(parent, title, class_name, filter) || '');
+  }
+
   enumWindowByProcessId(pid: number, title: string, class_name: string, filter: number): number {
     return this.dm.EnumWindowByProcessId(pid, title, class_name, filter);
   }
   leftClick(): number {
     return this.dm.LeftClick();
   }
+
+  // 新增：根据窗口句柄获取窗口标题（中文注释）
+  getWindowTitle(hwnd: number): string {
+    return String(this.dm.GetWindowTitle(hwnd) || '');
+  }
+
+  // 新增：根据窗口句柄获取窗口类名（中文注释）
+  getWindowClass(hwnd: number): string {
+    return String(this.dm.GetWindowClass(hwnd) || '');
+  }
+
+  // 新增：根据窗口句柄获取所属进程 PID（中文注释）
+  getWindowProcessId(hwnd: number): number {
+    const pid = Number(this.dm.GetWindowProcessId(hwnd));
+    return Number.isFinite(pid) ? pid : 0;
+  }
+
+  // 中文注释：收费注册接口（仅在管理员权限下执行）
+  reg(): number {
+    const elevated = isElevated();
+    if (!elevated) {
+      // 中文注释：非管理员直接返回 -2，避免影响免费功能
+      console.warn('大漠收费注册未执行：当前进程非管理员(-2)。请以管理员运行或关闭UAC后重试。');
+      return -2;
+    }
+    // 中文注释：示例限时控制（保留原逻辑）
+    const now = new Date();
+    const deadline = new Date('2026-02-15T00:00:00');
+    if (now >= deadline) {
+      console.warn('当前时间已超过2026年2月15号，已过期');
+      return -1;
+    }
+    const regCode = this.dm.Reg(registerCode, attachCode);
+    console.log('大漠插件注册返回值: ', regCode, this.describeRegResult(regCode));
+    console.log('大漠插件版本：', this.dm.Ver());
+    console.log('大漠插件路径：', this.dm.GetBasePath());
+    return regCode;
+  }
 }
 
-// 中文注释：返回码中文映射（与类内私有描述保持一致，便于外部展示）
+// 新增：返回码中文含义（汇总常见结果，便于快速定位问题）
 export const describeReg = (code?: number): string => {
   switch (code) {
     case 1:

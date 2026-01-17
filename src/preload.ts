@@ -21,6 +21,18 @@ const damo = {
   // 中文注释：一键绑定“当前前台窗口”的所属进程（通过绑定管理器），便于 Alt+W 切换
   bindForeground: (): Promise<{ ok: boolean; count?: number; hwnd?: number; pid?: number; message?: string }> => ipcRenderer.invoke('ffo:bindForeground'),
 
+  // 新增：列出当前可绑定窗口（全局顶层可见窗口）
+  listBindableWindows: (): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string }>> => ipcRenderer.invoke('ffo:listBindableWindows'),
+
+  // 新增：读取当前已绑定窗口列表（通过绑定管理器）
+  listBoundWindows: (): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string }>> => ipcRenderer.invoke('ffo:listBoundWindows'),
+
+  // 新增：按句柄执行绑定（通过绑定管理器记录）
+  bindHwnd: (hwnd: number): Promise<{ ok: boolean; hwnd?: number; message?: string }> => ipcRenderer.invoke('ffo:bindHwnd', hwnd),
+
+  // 新增：按句柄执行解绑（通过绑定管理器记录）
+  unbindHwnd: (hwnd: number): Promise<{ ok: boolean; hwnd?: number; message?: string }> => ipcRenderer.invoke('ffo:unbindHwnd', hwnd),
+
   // 中文注释：切换自动按键（通过主进程复用统一逻辑）
   toggleAutoKey: (
     keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',

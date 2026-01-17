@@ -227,6 +227,40 @@ export class DamoBindingManager {
     console.log('[绑定] 枚举窗口 hwnds', hwnds);
     return successCount;
   }
+
+  // 中文注释：按句柄绑定单个窗口（与按 PID 枚举相比更精确）
+  async bindWindow(hwnd: number, config?: BindConfig): Promise<boolean> {
+    if (!hwnd || hwnd <= 0) return false; // 中文注释：非法句柄直接返回
+    if (this.isBound(hwnd)) return true; // 中文注释：已绑定则认为成功
+    const cfg = { ...this.defaultConfig, ...(config || {}) };
+    let client: AutoT;
+    try {
+      client = new AutoT();
+    } catch (err) {
+      ffoEvents.emit('error', { hwnd, error: err } as ErrorPayload);
+      return false;
+    }
+    // 中文注释：尝试获取 PID（用于事件负载与记录）
+    let pid = 0;
+    try {
+      pid = Number(client.getWindowProcessId?.(hwnd) || 0);
+    } catch {}
+    try {
+      const ret = client.dm.BindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
+      if (ret !== 1) {
+        throw new Error(`BindWindow 失败，返回值=${ret}, hwnd=${hwnd}`);
+      }
+      this.clientsByHwnd.set(hwnd, { pid, hwnd, ffoClient: client });
+      ffoEvents.emit('bound', { pid, hwnd } as BoundPayload);
+      return true;
+    } catch (err) {
+      ffoEvents.emit('error', { pid, hwnd, error: err } as ErrorPayload);
+      try {
+        client.unbindWindow();
+      } catch {}
+      return false;
+    }
+  }
 }
 
 // 中文注释：单例管理器，供主进程/其他模块复用
