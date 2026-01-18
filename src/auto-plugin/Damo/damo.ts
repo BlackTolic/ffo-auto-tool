@@ -66,9 +66,10 @@ export class Damo {
   }
 
   // 绑定窗口
-  bindWindow(hwnd: number, display: string, mouse: string, keypad: string, mode: number): number {
-    console.log(hwnd, display, mouse, keypad, mode);
-    return this.dm.BindWindow(hwnd, display, mouse, keypad, mode);
+  bindWindow(hwnd: number, display: string, mouse: string, keypad: string, api: string, mode: number): number {
+    console.log('hwnd==', hwnd, 'display==', display, 'mouse==', mouse, 'keypad==', keypad, 'api==', api, 'mode==', mode);
+    // return this.dm.BindWindow(hwnd, display, mouse, keypad, mode);
+    return this.dm.BindWindowEx(hwnd, display, mouse, keypad, api, mode);
   }
 
   // 解绑窗口

@@ -23,8 +23,8 @@ export const registerBoundEventHandlers = () => {
     const rec = damoBindingManager.get(hwnd);
     const ad = new Role();
     // 注册角色信息 1280*800  1600*900
-    ad.registerRole('1600*900');
-    // ad.registerRole('1280*800');
+    // ad.registerRole('1600*900');
+    ad.registerRole('1280*800');
     // 中文注释：设置角色信息
     damoBindingManager.setRole(hwnd, ad);
 

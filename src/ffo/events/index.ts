@@ -72,24 +72,24 @@ export class DamoBindingManager {
     // keypad: 'windows',
     // api: 'dx.public.active.api',
     // mode: 0,
-
+    //********************************************************** */
     // display: 'dx2',
     // mouse: 'dx.mouse.position.lock.api|dx.mouse.api|dx.mouse.cursor',
     // keypad: 'dx.keypad.api',
     // api: 'dx.public.active.api|dx.public.hide.dll|dx.public.graphic.protect|dx.public.down.cpu',
     // mode: 0,
-
-    // display: 'dx2',
-    // mouse: 'windows',
-    // keypad: 'windows',
-    // api: '',
-    // mode: 1,
-
-    display: 'dx2',
-    mouse: 'normal',
-    keypad: 'windows',
+    //********************************************************** */
+    display: 'dx.graphic.2d',
+    mouse: 'dx.mouse.position.lock.api|dx.mouse.position.lock.message',
+    keypad: 'dx.keypad.state.api|dx.keypad.api',
     api: '',
     mode: 0,
+    //********************************************************** */
+    // display: 'dx2',
+    // mouse: 'normal',
+    // keypad: 'windows',
+    // api: '',
+    // mode: 0,
   };
 
   setRole(hwnd: number, role: Role) {
@@ -203,7 +203,7 @@ export class DamoBindingManager {
         // const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
         console.log(client.dm.Ver(), 'client.dm');
         // const ret = 2;
-        const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
+        const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
         // client.dm.delay(200);
         console.log('BindWindow 结果', ret, hwnd, pid);
         if (ret !== 1) {
@@ -246,7 +246,7 @@ export class DamoBindingManager {
       pid = Number(client.getWindowProcessId?.(hwnd) || 0);
     } catch {}
     try {
-      const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
+      const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
       if (ret !== 1) {
         throw new Error(`BindWindow 失败，返回值=${ret}, hwnd=${hwnd}`);
       }

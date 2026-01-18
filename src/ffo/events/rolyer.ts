@@ -60,6 +60,7 @@ export class Role {
     const bindDm = rec?.ffoClient as AutoT;
     this.bindDm = rec?.ffoClient.dm;
     this.timer = setInterval(() => {
+      // console.log('轮询角色信息');
       try {
         const raw: string = String(bindDm.ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, rolePos.color, rolePos.sim) || '').trim();
         const pos = parseRolePositionFromText(raw);
