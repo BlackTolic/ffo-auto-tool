@@ -38,7 +38,7 @@ export class Role {
   constructor() {}
 
   // 需要先绑定之后再注册角色信息
-  public registerRole(bindWindowSize: '1600*900' | '1280*800') {
+  public registerRole(bindWindowSize: '1600*900' | '1280*800', hwndId?: number) {
     this.bindWindowSize = bindWindowSize;
     const map = DEFAULT_ADDRESS_NAME[bindWindowSize];
     const rolePos = DEFAULT_ROLE_POSITION[bindWindowSize];
@@ -48,7 +48,7 @@ export class Role {
 
     const dm = ensureDamo();
     // 中文注释：获取当前前台窗口句柄
-    const hwnd = dm.getForegroundWindow();
+    const hwnd = hwndId ? hwndId : dm.getForegroundWindow();
     const rec = damoBindingManager.get(hwnd);
     if (!hwnd || !dm) {
       throw new Error('[角色信息] 未提供有效的绑定记录或 dm 实例');
