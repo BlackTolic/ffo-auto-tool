@@ -115,6 +115,7 @@ function setupAppLifecycle() {
   });
 
   app.on('window-all-closed', () => {
+    console.log('[应用生命周期] 所有窗口关闭');
     if (process.platform !== 'darwin') {
       app.quit();
     }
@@ -123,6 +124,7 @@ function setupAppLifecycle() {
   // 中文注释：在应用退出前（before-quit）执行清理，解绑窗口、移除 IPC 与事件
   app.on('before-quit', () => {
     try {
+      console.log('[退出清理] 应用退出前执行清理');
       // 中文注释：解绑所有已绑定的大漠窗口（防止残留绑定）
       damoBindingManager.unbindAll();
     } catch (e) {

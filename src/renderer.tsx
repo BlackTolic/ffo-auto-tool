@@ -1,6 +1,7 @@
 // 中文注释：React 入口，挂载根组件到页面
 import { createRoot } from 'react-dom/client';
-import App from './app/App.tsx';
+import App from './app/App';
+
 // import './index.css'; // 中文注释：已迁移为各组件单独引入 Less，不再全局引入 CSS
 
 // 新增：字库信息接口定义（中文注释）
@@ -131,14 +132,14 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // 中文注释：在页面卸载/关闭前执行清理（取消 IPC 事件订阅）
-window.addEventListener('beforeunload', () => {
-  try {
-    // @ts-expect-error 运行时存在 offDictInfoUpdated/类型未在 DamoAPI 中声明
-    window.damo.offDictInfoUpdated();
-  } catch (e) {
-    console.warn('[渲染清理] 取消字库更新订阅失败:', String((e as any)?.message || e));
-  }
-});
+// window.addEventListener('beforeunload', () => {
+//   try {
+//     // @ts-expect-error 运行时存在 offDictInfoUpdated/类型未在 DamoAPI 中声明
+//     window.damo.offDictInfoUpdated();
+//   } catch (e) {
+//     console.warn('[渲染清理] 取消字库更新订阅失败:', String((e as any)?.message || e));
+//   }
+// });
 
 // 中文注释：在页面上以卡片样式展示环境校验结果（若存在对应容器）
 document.addEventListener('DOMContentLoaded', async () => {

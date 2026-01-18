@@ -51,6 +51,17 @@ const env = {
   check: (): Promise<any> => ipcRenderer.invoke('env:check'),
 };
 
+// 新增：窗口控制 API（最小化与关闭当前窗口）
+const windowControl = {
+  // 中文注释：最小化当前窗口
+  minimize: (): Promise<void> => ipcRenderer.invoke('window:minimize'),
+  // 中文注释：关闭当前窗口
+  close: (): Promise<void> => ipcRenderer.invoke('window:close'),
+};
+
 // 中文注释：向渲染进程暴露用于操作大漠插件的 API
 contextBridge.exposeInMainWorld('damo', damo);
+// 中文注释：向渲染进程暴露环境校验 API
 contextBridge.exposeInMainWorld('env', env);
+// 中文注释：向渲染进程暴露窗口控制 API
+contextBridge.exposeInMainWorld('windowControl', windowControl);

@@ -1,5 +1,5 @@
 import { execSync } from 'child_process'; // 中文注释：用于在缺少路径时回退查询进程名
-import { ipcMain, screen } from 'electron';
+import { BrowserWindow, ipcMain, screen } from 'electron';
 // 中文注释：使用大漠插件进行枚举（不再依赖天使插件）
 import { validateEnvironment } from '../envCheck';
 
@@ -259,3 +259,19 @@ export function registerIpcHandlers(deps: {
     }
   });
 }
+
+// 新增：窗口控制 - 最小化当前窗口
+ipcMain.handle('window:minimize', event => {
+  // 中文注释：通过事件的 sender 找到对应的 BrowserWindow
+  const win = BrowserWindow.fromWebContents(event.sender);
+  // 中文注释：若找到窗口则执行最小化
+  win?.minimize();
+});
+
+// 新增：窗口控制 - 关闭当前窗口
+ipcMain.handle('window:close', event => {
+  // 中文注释：通过事件的 sender 找到对应的 BrowserWindow
+  const win = BrowserWindow.fromWebContents(event.sender);
+  // 中文注释：若找到窗口则执行关闭
+  win?.close();
+});

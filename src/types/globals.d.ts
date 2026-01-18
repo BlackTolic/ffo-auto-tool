@@ -23,41 +23,34 @@ declare global {
       bindForeground(): Promise<{ ok: boolean; count?: number; hwnd?: number; pid?: number; message?: string }>;
 
       // 中文注释：列出当前可绑定窗口（全局顶层可见窗口）
-      listBindableWindows(): Promise<BindableWindow[]>;
+      listBindableWindows(): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string }>>;
 
-      // 中文注释：读取当前已绑定窗口信息（通过绑定管理器）
-      listBoundWindows(): Promise<BoundWindow[]>;
+      // 中文注释：读取当前已绑定窗口列表（通过绑定管理器）
+      listBoundWindows(): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string }>>;
 
-      // 中文注释：按句柄绑定一个窗口（通过绑定管理器）
-      bindHwnd(hwnd: number): Promise<BindHwndResult>;
+      // 中文注释：按句柄执行绑定（通过绑定管理器记录）
+      bindHwnd(hwnd: number): Promise<{ ok: boolean; hwnd?: number; message?: string }>;
 
-      // 新增：按句柄解绑一个窗口（通过绑定管理器）
-      unbindHwnd(hwnd: number): Promise<UnbindHwndResult>;
+      // 中文注释：按句柄执行解绑（通过绑定管理器记录）
+      unbindHwnd(hwnd: number): Promise<{ ok: boolean; hwnd?: number; message?: string }>;
 
-      // 新增：批量清空所有已绑定窗口（通过绑定管理器）
-      unbindAll(): Promise<UnbindAllResult>;
+      // 中文注释：批量清空所有已绑定窗口（通过绑定管理器）
+      unbindAll(): Promise<{ ok: boolean; count?: number; message?: string }>;
 
-      // 中文注释：开关自动按键功能
+      // 中文注释：切换自动按键（通过主进程复用统一逻辑）
       toggleAutoKey(
         keyName?: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10',
         intervalMs?: number
       ): Promise<{ ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string }>;
     };
 
-    // 中文注释：环境检测 API
+    // 中文注释：环境校验 API（preload 暴露）
     env: {
       check(): Promise<any>;
     };
-  }
 
-  // 中文注释：可绑定窗口的接口类型
-  interface BindableWindow {
-    hwnd: number; // 中文注释：窗口句柄
-    pid: number; // 中文注释：所属进程 PID
-    title: string; // 中文注释：窗口标题
-    className: string; // 中文注释：窗口类名
-    processPath?: string; // 中文注释：窗口所属进程路径（如 C:\\Path\\fo.exe）
-    exeName?: string; // 中文注释：进程的可执行文件名（如 fo.exe）
+    // 中文注释：窗口控制 API（最小化与关闭）
+    windowControl: WindowControlAPI;
   }
 
   // 中文注释：已绑定窗口的接口类型
@@ -70,24 +63,9 @@ declare global {
     exeName?: string; // 中文注释：进程的可执行文件名（如 fo.exe）
   }
 
-  // 中文注释：按句柄绑定的返回结果接口
-  interface BindHwndResult {
-    ok: boolean; // 中文注释：是否绑定成功
-    hwnd?: number; // 中文注释：绑定的窗口句柄（成功时有值）
-    message?: string; // 中文注释：错误或提示信息
-  }
-
-  // 新增：按句柄解绑的返回结果接口
-  interface UnbindHwndResult {
-    ok: boolean; // 中文注释：是否解绑成功
-    hwnd?: number; // 中文注释：解绑的窗口句柄（成功时有值）
-    message?: string; // 中文注释：错误或提示信息
-  }
-
-  // 新增：批量清空已绑定窗口的返回结果接口
-  interface UnbindAllResult {
-    ok: boolean; // 中文注释：是否清空成功
-    count?: number; // 中文注释：清空前的绑定窗口数量
-    message?: string; // 中文注释：提示或错误信息
+  // 中文注释：窗口控制接口类型（独立抽出，便于声明与复用）
+  interface WindowControlAPI {
+    minimize(): Promise<void>; // 中文注释：最小化当前窗口
+    close(): Promise<void>; // 中文注释：关闭当前窗口
   }
 }

@@ -25,7 +25,7 @@ export default function BasicConfigView() {
   const isElectron = typeof window !== 'undefined' && !!(window as any).damo && !!(window as any).env; // 中文注释：存在 preload 暴露的 API 则认为是 Electron
 
   // 中文注释：格式化候选项的显示文本
-  const formatLabel = (w: BindableWindow): string => {
+  const formatLabel = (w: any): string => {
     const title = w.title || '(无标题)';
     const cls = w.className || '(无类名)';
     return `${title} | ${cls} | hwnd=${w.hwnd} | pid=${w.pid}`;
