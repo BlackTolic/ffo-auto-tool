@@ -33,6 +33,9 @@ const damo = {
   // 新增：按句柄执行解绑（通过绑定管理器记录）
   unbindHwnd: (hwnd: number): Promise<{ ok: boolean; hwnd?: number; message?: string }> => ipcRenderer.invoke('ffo:unbindHwnd', hwnd),
 
+  // 新增：批量清空所有已绑定窗口（通过绑定管理器）
+  unbindAll: (): Promise<{ ok: boolean; count?: number; message?: string }> => ipcRenderer.invoke('ffo:unbindAll'),
+
   // 中文注释：切换自动按键（通过主进程复用统一逻辑）
   toggleAutoKey: (
     keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',

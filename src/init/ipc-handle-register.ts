@@ -1,5 +1,5 @@
-import { ipcMain, screen } from 'electron';
 import { execSync } from 'child_process'; // 中文注释：用于在缺少路径时回退查询进程名
+import { ipcMain, screen } from 'electron';
 // 中文注释：使用大漠插件进行枚举（不再依赖天使插件）
 import { validateEnvironment } from '../envCheck';
 
@@ -243,6 +243,19 @@ export function registerIpcHandlers(deps: {
       return { ok, hwnd, message: ok ? '解绑成功' : '解绑失败，未找到绑定记录' };
     } catch (e) {
       return { ok: false, hwnd, message: (e as any)?.message || String(e) };
+    }
+  });
+
+  // 新增：批量清空所有已绑定窗口（通过绑定管理器）
+  ipcMain.handle('ffo:unbindAll', async () => {
+    try {
+      // 中文注释：记录清空前的绑定数量，便于反馈给渲染层
+      const before = Array.isArray(damoBindingManager.list()) ? damoBindingManager.list().length : 0;
+      // 中文注释：逐个调用解绑，确保插件状态一致
+      await damoBindingManager.unbindAll();
+      return { ok: true, count: before, message: '已清空所有绑定窗口' };
+    } catch (e) {
+      return { ok: false, message: (e as any)?.message || String(e) };
     }
   });
 }

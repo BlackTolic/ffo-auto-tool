@@ -203,7 +203,7 @@ export class DamoBindingManager {
         // const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
         console.log(client.dm.Ver(), 'client.dm');
         // const ret = 2;
-        const ret = client.dm.BindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
+        const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
         // client.dm.delay(200);
         console.log('BindWindow 结果', ret, hwnd, pid);
         if (ret !== 1) {
@@ -246,7 +246,7 @@ export class DamoBindingManager {
       pid = Number(client.getWindowProcessId?.(hwnd) || 0);
     } catch {}
     try {
-      const ret = client.dm.BindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
+      const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
       if (ret !== 1) {
         throw new Error(`BindWindow 失败，返回值=${ret}, hwnd=${hwnd}`);
       }

@@ -34,6 +34,9 @@ declare global {
       // 新增：按句柄解绑一个窗口（通过绑定管理器）
       unbindHwnd(hwnd: number): Promise<UnbindHwndResult>;
 
+      // 新增：批量清空所有已绑定窗口（通过绑定管理器）
+      unbindAll(): Promise<UnbindAllResult>;
+
       // 中文注释：开关自动按键功能
       toggleAutoKey(
         keyName?: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10',
@@ -79,5 +82,12 @@ declare global {
     ok: boolean; // 中文注释：是否解绑成功
     hwnd?: number; // 中文注释：解绑的窗口句柄（成功时有值）
     message?: string; // 中文注释：错误或提示信息
+  }
+
+  // 新增：批量清空已绑定窗口的返回结果接口
+  interface UnbindAllResult {
+    ok: boolean; // 中文注释：是否清空成功
+    count?: number; // 中文注释：清空前的绑定窗口数量
+    message?: string; // 中文注释：提示或错误信息
   }
 }

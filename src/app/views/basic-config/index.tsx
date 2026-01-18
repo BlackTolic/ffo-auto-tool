@@ -56,6 +56,18 @@ export default function BasicConfigView() {
       setOptions(opts);
       // 优先选择第一个候选项
       setSelectedHwnd(opts.length > 0 ? opts[0].value : null);
+
+      // 新增：若查不到可绑定窗口，则批量清空所有已绑定窗口
+      if (opts.length === 0) {
+        const res = await window.damo.unbindAll();
+        if (res.ok) {
+          setMessage('未找到可绑定窗口，已清空所有已绑定窗口');
+        } else {
+          setMessage(res.message || '未找到可绑定窗口，尝试清空已绑定窗口失败');
+        }
+        // 中文注释：清空后刷新已绑定列表
+        await loadBoundWindows();
+      }
     } catch (err: any) {
       setMessage(err?.message || '加载可绑定窗口列表失败');
     } finally {

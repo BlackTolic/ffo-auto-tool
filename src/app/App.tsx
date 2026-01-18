@@ -193,10 +193,10 @@ export const App: React.FC<AppProps> = () => {
               const current = routes.find(r => r.id === currentRouteId);
               return (
                 <>
-                  <section className="card">
+                  {/* <section className="card">
                     <div className="card-title">{current?.label}</div>
                     <div className="card-sub">路由地址：{current?.path}</div>
-                  </section>
+                  </section> */}
                   {current?.Component ? React.createElement(current.Component) : null}
                 </>
               );
