@@ -23,4 +23,4 @@ export const AttackRange2 = { x1: 364, y1: 152, x2: 1293, y2: 677 };
 // 天泉怪物
 export const OCR_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['天泉怪物'], color: 'a8a8a0-111111', sim: 1.0 };
 // 无泪南郊怪物
-export const OCR_NAN_JIAO_MONSTER = { ...AttackRange2, string: MONSTER_FEATURE['南郊怪物'], color: 'a8a8a0-111111', sim: 1.0 };
+export const OCR_NAN_JIAO_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['南郊怪物'], color: 'a8a8a0-111111', sim: 1.0 };

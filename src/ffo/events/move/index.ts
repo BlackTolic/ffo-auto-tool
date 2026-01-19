@@ -90,7 +90,7 @@ export class MoveActions {
     if (!Array.isArray(toPos)) {
       toPos = [toPos];
     }
-    console.log('开始移动了：', fromPos, toPos[this.recordAimPosIndex]);
+    // console.log('开始移动了：', fromPos, toPos[this.recordAimPosIndex]);
     // 第一次寻路开启连续点击
     if (!isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
       const curAimPos = toPos[this.recordAimPosIndex];
@@ -130,7 +130,7 @@ export class MoveActions {
       let isArrive: boolean | undefined;
       console.log('开启第一步');
       this.timer = setInterval(() => {
-        console.log('定时器启动', this.role.position);
+        // console.log('定时器启动', this.role.position);
         if (this.role.position) {
           isArrive = this.fromTo(this.role.position, toPos);
           // console.log('开始寻路拉！！', this.role.position, toPos, isArrive);

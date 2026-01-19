@@ -70,13 +70,14 @@ export class Role {
         // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
         const verifyCode = bindDm.findStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
         const verifyCodeTextPos = parseTextPos(verifyCode);
-        // console.log(verifyCodeTextPos, 'verifyCodeTextPos');
+        console.log(verifyCodeTextPos, 'verifyCodeTextPos');
         if (verifyCodeTextPos) {
           const now = Date.now();
           if (this.openCapture || now - this.lastVerifyCaptureTs >= 10000) {
             const checkPos = DEFAULT_VERIFY_CODE_TEXT[this.bindWindowSize as keyof typeof DEFAULT_VERIFY_CODE_TEXT];
-            const verifyCodeImg = bindDm.capturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}/${hwnd}验证码.png`);
-            console.log(verifyCodeImg);
+            console.log('神医验证码地址：', `${VERIFY_CODE_PATH}`);
+            const verifyCodeImg = bindDm.capturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}`);
+            console.log(verifyCodeImg, 'ssssss');
             if (String(verifyCodeImg) === '1') {
               const safeCheckPos: VerifyCodeTextPos = checkPos;
               // 调用AI识别验证码

@@ -9,7 +9,7 @@ const path = require('path');
  * @returns base64url 字符串（data:image/png;base64, 开头）
  */
 export function readVerifyCodeImage(hwnd: string | number): string {
-  const targetFile = path.join(VERIFY_CODE_PATH, `${hwnd}验证码.png`);
+  const targetFile = path.join(VERIFY_CODE_PATH);
   const exists = fs.existsSync(targetFile);
   if (!exists) {
     console.log('验证码图片不存在');
