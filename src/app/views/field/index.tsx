@@ -1,17 +1,33 @@
 import React from 'react';
+import Card from '../../components/card/Card';
+import './index.less';
 
-// 中文注释：野外刷怪视图的属性接口定义
-export interface FieldProps {
-  // 中文注释：预留属性（如刷怪配置、状态等）
-}
+export interface FieldProps {}
 
-// 中文注释：野外刷怪视图组件
 const FieldView: React.FC<FieldProps> = () => {
   return (
-    <section className="card">
-      <div className="card-title">野外刷怪</div>
-      <div className="card-sub">此页面内容开发中（占位）</div>
-    </section>
+    <div className="field-root">
+      <Card title="野外刷怪" subtitle="选择刷怪路线并控制自动练级" />
+
+      <section className="card card-inline field-card-main">
+        <div className="card-main">
+          <div className="card-title-row">
+            <div className="card-title">无泪南郊</div>
+            <span className="tag tag-pill">练级</span>
+          </div>
+          <div className="card-meta">
+            <span className="meta-item">等级 60 - 66</span>
+            <span className="meta-item">单人 / 小队</span>
+          </div>
+          <div className="card-sub">适合长时间持续刷怪练级</div>
+        </div>
+        <div className="card-actions">
+          <button className="btn primary">启动</button>
+          <button className="btn">暂停</button>
+          <button className="btn">停止</button>
+        </div>
+      </section>
+    </div>
   );
 };
 

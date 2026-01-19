@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import '../styles/global.less'; // 中文注释：引入全局基础样式与通用样式（Less）
 import './App.less'; // 中文注释：引入 App 组件专属样式（Less）
-import BindForegroundButton from './components/bind-foreground-button/BindForegroundButton'; // 中文注释：绑定前台窗口按钮组件
-import ContentHeader from './components/content-header/ContentHeader'; // 中文注释：顶部统计区组件
-import Sidebar, { SidebarNavItem } from './components/sider/Sidebar'; // 中文注释：侧边栏组件与导航项类型
-import BasicConfigView from './views/basic-config'; // 中文注释：基本配置视图
-import DungeonView from './views/dungeon'; // 中文注释：副本视图
-import FieldView from './views/field'; // 中文注释：野外刷怪视图
-import PetView from './views/pet'; // 中文注释：抓宠视图
-import ReputationView from './views/reputation'; // 中文注释：名誉视图
+import BindForegroundButton from './components/bind-foreground-button/BindForegroundButton';
+import ContentHeader from './components/content-header/ContentHeader';
+import Sidebar, { SidebarNavItem } from './components/sider/Sidebar';
+import BasicConfigView from './views/basic-config';
+import DungeonView from './views/dungeon';
+import EnhanceView from './views/enhance';
+import FieldView from './views/field';
+import MiningView from './views/mining';
+import PetView from './views/pet';
+import ReputationView from './views/reputation';
 
 // 中文注释：侧边导航项接口类型
 export interface NavItem {
@@ -60,11 +62,12 @@ export const App: React.FC<AppProps> = () => {
   // 中文注释：当前路由 id 状态（默认首页）
   const [currentRouteId, setCurrentRouteId] = useState<string>('home');
 
-  // 中文注释：定义全部路由
   const routes: RouteItem[] = [
     { id: 'home', label: '首页', path: '#/home' },
     { id: 'basic', label: '基本配置', path: '#/basic', Component: BasicConfigView },
     { id: 'field', label: '野外刷怪', path: '#/field', Component: FieldView },
+    { id: 'mining', label: '挖矿', path: '#/mining', Component: MiningView },
+    { id: 'enhance', label: '装备强化', path: '#/enhance', Component: EnhanceView },
     { id: 'dungeon', label: '副本', path: '#/dungeon', Component: DungeonView },
     { id: 'pet', label: '抓宠', path: '#/pet', Component: PetView },
     { id: 'reputation', label: '名誉', path: '#/reputation', Component: ReputationView },

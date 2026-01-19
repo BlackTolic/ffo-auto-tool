@@ -3,6 +3,7 @@ export const MONSTER_FEATURE = {
   精英: '精英',
   头目: '头目',
   '精英|头目': '精英|头目',
+  '盾|卫|者|石|魈|吞|灵': '盾|卫|者|石|魈|吞|灵',
 };
 
 export const TianQuanRange = { x1: 574, y1: 236, x2: 1026, y2: 578 };
