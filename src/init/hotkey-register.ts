@@ -1,6 +1,6 @@
 import { globalShortcut } from 'electron';
 import { ensureDamo } from '../auto-plugin/index';
-import { MONSTER_FEATURE } from '../ffo/constant/monster-feature';
+import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
 import { pauseCurActive, restartCurActive } from '../ffo/events/game-actions/tian-quan';
 import { toggleWuLeiNanJiao } from '../ffo/events/game-actions/wu-lei-nan-jiao';
@@ -178,7 +178,7 @@ export const toggleAutoAttack = () => {
     // 中文注释：获取或创建持久化的 AttackActions 实例
     let actions = autoAttackActionsByHwnd.get(hwnd);
     if (!actions) {
-      actions = new AttackActions(role, MONSTER_FEATURE['盾|卫|者|石|魈|吞|灵']);
+      actions = new AttackActions(role, OCR_NAN_JIAO_MONSTER);
       autoAttackActionsByHwnd.set(hwnd, actions);
     }
 

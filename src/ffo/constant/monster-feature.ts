@@ -2,10 +2,25 @@ export const MONSTER_FEATURE: Record<string, string> = {
   QQ糖: 'QQ糖',
   精英: '精英',
   头目: '头目',
-  '精英|头目': '精英|头目',
-  '盾|卫|者|石|魈|吞|灵': '盾|卫|者|石|魈|吞|灵',
+  天泉怪物: '精英|头目',
+  南郊怪物: '盾卫者|石魈|吞噬|灵|敏',
 };
 
-export const TianQuanRange = { x1: 574, y1: 236, x2: 1026, y2: 578 };
-//  x1: 380, y1: 117, x2: 1254, y2: 736,
-export const OCR_MONSTER = { ...TianQuanRange, string: MONSTER_FEATURE['精英'], color: 'a8a8a0-111111', sim: 1.0 };
+export interface MonsterFeature {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  string: string;
+  color: string;
+  sim: number;
+}
+
+// 攻击范围1
+export const AttackRange1 = { x1: 574, y1: 236, x2: 1026, y2: 578 };
+// 攻击范围2
+export const AttackRange2 = { x1: 364, y1: 152, x2: 1293, y2: 677 };
+// 天泉怪物
+export const OCR_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['天泉怪物'], color: 'a8a8a0-111111', sim: 1.0 };
+// 无泪南郊怪物
+export const OCR_NAN_JIAO_MONSTER = { ...AttackRange2, string: MONSTER_FEATURE['南郊怪物'], color: 'a8a8a0-111111', sim: 1.0 };

@@ -1,4 +1,4 @@
-import { MONSTER_FEATURE, OCR_MONSTER } from '../../constant/monster-feature';
+import { MONSTER_FEATURE, MonsterFeature, OCR_MONSTER } from '../../constant/monster-feature';
 import { parseTextPos } from '../../utils/common';
 import { Pos, Role } from '../rolyer';
 
@@ -53,10 +53,10 @@ export class AttackActions {
   // 当前正在攻击的对象的坐标
   public currentAttackTargetPos: Pos | null = null;
 
-  constructor(role: Role, ocrMonster?: keyof typeof MONSTER_FEATURE) {
+  constructor(role: Role, ocrMonster?: MonsterFeature) {
     this.role = role;
     this.bindDm = role.bindDm;
-    this.ocrMonster = { ...OCR_MONSTER, string: ocrMonster ? MONSTER_FEATURE[ocrMonster] : MONSTER_FEATURE['精英|头目'] };
+    this.ocrMonster = ocrMonster || OCR_MONSTER;
   }
 
   findMonsterPos() {

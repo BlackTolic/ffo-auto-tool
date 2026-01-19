@@ -2,6 +2,7 @@
 
 import { damoBindingManager } from '..';
 import { ensureDamo } from '../../../auto-plugin/index';
+import { OCR_NAN_JIAO_MONSTER } from '../../constant/monster-feature';
 import { MoveActions } from '../move';
 import { Role } from '../rolyer';
 import { AttackActions } from '../skills';
@@ -21,7 +22,7 @@ const pos = [
   { x: 257, y: 77 },
   { x: 182, y: 85 },
   { x: 175, y: 50 },
-  { x: 213, y: 58 },
+  { x: 227, y: 53 },
 ];
 
 // 中文注释：自动寻路切换返回结果
@@ -41,7 +42,7 @@ export class WuLeiNanJiaoAction {
   constructor(role: Role) {
     this.role = role;
     this.actions = new MoveActions(role);
-    this.active = new AttackActions(role, MONSTER_FEATURE['精英|头目']);
+    this.active = new AttackActions(role, OCR_NAN_JIAO_MONSTER);
   }
 
   public static getInstance(hwnd: number): WuLeiNanJiaoAction | null {
@@ -61,7 +62,7 @@ export class WuLeiNanJiaoAction {
 
   public start() {
     // 在仓库管理员处进行循环
-    this.role.addIntervalActive('无泪南郊练级', { x: 213, y: 58 }, () => {
+    this.role.addIntervalActive('无泪南郊练级', { x: 227, y: 53 }, () => {
       console.log('开始跑步', this.role.position);
       this.actions.startAutoFindPath(pos, this.active).then(res => {
         // setTimeout(() => {
@@ -120,7 +121,10 @@ export const toggleWuLeiNanJiao = (): AutoRouteToggleResult => {
   try {
     const dm = ensureDamo();
     const hwnd = dm.getForegroundWindow();
+    console.log(hwnd, 'hwnd');
     curAction = WuLeiNanJiaoAction.getInstance(hwnd);
+    // console.log(curAction, 'curAction');
+    console.log(curAction?.isRunning(), 'curAction?.isRunning()');
     if (curAction?.isRunning()) {
       curAction.stop();
       return { ok: true, hwnd, running: false };

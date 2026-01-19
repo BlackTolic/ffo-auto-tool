@@ -99,7 +99,7 @@ export class Role {
                 const answerPos = map[res as keyof typeof map];
                 console.log('answerPos', answerPos);
                 bindDm.moveTo(answerPos.x, answerPos.y);
-                // bindDm.leftClick();
+                bindDm.leftClick();
                 this.openCapture = false;
                 this.lastVerifyCaptureTs = now;
                 console.log('关闭截图啦', this.openCapture);

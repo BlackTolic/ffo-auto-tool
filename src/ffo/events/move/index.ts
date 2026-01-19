@@ -130,7 +130,7 @@ export class MoveActions {
       let isArrive: boolean | undefined;
       console.log('开启第一步');
       this.timer = setInterval(() => {
-        console.log('定时器启动 --这个位置是否存在', this.role.position);
+        console.log('定时器启动', this.role.position);
         if (this.role.position) {
           isArrive = this.fromTo(this.role.position, toPos);
           // console.log('开始寻路拉！！', this.role.position, toPos, isArrive);
