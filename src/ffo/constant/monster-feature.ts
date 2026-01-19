@@ -1,4 +1,4 @@
-export const MONSTER_FEATURE = {
+export const MONSTER_FEATURE: Record<string, string> = {
   QQ糖: 'QQ糖',
   精英: '精英',
   头目: '头目',

@@ -1,5 +1,6 @@
 import { globalShortcut } from 'electron';
 import { ensureDamo } from '../auto-plugin/index';
+import { MONSTER_FEATURE } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
 import { pauseCurActive, restartCurActive } from '../ffo/events/game-actions/tian-quan';
 import { toggleWuLeiNanJiao } from '../ffo/events/game-actions/wu-lei-nan-jiao';
