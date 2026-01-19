@@ -2,6 +2,7 @@
 
 import { damoBindingManager } from '..';
 import { ensureDamo } from '../../../auto-plugin/index';
+import { MONSTER_FEATURE } from '../../constant/monster-feature';
 import { TianDu } from '../../constant/NPC_position';
 import { isArriveAimNear } from '../../utils/common';
 import { BaseAction } from '../base-action';
@@ -47,7 +48,7 @@ export class TianQuanAction {
   constructor(role: Role) {
     this.role = role;
     this.actions = new MoveActions(role);
-    this.active = new AttackActions(role);
+    this.active = new AttackActions(role, MONSTER_FEATURE['盾|卫|者|石|魈|吞|灵']);
   }
 
   public static getInstance(hwnd: number): TianQuanAction | null {

@@ -1,7 +1,8 @@
 import { globalShortcut } from 'electron';
 import { ensureDamo } from '../auto-plugin/index';
 import { damoBindingManager } from '../ffo/events';
-import { pauseCurActive, restartCurActive, toggleTianquan } from '../ffo/events/game-actions/tian-quan';
+import { pauseCurActive, restartCurActive } from '../ffo/events/game-actions/tian-quan';
+import { toggleWuLeiNanJiao } from '../ffo/events/game-actions/wu-lei-nan-jiao';
 import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 
@@ -122,7 +123,8 @@ export function registerGlobalHotkeys() {
   try {
     const okRole = globalShortcut.register('Alt+R', () => {
       // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
-      const ret = toggleTianquan();
+      // const ret = toggleTianquan();
+      const ret = toggleWuLeiNanJiao();
       const msg = ret.ok ? `[快捷键] Alt+R 切换天泉副本成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换自动打怪失败 | ${ret.message}`;
       console.log(msg);
     });
@@ -175,7 +177,7 @@ export const toggleAutoAttack = () => {
     // 中文注释：获取或创建持久化的 AttackActions 实例
     let actions = autoAttackActionsByHwnd.get(hwnd);
     if (!actions) {
-      actions = new AttackActions(role);
+      actions = new AttackActions(role, MONSTER_FEATURE['盾|卫|者|石|魈|吞|灵']);
       autoAttackActionsByHwnd.set(hwnd, actions);
     }
 

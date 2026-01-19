@@ -53,9 +53,10 @@ export class AttackActions {
   // 当前正在攻击的对象的坐标
   public currentAttackTargetPos: Pos | null = null;
 
-  constructor(role: Role) {
+  constructor(role: Role, ocrMonster?: typeof MONSTER_FEATURE) {
     this.role = role;
     this.bindDm = role.bindDm;
+    this.ocrMonster = { ...OCR_MONSTER, string: ocrMonster ? MONSTER_FEATURE[ocrMonster] : MONSTER_FEATURE['精英|头目'] };
   }
 
   findMonsterPos() {
