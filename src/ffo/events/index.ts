@@ -92,6 +92,9 @@ export class DamoBindingManager {
     // mode: 0,
   };
 
+  // 当前选中的任务句柄
+  public selectHwnd: number | null = null;
+
   setRole(hwnd: number, role: Role) {
     this.roleByHwnd.set(hwnd, role);
   }

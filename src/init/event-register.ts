@@ -77,7 +77,6 @@ export const registerBoundEventHandlers = () => {
       console.warn(`[绑定事件] 处理失败: ${String((err as any)?.message || err)}`);
     }
   });
-
   // 中文注释：解绑事件处理（停止定时器与清理状态）
   ffoEvents.on('unbind', async ({ hwnd }) => {
     try {
