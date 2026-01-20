@@ -124,7 +124,6 @@ export class MoveActions {
     if (actions) {
       this.actions = actions;
     }
-    console.log('startAutoFindPath执行了');
     return new Promise((res, rej) => {
       this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
       let isArrive: boolean | undefined;

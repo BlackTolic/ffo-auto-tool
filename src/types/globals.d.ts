@@ -68,4 +68,57 @@ declare global {
     minimize(): Promise<void>; // 中文注释：最小化当前窗口
     close(): Promise<void>; // 中文注释：关闭当前窗口
   }
+
+  // 中文注释：FFO 动作返回结果接口（与主进程保持一致）
+  // 中文注释：大漠 API 接口类型（通过 preload 暴露到渲染进程）
+  export interface DamoAPI {
+    ver: () => Promise<string>; // 中文注释：查询大漠插件版本号
+    getForegroundWindow: () => Promise<number>; // 中文注释：获取当前前台窗口句柄
+    bindWindow: (hwnd: number, display: string, mouse: string, keypad: string, mode: number) => Promise<number>; // 中文注释：绑定指定窗口
+    unbindWindow: () => Promise<number>; // 中文注释：解绑当前绑定窗口
+    unbindHwnd: (hwnd: number) => Promise<{ ok: boolean; hwnd?: number; message?: string }>; // 中文注释：按句柄解绑窗口
+    unbindAll: () => Promise<{ ok: boolean; count?: number; message?: string }>; // 中文注释：解绑所有已绑定窗口
+    toggleAutoKey: (
+      keyName?: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10',
+      intervalMs?: number
+    ) => Promise<{ ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string }>; // 中文注释：切换自动按键
+  }
+
+  // 中文注释：自动路线切换结果接口（用于前端 UI 状态更新）
+  export interface AutoRouteToggleResult {
+    ok: boolean; // 中文注释：是否切换成功
+    running?: boolean; // 中文注释：切换后的运行状态（true 表示已启动，false 表示已停止）
+    hwnd?: number; // 中文注释：相关窗口句柄（仅在绑定窗口逻辑中使用）
+    message?: string; // 中文注释：失败时的错误信息
+  }
+
+  // 中文注释：暂停当前动作结果接口（用于点击“暂停”时的反馈）
+  export interface PauseResult {
+    ok: boolean; // 中文注释：是否暂停成功
+    message?: string; // 中文注释：失败时的错误信息
+  }
+
+  // 中文注释：停止当前动作结果接口（用于点击“停止”时的反馈）
+  export interface StopResult {
+    ok: boolean; // 中文注释：是否停止成功
+    message?: string; // 中文注释：失败时的错误信息
+  }
+
+  // 中文注释：渲染进程可用的 FFO 动作 API 接口
+  export interface FfoActionsAPI {
+    // 中文注释：切换“无泪南郊”自动寻路（第一次开启，第二次关闭）
+    toggleWuLeiNanJiao: () => Promise<AutoRouteToggleResult>;
+    // 中文注释：暂停当前激活的无泪南郊动作（仅停止自动寻路，保留任务）
+    pauseCurActive: () => Promise<PauseResult>;
+    // 中文注释：停止当前激活的无泪南郊动作（清空任务并停止自动寻路）
+    stopCurActive: () => Promise<StopResult>;
+  }
+
+  // 中文注释：向全局 window 挂载 API（preload 暴露）
+  declare global {
+    interface Window {
+      damo: DamoAPI; // 中文注释：大漠操作 API
+      ffoActions: FfoActionsAPI; // 中文注释：FFO 动作 API
+    }
+  }
 }

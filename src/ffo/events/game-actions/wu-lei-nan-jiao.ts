@@ -1,7 +1,6 @@
 // 刷天泉
 
 import { damoBindingManager } from '..';
-import { ensureDamo } from '../../../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../../constant/monster-feature';
 import { MoveActions } from '../move';
 import { Role } from '../rolyer';
@@ -45,8 +44,10 @@ export class WuLeiNanJiaoAction {
     this.active = new AttackActions(role, OCR_NAN_JIAO_MONSTER);
   }
 
-  public static getInstance(hwnd: number): WuLeiNanJiaoAction | null {
-    if (!damoBindingManager.isBound(hwnd)) {
+  public static getInstance(): WuLeiNanJiaoAction | null {
+    const hwnd = damoBindingManager.selectHwnd;
+    if (!hwnd || !damoBindingManager.isBound(hwnd)) {
+      console.log('未选择已绑定的窗口', hwnd);
       return null;
     }
     const role = damoBindingManager.getRole(hwnd);
@@ -61,38 +62,10 @@ export class WuLeiNanJiaoAction {
   }
 
   public start() {
-    // 在仓库管理员处进行循环
+    // 在(227,53)附近开启循环
     this.role.addIntervalActive('无泪南郊练级', { x: 227, y: 53 }, () => {
       console.log('开始跑步', this.role.position);
-      this.actions.startAutoFindPath(pos, this.active).then(res => {
-        // setTimeout(() => {
-        //   this.active.scanMonster().then(res => {
-        //     console.log('当前已经没有怪物了', this.role.position);
-        //     // setTimeout(() => {
-        //     //   new BaseAction(this.role).backCity({ x: 291, y: 124 });
-        //     // }, 1000);
-        //   });
-        // }, 1000);
-      });
-
-      // new MoveActions(this.role).startAutoFindPath(TianDu.杨戬).then(() => {
-      //   if (isArriveAimNear(this.role.position, TianDu.杨戬)) {
-      //     console.log('到达位置杨戬位置', this.role.position);
-      //     new Conversation(this.role).YangJian().then(res => {
-      //       console.log('完成与杨戬的对话');
-      //       this.actions.startAutoFindPath(pos, this.active).then(res => {
-      //         setTimeout(() => {
-      //           this.active.scanMonster().then(res => {
-      //             console.log('当前已经没有怪物了', this.role.position);
-      //             setTimeout(() => {
-      //               new BaseAction(this.role).backCity({ x: 291, y: 124 });
-      //             }, 1000);
-      //           });
-      //         }, 1000);
-      //       });
-      //     });
-      //   }
-      // });
+      this.actions.startAutoFindPath(pos, this.active).then(res => {});
     });
   }
 
@@ -119,18 +92,13 @@ let curAction: WuLeiNanJiaoAction | null = null;
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
 export const toggleWuLeiNanJiao = (): AutoRouteToggleResult => {
   try {
-    const dm = ensureDamo();
-    const hwnd = dm.getForegroundWindow();
-    console.log(hwnd, 'hwnd');
-    curAction = WuLeiNanJiaoAction.getInstance(hwnd);
-    // console.log(curAction, 'curAction');
-    console.log(curAction?.isRunning(), 'curAction?.isRunning()');
+    curAction = WuLeiNanJiaoAction.getInstance();
     if (curAction?.isRunning()) {
       curAction.stop();
-      return { ok: true, hwnd, running: false };
+      return { ok: true, running: false };
     } else {
       curAction?.start();
-      return { ok: true, hwnd, running: true };
+      return { ok: true, running: true };
     }
   } catch (err) {
     return { ok: false, message: String((err as any)?.message || err) };
@@ -143,4 +111,9 @@ export const pauseCurActive = () => {
 
 export const restartCurActive = () => {
   curAction?.restart();
+};
+
+// 中文注释：停止当前激活的无泪南郊动作（清空任务并停止自动寻路）
+export const stopCurActive = () => {
+  curAction?.stop();
 };

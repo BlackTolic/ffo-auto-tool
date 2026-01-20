@@ -2,6 +2,7 @@ import { execSync } from 'child_process'; // 中文注释：用于在缺少路�
 import { BrowserWindow, ipcMain, screen } from 'electron';
 // 中文注释：使用大漠插件进行枚举（不再依赖天使插件）
 import { validateEnvironment } from '../envCheck';
+import { pauseCurActive as pauseWuLeiNanJiao, stopCurActive as stopWuLeiNanJiao, toggleWuLeiNanJiao } from '../ffo/events/game-actions/wu-lei-nan-jiao'; // 中文注释：引入无泪南郊切换/暂停/停止逻辑供 IPC 调用
 
 // 中文注释：可绑定窗口的信息接口（在主进程内部使用）
 interface BindableWindowInfo {
@@ -274,4 +275,34 @@ ipcMain.handle('window:close', event => {
   const win = BrowserWindow.fromWebContents(event.sender);
   // 中文注释：若找到窗口则执行关闭
   win?.close();
+});
+
+// 中文注释：无泪南郊 - 切换自动寻路（渲染进程调用）
+ipcMain.handle('ffo:wuLeiNanJiao:toggle', async () => {
+  try {
+    const ret = toggleWuLeiNanJiao();
+    return ret; // 中文注释：返回切换结果（含running/错误信息）
+  } catch (e) {
+    return { ok: false, message: (e as any)?.message || String(e) };
+  }
+});
+
+// 中文注释：无泪南郊 - 暂停当前动作（渲染进程调用）
+ipcMain.handle('ffo:wuLeiNanJiao:pause', async () => {
+  try {
+    pauseWuLeiNanJiao();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: (e as any)?.message || String(e) };
+  }
+});
+
+// 中文注释：无泪南郊 - 停止当前动作（渲染进程调用）
+ipcMain.handle('ffo:wuLeiNanJiao:stop', async () => {
+  try {
+    stopWuLeiNanJiao();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: (e as any)?.message || String(e) };
+  }
 });

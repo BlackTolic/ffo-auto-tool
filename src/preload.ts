@@ -1,49 +1,24 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-// 中文注释：向渲染进程暴露用于操作大漠插件的 API
+// 中文注释：大漠相关 API（仅示例保留核心调用）
 const damo = {
-  ver: (): Promise<string> => ipcRenderer.invoke('damo:ver'),
+  // 中文注释：获取当前前台窗口句柄
   getForegroundWindow: (): Promise<number> => ipcRenderer.invoke('damo:getForegroundWindow'),
+  // 中文注释：查询大漠插件版本号（供渲染层显示或诊断）
+  ver: (): Promise<string> => ipcRenderer.invoke('damo:ver'),
+  // 中文注释：绑定窗口
   bindWindow: (hwnd: number, display: string, mouse: string, keypad: string, mode: number): Promise<number> => ipcRenderer.invoke('damo:bindWindow', hwnd, display, mouse, keypad, mode),
+  // 中文注释：解绑窗口
   unbindWindow: (): Promise<number> => ipcRenderer.invoke('damo:unbindWindow'),
-  getClientRect: (hwnd: number): Promise<{ x: number; y: number; width: number; height: number }> => ipcRenderer.invoke('damo:getClientRect', hwnd),
-  clientToScreen: (hwnd: number, x: number, y: number): Promise<{ x: number; y: number }> => ipcRenderer.invoke('damo:clientToScreen', hwnd, x, y),
-  screenToClient: (hwnd: number, x: number, y: number): Promise<{ x: number; y: number }> => ipcRenderer.invoke('damo:screenToClient', hwnd, x, y),
-  getWindowRect: (hwnd: number): Promise<{ x: number; y: number; width: number; height: number }> => ipcRenderer.invoke('damo:getWindowRect', hwnd),
-  getWindowInfo: (
-    hwnd: number
-  ): Promise<{ windowRect: { x: number; y: number; width: number; height: number }; clientRect: { x: number; y: number; width: number; height: number }; scaleFactor: number }> =>
-    ipcRenderer.invoke('damo:getWindowInfo', hwnd),
-  clientCssToScreenPx: (hwnd: number, xCss: number, yCss: number): Promise<{ x: number; y: number }> => ipcRenderer.invoke('damo:clientCssToScreenPx', hwnd, xCss, yCss),
-  screenPxToClientCss: (hwnd: number, x: number, y: number): Promise<{ x: number; y: number }> => ipcRenderer.invoke('damo:screenPxToClientCss', hwnd, x, y),
-  getDictInfo: (hwnd?: number): Promise<any> => ipcRenderer.invoke('damo:getDictInfo', hwnd),
-
-  // 中文注释：一键绑定“当前前台窗口”的所属进程（通过绑定管理器），便于 Alt+W 切换
-  bindForeground: (): Promise<{ ok: boolean; count?: number; hwnd?: number; pid?: number; message?: string }> => ipcRenderer.invoke('ffo:bindForeground'),
-
-  // 新增：列出当前可绑定窗口（全局顶层可见窗口）
-  listBindableWindows: (): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string }>> => ipcRenderer.invoke('ffo:listBindableWindows'),
-
-  // 新增：读取当前已绑定窗口列表（通过绑定管理器）
-  listBoundWindows: (): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string }>> => ipcRenderer.invoke('ffo:listBoundWindows'),
-
-  // 新增：按句柄执行绑定（通过绑定管理器记录）
-  bindHwnd: (hwnd: number): Promise<{ ok: boolean; hwnd?: number; message?: string }> => ipcRenderer.invoke('ffo:bindHwnd', hwnd),
-
-  // 新增：按句柄执行解绑（通过绑定管理器记录）
+  // 中文注释：按句柄解绑（扩展能力）
   unbindHwnd: (hwnd: number): Promise<{ ok: boolean; hwnd?: number; message?: string }> => ipcRenderer.invoke('ffo:unbindHwnd', hwnd),
-
-  // 新增：批量清空所有已绑定窗口（通过绑定管理器）
+  // 中文注释：清空所有绑定
   unbindAll: (): Promise<{ ok: boolean; count?: number; message?: string }> => ipcRenderer.invoke('ffo:unbindAll'),
-
-  // 中文注释：切换自动按键（通过主进程复用统一逻辑）
+  // 中文注释：切换自动按键
   toggleAutoKey: (
     keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',
     intervalMs: number = 200
   ): Promise<{ ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string }> => ipcRenderer.invoke('autoKey:toggle', keyName, intervalMs),
-
-  // 中文注释：手动触发一次“收费注册”，仅首次真正执行，后续返回上次结果
-  // register: (): Promise<DamoRegResult> => ipcRenderer.invoke('damo:register'),
 };
 
 // 新增：环境校验 API，渲染进程可调用展示结果
@@ -59,9 +34,21 @@ const windowControl = {
   close: (): Promise<void> => ipcRenderer.invoke('window:close'),
 };
 
+// 新增：FFO 动作 API（无泪南郊：切换/暂停/停止）
+const ffoActions = {
+  // 中文注释：切换“无泪南郊”自动寻路（第一次开启，第二次关闭）
+  toggleWuLeiNanJiao: (): Promise<{ ok: boolean; running?: boolean; hwnd?: number; message?: string }> => ipcRenderer.invoke('ffo:wuLeiNanJiao:toggle'),
+  // 中文注释：暂停当前激活的无泪南郊动作（停止自动寻路但保留任务）
+  pauseCurActive: (): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('ffo:wuLeiNanJiao:pause'),
+  // 中文注释：停止当前激活的无泪南郊动作（清空任务并停止自动寻路）
+  stopCurActive: (): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('ffo:wuLeiNanJiao:stop'),
+};
+
 // 中文注释：向渲染进程暴露用于操作大漠插件的 API
 contextBridge.exposeInMainWorld('damo', damo);
 // 中文注释：向渲染进程暴露环境校验 API
 contextBridge.exposeInMainWorld('env', env);
 // 中文注释：向渲染进程暴露窗口控制 API
 contextBridge.exposeInMainWorld('windowControl', windowControl);
+// 中文注释：向渲染进程暴露 FFO 动作 API
+contextBridge.exposeInMainWorld('ffoActions', ffoActions);
