@@ -52,6 +52,7 @@ export default function BasicConfigView() {
         const cls = String(w.className || '');
         return title.includes(targetField) || cls.includes(targetField);
       });
+      console.log('过滤后的可绑定窗口:', list);
       const opts = filtered.map(w => ({ value: w.hwnd, label: formatLabel(w) }));
       setOptions(opts);
       // 优先选择第一个候选项
