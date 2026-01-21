@@ -3,7 +3,7 @@ import { getVerifyCodeAiRes } from '../../AI/request';
 import { AutoT, ensureDamo } from '../../auto-plugin/index';
 import { VERIFY_CODE_PATH } from '../../constant/config';
 import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
-import { isArriveAimNear, parseRolePositionFromText, parseTextPos } from '../utils/common';
+import { isArriveAimNear, parseRolePositionFromText } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
 import { MoveActions } from './move';
 
@@ -68,12 +68,14 @@ export class Role {
         const monsterName = bindDm.ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
         // 截图
         // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
-        const verifyCode = bindDm.findStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
-        const verifyCodeTextPos = parseTextPos(verifyCode);
+
+        // const verifyCode = bindDm.findStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
+        // const verifyCodeTextPos = parseTextPos(verifyCode);
+        let verifyCodeTextPos = { x: 11, y: 11 };
         console.log(verifyCodeTextPos, 'verifyCodeTextPos');
         if (verifyCodeTextPos) {
           const now = Date.now();
-          if (this.openCapture || now - this.lastVerifyCaptureTs >= 10000) {
+          if (this.openCapture || now - this.lastVerifyCaptureTs >= 20000) {
             const checkPos = DEFAULT_VERIFY_CODE_TEXT[this.bindWindowSize as keyof typeof DEFAULT_VERIFY_CODE_TEXT];
             console.log('神医验证码地址：', `${VERIFY_CODE_PATH}`);
             const verifyCodeImg = bindDm.capturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}`);
