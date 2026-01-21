@@ -1,5 +1,5 @@
 import { damoBindingManager } from '.';
-import { getVerifyCodeAiRes } from '../../AI/request';
+import { getVerifyCodeAiRes } from '../../AI/ali-qianwen';
 import { AutoT, ensureDamo } from '../../auto-plugin/index';
 import { VERIFY_CODE_PATH } from '../../constant/config';
 import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
