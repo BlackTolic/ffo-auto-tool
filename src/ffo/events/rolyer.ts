@@ -6,6 +6,7 @@ import { VERIFY_CODE_OPTIONS_PATH, VERIFY_CODE_QUESTION_PATH } from '../../const
 import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { isArriveAimNear, parseRolePositionFromText, parseTextPos, selectRightAnwser } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
+import { isOffline } from '../utils/ocr-check/base';
 import { MoveActions } from './move';
 
 export type Pos = {
@@ -94,22 +95,30 @@ export class Role {
               // 20S
               this.openCapture = false;
               this.lastVerifyCaptureTs = now;
+              // 检查是否已经离线
+              const isOff = isOffline(this.bindDm, this.bindWindowSize);
+              console.log(isOff, 'isOffisOff');
+              if (isOff) {
+                this.unregisterRole();
+              }
               Promise.all([getVerifyCodeByAliQW(optionsUrl), getVerifyCodeByTuJian(questionUrl)]).then(([Ali = '', TuJian = '']) => {
                 console.log('验证码识别结果', [Ali, TuJian]);
-                if (![Ali, TuJian].every(item => item !== null)) {
-                  return;
-                }
-                const result = selectRightAnwser(Ali, TuJian);
-                if (!result) {
-                  return;
-                }
                 console.log('Ali', Ali);
                 console.log('TuJian', TuJian);
                 const I = { x: verifyCodeTextPos.x + safeCheckPos.I.x, y: verifyCodeTextPos.y + safeCheckPos.I.y };
                 const II = { x: verifyCodeTextPos.x + safeCheckPos.II.x, y: verifyCodeTextPos.y + safeCheckPos.II.y };
                 const III = { x: verifyCodeTextPos.x + safeCheckPos.III.x, y: verifyCodeTextPos.y + safeCheckPos.III.y };
                 const map = { I, II, III };
-                const answerPos = map[result as keyof typeof map];
+                let answerPos;
+                // 识别不出来直接选第一个
+                if (![Ali, TuJian].every(item => item !== null)) {
+                  answerPos = map['I'];
+                }
+                const result = selectRightAnwser(Ali, TuJian);
+                if (!result) {
+                  answerPos = map['I'];
+                }
+                answerPos = map[result as keyof typeof map];
                 console.log('answerPos', answerPos);
                 bindDm.moveTo(answerPos.x, answerPos.y);
                 bindDm.leftClick();
@@ -125,7 +134,7 @@ export class Role {
         this.selectMonster = monsterName;
         this.map = addressName;
         this.position = pos;
-        if (this.task?.taskStatus === 'done' && isArriveAimNear(pos as Pos, this.task.pos, 10)) {
+        if (this.task?.taskStatus === 'doing' && isArriveAimNear(pos as Pos, this.task.pos, 10)) {
           const now = Date.now();
           if (now - this.lastTaskActionTs >= 10000) {
             console.log(`[角色信息] 已到达任务位置 ${this.task.name}`);

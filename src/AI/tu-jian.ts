@@ -48,7 +48,6 @@ export const getVerifyCodeByTuJian = async (url: string) => {
       image: url,
     });
     let d = res.data;
-    console.log(d, '999999');
     if (d.success) {
       // handle success
       let { id, result } = d.data;
