@@ -34,7 +34,7 @@ export class Role {
   private openCapture: boolean = true; // 是否开启截图
   private lastVerifyCaptureTs: number = 0;
   private lastTaskActionTs: number = 0;
-  private task: { name: string; pos: Pos; action: () => void } | null = null;
+  private task: { name: string; pos: Pos; action: () => void; taskStatus: 'doing' | 'done' } | null = null;
 
   constructor() {}
 
@@ -125,7 +125,7 @@ export class Role {
         this.selectMonster = monsterName;
         this.map = addressName;
         this.position = pos;
-        if (this.task && isArriveAimNear(pos as Pos, this.task.pos, 10)) {
+        if (this.task?.taskStatus === 'done' && isArriveAimNear(pos as Pos, this.task.pos, 10)) {
           const now = Date.now();
           if (now - this.lastTaskActionTs >= 10000) {
             console.log(`[角色信息] 已到达任务位置 ${this.task.name}`);
@@ -152,7 +152,7 @@ export class Role {
   }
 
   addIntervalActive(task: string, pos: Pos, call: () => void) {
-    this.task = { name: task, pos, action: call };
+    this.task = { name: task, pos, action: call, taskStatus: 'doing' };
     this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
   }
 
@@ -167,8 +167,16 @@ export class Role {
   hasActiveTask() {
     return !!this.task;
   }
+
+  updateTaskStatus(status: 'done' | 'doing') {
+    if (!this.task) {
+      console.log('任务不存在!');
+      return;
+    }
+    this.task.taskStatus = status;
+  }
 }
 
 // 66 72 78 84 90 96 102 6次机会
 // 66 120J  102 40J  80J =》 15J + 15J = 30J 一次机会
-// 320
+//

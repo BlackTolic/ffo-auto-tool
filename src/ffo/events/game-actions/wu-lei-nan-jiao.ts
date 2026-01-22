@@ -64,8 +64,11 @@ export class WuLeiNanJiaoAction {
   public start() {
     // 在(227,53)附近开启循环
     this.role.addIntervalActive('无泪南郊练级', { x: 227, y: 53 }, () => {
-      console.log('开始跑步', this.role.position);
-      this.actions.startAutoFindPath(pos, this.active).then(res => {});
+      console.log('无泪南郊练级任务启动！', this.role.position);
+      this.actions.startAutoFindPath(pos, this.active).then(res => {
+        this.role.updateTaskStatus('done');
+        console.log('无泪南郊练级任务完成！', this.role.position);
+      });
     });
   }
 
