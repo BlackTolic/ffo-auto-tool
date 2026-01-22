@@ -33,6 +33,7 @@ const skillGroup: KeyPressOptions[] = [
   { key: 'F2', interval: 5000, song: 750 },
   { key: 'F3', interval: 10000, song: 0 },
   { key: 'F4', interval: 9000, song: 0 },
+  { key: 'F9', interval: 10000, song: 0 },
 ];
 
 // dm.Ocr(380,117,1254,736,"000400-555555",1.0)
@@ -49,6 +50,7 @@ export class AttackActions {
     ['F2', false],
     ['F3', false],
     ['F4', false],
+    ['F9', false],
   ]);
   // 当前正在攻击的对象的坐标
   public currentAttackTargetPos: Pos | null = null;

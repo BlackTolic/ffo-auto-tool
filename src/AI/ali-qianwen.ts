@@ -17,7 +17,7 @@ const DEBOUNCE_MS = 10_000;
  * 中文注释：带 10 秒防抖的验证码 AI 识别
  * 同一 url 在 10 秒内多次调用，直接返回上次的 Promise
  */
-export function getVerifyCodeAiRes(url: string): Promise<string | null> {
+export function getVerifyCodeByAliQW(url: string): Promise<string | null> {
   const now = Date.now();
   const cached = debounceMap.get(url);
 
@@ -41,9 +41,10 @@ export function getVerifyCodeAiRes(url: string): Promise<string | null> {
                 { type: 'image_url', image_url: { url } },
                 {
                   type: 'text',
-                  text: '帮我识别图中左边的字母，然后对比右边的三个选项，选一个与左边最相似的答案出来，选项用I、II、III表示。只输出最相似的那个选项',
+                  // text: '帮我识别图中左边的字母，然后对比右边的三个选项，选一个与左边最相似的答案出来，选项用I、II、III表示。只输出最相似的那个选项',
                   // text: '帮我识别图中左边的3个字母，然后对比右边的三个选项，选一个左边最相似的出来，列出左边最确定能识别到的字母c,列出选项与左边字母的相似度a，输出最相似的选项，选项依次用I、II、III表示。最终的输出结果有两个，第一个是最相似的选项，第二个是各自的相似度。格式为：最相似的选项|(I,a;II,a;III,a;c)',
                   // text: '请不要依赖右侧‘正确答案是’的提示，仅根据左侧验证码图像的视觉特征，逐字分析每个字符，并从右侧三个选项中，为每个位置选出视觉上最相似的字母。最后输出一个由这些最相似字母组成的‘视觉匹配答案’，并标注每个字符的相似度。或者用OCR+人工校正的方式识别左边字符，再与右边选项做编辑距离或形状匹配',
+                  text: '帮我识别图中的3组字母，返回格式: a,b,c',
                 },
               ],
             },
@@ -58,9 +59,10 @@ export function getVerifyCodeAiRes(url: string): Promise<string | null> {
       );
 
       const res = response.data.choices[0].message.content;
-      console.log('AI 识别结果', res);
-      const x = res.split('|')[0];
-      return x;
+      // console.log('AI 识别结果', res);
+      // const x = res.split('|')[0];
+      // return x;
+      return res;
     } catch (error) {
       console.log('AI Request Failed:', error);
       return null;

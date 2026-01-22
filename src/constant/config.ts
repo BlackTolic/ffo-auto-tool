@@ -5,7 +5,10 @@ export const OCR_FONT_PATH = path.join(process.cwd(), '/src/lib/font/0_ffo.txt')
 // 截图保存路径
 export const SCREENSHOT_PATH = path.join(process.cwd(), '/public/screenshot/');
 // 神医验证码保存路径
-export const VERIFY_CODE_PATH = path.join(process.cwd(), '/public/verify-code/神医验证码.png');
+export const VERIFY_CODE_QUESTION_PATH = path.join(process.cwd(), '/public/verify-code/code-question.png');
+export const VERIFY_CODE_ANSWER_PATH = path.join(process.cwd(), '/public/verify-code/code-answer.png');
+export const VERIFY_CODE_OPTIONS_PATH = path.join(process.cwd(), '/public/verify-code/code-options.png');
+
 // 绑定的窗口
 export const BIND_WINDOW_NAME = 'FFO';
 

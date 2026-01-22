@@ -21,12 +21,12 @@ export const registerBoundEventHandlers = () => {
     new Notification({ title: '绑定成功', body: `PID=${pid} HWND=${hwnd}` }).show();
     lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄（供其他逻辑参考，不参与快捷键切换）
     const rec = damoBindingManager.get(hwnd);
-    const ad = new Role();
+    const role = new Role();
     // 注册角色信息 1280*800  1600*900
-    ad.registerRole('1600*900', hwnd);
+    role.registerRole('1600*900', hwnd);
     // ad.registerRole('1280*800', hwnd);
     // 中文注释：设置角色信息
-    damoBindingManager.setRole(hwnd, ad);
+    damoBindingManager.setRole(hwnd, role);
 
     if (!rec) return;
     try {
@@ -86,6 +86,10 @@ export const registerBoundEventHandlers = () => {
       stopKeyPress(hwnd);
       // 中文注释：更新自动按键状态并重置最近绑定句柄
       // autoKeyOnByHwnd.delete(hwnd);
+      const role = damoBindingManager.getRole(hwnd);
+      if (role) {
+        role.unregisterRole();
+      }
       if (lastBoundHwnd === hwnd) lastBoundHwnd = null;
     } catch (err) {
       console.warn(`[解绑事件] 清理失败: ${String((err as any)?.message || err)}`);

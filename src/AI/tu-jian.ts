@@ -1,6 +1,9 @@
 import axios from 'axios';
 // const fs = require('fs');
 const apiUrl = 'http://api.ttshitu.com/predict';
+
+const ACCOUNT = 'BlackTolic';
+const PASSWORD = 'Zk617938';
 // const imageFile = 'captcha.gif'; //填写自己的文件路径
 // let buff = fs.readFileSync(imageFile);
 // let base64data = buff.toString('base64');
@@ -36,22 +39,28 @@ const apiUrl = 'http://api.ttshitu.com/predict';
 //五、拼图识别
 //53：拼图识别
 
-export const getVerifyCodeAiRes = (url: string) => {
-  return axios
-    .post(apiUrl, {
-      username: 'BlackTolic', //用户名
-      password: 'Zk617938', //密码
+export const getVerifyCodeByTuJian = async (url: string) => {
+  try {
+    const res = await axios.post(apiUrl, {
+      username: ACCOUNT, //用户名
+      password: PASSWORD, //密码
       typeid: '7',
       image: url,
-    })
-    .then(function (response) {
-      let d = response.data;
-      if (d.success) {
-        // handle success
-        let { id, result } = d.data;
-        console.log(result);
-      } else {
-        console.log(d.message);
-      }
     });
+    let d = res.data;
+    console.log(d, '999999');
+    if (d.success) {
+      // handle success
+      let { id, result } = d.data;
+      console.log(result);
+      // 返回字符串转成大写
+      return result.toUpperCase();
+    } else {
+      console.log(d.message);
+      return '';
+    }
+  } catch (err) {
+    console.log(err);
+    return '';
+  }
 };

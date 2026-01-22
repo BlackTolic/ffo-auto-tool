@@ -90,6 +90,7 @@ export function registerGlobalHotkeys() {
         const dm = ensureDamo();
         // 中文注释：获取当前前台窗口句柄
         const hwnd = dm.getForegroundWindow();
+        damoBindingManager.selectHwnd = hwnd;
         console.log('[快捷键] Alt+Q 检测到前台窗口', hwnd);
         if (!hwnd || hwnd <= 0) {
           console.log('[快捷键] Alt+Q 失败 | 未检测到前台窗口');

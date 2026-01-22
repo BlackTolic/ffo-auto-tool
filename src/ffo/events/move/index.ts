@@ -90,8 +90,9 @@ export class MoveActions {
     if (!Array.isArray(toPos)) {
       toPos = [toPos];
     }
-    // console.log('开始移动了：', fromPos, toPos[this.recordAimPosIndex]);
+    console.log('开始移动了：', fromPos, toPos[this.recordAimPosIndex]);
     // 第一次寻路开启连续点击
+    console.log('第一次寻路开启连续点击', isArriveAimNear(fromPos, toPos[toPos.length - 1]));
     if (!isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
       const curAimPos = toPos[this.recordAimPosIndex];
       !this.isPause && this.move(fromPos, curAimPos);

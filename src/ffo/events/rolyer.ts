@@ -1,9 +1,10 @@
 import { damoBindingManager } from '.';
-import { getVerifyCodeAiRes } from '../../AI/ali-qianwen';
+import { getVerifyCodeByAliQW } from '../../AI/ali-qianwen';
+import { getVerifyCodeByTuJian } from '../../AI/tu-jian';
 import { AutoT, ensureDamo } from '../../auto-plugin/index';
-import { VERIFY_CODE_PATH } from '../../constant/config';
+import { VERIFY_CODE_OPTIONS_PATH, VERIFY_CODE_QUESTION_PATH } from '../../constant/config';
 import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
-import { isArriveAimNear, parseRolePositionFromText } from '../utils/common';
+import { isArriveAimNear, parseRolePositionFromText, parseTextPos, selectRightAnwser } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
 import { MoveActions } from './move';
 
@@ -68,43 +69,50 @@ export class Role {
         const monsterName = bindDm.ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
         // 截图
         // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
-
-        // const verifyCode = bindDm.findStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
-        // const verifyCodeTextPos = parseTextPos(verifyCode);
-        let verifyCodeTextPos = { x: 11, y: 11 };
-        console.log(verifyCodeTextPos, 'verifyCodeTextPos');
+        const verifyCode = bindDm.findStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
+        const verifyCodeTextPos = parseTextPos(verifyCode);
+        // let verifyCodeTextPos = { x: 11, y: 11 };
+        // console.log(verifyCodeTextPos, 'verifyCodeTextPos');
         if (verifyCodeTextPos) {
           const now = Date.now();
-          if (this.openCapture || now - this.lastVerifyCaptureTs >= 20000) {
+          if (this.openCapture || now - this.lastVerifyCaptureTs >= 10000) {
             const checkPos = DEFAULT_VERIFY_CODE_TEXT[this.bindWindowSize as keyof typeof DEFAULT_VERIFY_CODE_TEXT];
-            console.log('神医验证码地址：', `${VERIFY_CODE_PATH}`);
-            const verifyCodeImg = bindDm.capturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_PATH}`);
-            console.log(verifyCodeImg, 'ssssss');
-            if (String(verifyCodeImg) === '1') {
+            // 获取验证码截图
+            // const answerImg = bindDm.capturePng(verifyCodeTextPos.x - 10, verifyCodeTextPos.y - 10, verifyCodeTextPos.x + 300, verifyCodeTextPos.y + 140, `${VERIFY_CODE_ANSWER_PATH}`);
+            const questionImg = bindDm.capturePng(verifyCodeTextPos.x, verifyCodeTextPos.y + 60, verifyCodeTextPos.x + 100, verifyCodeTextPos.y + 130, `${VERIFY_CODE_QUESTION_PATH}`);
+            const optionsImg = bindDm.capturePng(verifyCodeTextPos.x + 200, verifyCodeTextPos.y + 30, verifyCodeTextPos.x + 250, verifyCodeTextPos.y + 110, `${VERIFY_CODE_OPTIONS_PATH}`);
+            if (String(questionImg) === '1' && String(optionsImg) === '1') {
               const safeCheckPos: VerifyCodeTextPos = checkPos;
               // 调用AI识别验证码
               // this.verifyCode = verifyCodeImg;
-              const url = readVerifyCodeImage(hwnd);
-              if (!url) {
+              const optionsUrl = readVerifyCodeImage(`${VERIFY_CODE_OPTIONS_PATH}`, 'ali');
+              const questionUrl = readVerifyCodeImage(`${VERIFY_CODE_QUESTION_PATH}`, 'tujian');
+              // console.log(VERIFY_CODE_OPTIONS_PATH, 'optionsUrl');
+              if (!optionsUrl || !questionUrl) {
                 return;
               }
-              getVerifyCodeAiRes(url).then(res => {
-                console.log('验证码识别结果', res);
-                if (!res) {
-                  this.openCapture = false;
-                  this.lastVerifyCaptureTs = now;
+              // 20S
+              this.openCapture = false;
+              this.lastVerifyCaptureTs = now;
+              Promise.all([getVerifyCodeByAliQW(optionsUrl), getVerifyCodeByTuJian(questionUrl)]).then(([Ali = '', TuJian = '']) => {
+                console.log('验证码识别结果', [Ali, TuJian]);
+                if (![Ali, TuJian].every(item => item !== null)) {
                   return;
                 }
+                const result = selectRightAnwser(Ali, TuJian);
+                if (!result) {
+                  return;
+                }
+                console.log('Ali', Ali);
+                console.log('TuJian', TuJian);
                 const I = { x: verifyCodeTextPos.x + safeCheckPos.I.x, y: verifyCodeTextPos.y + safeCheckPos.I.y };
                 const II = { x: verifyCodeTextPos.x + safeCheckPos.II.x, y: verifyCodeTextPos.y + safeCheckPos.II.y };
                 const III = { x: verifyCodeTextPos.x + safeCheckPos.III.x, y: verifyCodeTextPos.y + safeCheckPos.III.y };
                 const map = { I, II, III };
-                const answerPos = map[res as keyof typeof map];
+                const answerPos = map[result as keyof typeof map];
                 console.log('answerPos', answerPos);
                 bindDm.moveTo(answerPos.x, answerPos.y);
                 bindDm.leftClick();
-                this.openCapture = false;
-                this.lastVerifyCaptureTs = now;
                 console.log('关闭截图啦', this.openCapture);
               });
             }
@@ -136,6 +144,9 @@ export class Role {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
+      this.task = null;
+      this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
+      this.isPauseCurActive = false;
       console.log('[角色信息] 已解除角色轮询');
     }
   }

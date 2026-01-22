@@ -34,3 +34,29 @@ export const isArriveAimNear = (initPos: Pos | null, aimPos: Pos, r: number = 2)
   const { x: x2, y: y2 } = aimPos;
   return (x1 - x2) ** 2 + (y1 - y2) ** 2 <= r ** 2;
 };
+
+export const selectRightAnwser = (options: string | null, question: string | null) => {
+  if (!options || !question) return null;
+  console.log(options, 'options, ');
+  const map = { '0': 'I', '1': 'II', '2': 'III' };
+  const arr = options.split(',').map((x, idx) => ({ opt: x, sim: 0, target: map[idx.toString() as keyof typeof map] }));
+  console.log(arr, 'arr');
+  arr.forEach((x, idx) => {
+    const [aim1, aim2, aim3] = question.split('');
+    const [opt1, opt2, opt3] = x.opt.split('');
+    if (idx === 0) {
+      x.sim = (opt1 === aim1 ? 1 : 0) + (opt2 === aim2 ? 1 : 0) + (opt3 === aim3 ? 1 : 0);
+    }
+    if (idx === 1) {
+      x.sim = (opt1 === aim1 ? 1 : 0) + (opt2 === aim2 ? 1 : 0) + (opt3 === aim3 ? 1 : 0);
+    }
+    if (idx === 2) {
+      x.sim = (opt1 === aim1 ? 1 : 0) + (opt2 === aim2 ? 1 : 0) + (opt3 === aim3 ? 1 : 0);
+    }
+  });
+  const maxSim = Math.max(...arr.map(z => z.sim));
+  const result = arr.filter(z => z.sim === maxSim);
+  console.log(arr, 'arr11111');
+  console.log(result, 'result');
+  return result?.[0]?.target;
+};
