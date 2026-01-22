@@ -49,9 +49,8 @@ export const getVerifyCodeByTuJian = async (url: string) => {
     });
     let d = res.data;
     if (d.success) {
-      // handle success
       let { id, result } = d.data;
-      console.log(result);
+      console.log('图鉴识别：', result);
       // 返回字符串转成大写
       return result.toUpperCase();
     } else {

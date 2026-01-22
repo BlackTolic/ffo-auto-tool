@@ -15,6 +15,18 @@ export type Pos = {
   y: number;
 };
 
+const test = async () => {
+  const optionsUrl = readVerifyCodeImage(`${VERIFY_CODE_OPTIONS_PATH}`, 'ali');
+  const questionUrl = readVerifyCodeImage(`${VERIFY_CODE_QUESTION_PATH}`, 'tujian');
+  console.time('接口调用耗时');
+  // Promise.all([getVerifyCodeByDouBao(optionsUrl), getVerifyCodeByTuJian(questionUrl)]);
+  // getVerifyCodeByDouBao(optionsUrl);
+  await getVerifyCodeByAliQW(optionsUrl);
+
+  // await getVerifyCodeByTuJian(questionUrl);
+  console.timeEnd('接口调用耗时');
+};
+
 export class Role {
   public bindDm: any = null; // 大漠类
   private timer: NodeJS.Timeout | null = null; // 定时器
@@ -40,6 +52,7 @@ export class Role {
 
   // 需要先绑定之后再注册角色信息
   public registerRole(bindWindowSize: '1600*900' | '1280*800', hwndId?: number) {
+    // test();
     this.bindWindowSize = bindWindowSize;
     this.menusPos = DEFAULT_MENUS_POS[bindWindowSize as keyof typeof DEFAULT_MENUS_POS];
     const dm = ensureDamo();
