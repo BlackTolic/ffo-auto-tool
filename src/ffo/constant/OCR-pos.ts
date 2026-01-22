@@ -33,6 +33,12 @@ export const DEFAULT_VERIFY_CODE = {
   '1280*800': { x1: 12, y1: 116, x2: 1267, y2: 730, color: 'e80000-111111', sim: DEFAULT_SIM },
 };
 
+// 服务器中断
+export const DEFAULT_SERVER_DISCONNECT = {
+  '1600*900': { x1: 630, y1: 383, x2: 968, y2: 516, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1280*800': { x1: 630, y1: 383, x2: 968, y2: 516, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+};
+
 export interface VerifyCodeTextPos {
   I: { x: number; y: number };
   II: { x: number; y: number };

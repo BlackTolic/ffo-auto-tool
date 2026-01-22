@@ -1,10 +1,11 @@
 import { AutoT } from '../../../auto-plugin';
-import { DEFAULT_VERIFY_CODE } from '../../constant/OCR-pos';
-import { parseTextPos } from '../common';
+import { DEFAULT_ADDRESS_NAME, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_SERVER_DISCONNECT, DEFAULT_VERIFY_CODE } from '../../constant/OCR-pos';
+import { parseRolePositionFromText, parseTextPos } from '../common';
 
 // 检查服务器是否断线
 export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
-  const addressName = bindDm.ocr(630, 383, 968, 516, 'e8f0e8-111111', 1.0);
+  const offlinePos = DEFAULT_SERVER_DISCONNECT[bindWindowSize];
+  const addressName = bindDm.ocr(offlinePos.x1, offlinePos.y1, offlinePos.x2, offlinePos.y2, offlinePos.color, offlinePos.sim);
   console.log(addressName, 'addressName');
   return addressName.includes('退出游戏');
 };
@@ -15,5 +16,33 @@ export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 export const getVerifyCodePos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const verifyCodePos = DEFAULT_VERIFY_CODE[bindWindowSize];
   const verifyCode = bindDm.findStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
-  const verifyCodeTextPos = parseTextPos(verifyCode);
+  return parseTextPos(verifyCode);
+};
+
+// 检查角色名称
+// export const getRoleName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+//   const roleNamePos = DEFAULT_ROLE_NAME[bindWindowSize];
+//   const roleName = bindDm.ocr(roleNamePos.x1, roleNamePos.y1, roleNamePos.x2, roleNamePos.y2, roleNamePos.color, roleNamePos.sim);
+//   return roleName;
+// }
+
+// 获取地图名称
+export const getMapName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const mapNamePos = DEFAULT_ADDRESS_NAME[bindWindowSize];
+  const mapName = bindDm.ocr(mapNamePos.x1, mapNamePos.y1, mapNamePos.x2, mapNamePos.y2, mapNamePos.color, mapNamePos.sim);
+  return mapName;
+};
+
+// 获取角色坐标位置
+export const getRolePosition = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const rolePos = DEFAULT_ROLE_POSITION[bindWindowSize];
+  const rolePosText = bindDm.ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, rolePos.color, rolePos.sim);
+  return parseRolePositionFromText(rolePosText);
+};
+
+// 获取怪物名称
+export const getMonsterName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const monsterPos = DEFAULT_MONSTER_NAME[bindWindowSize];
+  const monsterPosText = bindDm.ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
+  return monsterPosText;
 };

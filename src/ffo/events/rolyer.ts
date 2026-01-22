@@ -3,10 +3,11 @@ import { getVerifyCodeByAliQW } from '../../AI/ali-qianwen';
 import { getVerifyCodeByTuJian } from '../../AI/tu-jian';
 import { AutoT, ensureDamo } from '../../auto-plugin/index';
 import { VERIFY_CODE_OPTIONS_PATH, VERIFY_CODE_QUESTION_PATH } from '../../constant/config';
-import { DEFAULT_ADDRESS_NAME, DEFAULT_MENUS_POS, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_VERIFY_CODE, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
-import { isArriveAimNear, parseRolePositionFromText, parseTextPos, selectRightAnwser } from '../utils/common';
+import { emailStrategy } from '../../utils/email';
+import { DEFAULT_MENUS_POS, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
+import { isArriveAimNear, selectRightAnwser } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
-import { isOffline } from '../utils/ocr-check/base';
+import { getMapName, getMonsterName, getRolePosition, getVerifyCodePos, isOffline } from '../utils/ocr-check/base';
 import { MoveActions } from './move';
 
 export type Pos = {
@@ -20,12 +21,10 @@ export class Role {
   private name: string = ''; // 当前控制的角色名称
   public position: Pos | null = { x: 0, y: 0 }; // 当前角色所在坐标
   public map: string = ''; // 当前所在地图名称
-  // 验证码
-  private verifyCode: string = '';
   private isOpenAutoRoute: boolean = false; // 是否开启自动寻路
   private bloodStatus: string = ''; // 血量状态
   private isDead: boolean = false; // 是否死亡
-  public bindWindowSize: string = ''; // 绑定窗口的尺寸
+  public bindWindowSize: '1600*900' | '1280*800' = '1600*900'; // 绑定窗口的尺寸
   private moveActions: MoveActions | null = null; // 移动操作类
   private pollTimers = new Map<number, ReturnType<typeof setInterval>>(); // 记录轮询定时器
   public selectMonster = ''; // 已选中怪物
@@ -42,12 +41,7 @@ export class Role {
   // 需要先绑定之后再注册角色信息
   public registerRole(bindWindowSize: '1600*900' | '1280*800', hwndId?: number) {
     this.bindWindowSize = bindWindowSize;
-    const map = DEFAULT_ADDRESS_NAME[bindWindowSize];
-    const rolePos = DEFAULT_ROLE_POSITION[bindWindowSize];
-    const monsterPos = DEFAULT_MONSTER_NAME[bindWindowSize];
-    const verifyCodePos = DEFAULT_VERIFY_CODE[bindWindowSize];
     this.menusPos = DEFAULT_MENUS_POS[bindWindowSize as keyof typeof DEFAULT_MENUS_POS];
-
     const dm = ensureDamo();
     // 中文注释：获取当前前台窗口句柄
     const hwnd = hwndId ? hwndId : dm.getForegroundWindow();
@@ -62,18 +56,17 @@ export class Role {
     const bindDm = rec?.ffoClient as AutoT;
     this.bindDm = rec?.ffoClient.dm;
     this.timer = setInterval(() => {
-      // console.log('轮询角色信息');
       try {
-        const raw: string = String(bindDm.ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, rolePos.color, rolePos.sim) || '').trim();
-        const pos = parseRolePositionFromText(raw);
-        const addressName = bindDm.ocr(map.x1, map.y1, map.x2, map.y2, map.color, map.sim);
-        const monsterName = bindDm.ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
+        // 获取角色位置
+        const pos = getRolePosition(bindDm, this.bindWindowSize);
+        // 获取地图名
+        const addressName = getMapName(bindDm, this.bindWindowSize);
+        // 获取选中的怪物名
+        const monsterName = getMonsterName(bindDm, this.bindWindowSize);
         // 截图
         // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
-        const verifyCode = bindDm.findStrFastE(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, '神医问题来啦', verifyCodePos.color, verifyCodePos.sim);
-        const verifyCodeTextPos = parseTextPos(verifyCode);
-        // let verifyCodeTextPos = { x: 11, y: 11 };
-        // console.log(verifyCodeTextPos, 'verifyCodeTextPos');
+        // 获取神医坐标
+        const verifyCodeTextPos = getVerifyCodePos(bindDm, this.bindWindowSize);
         if (verifyCodeTextPos) {
           const now = Date.now();
           if (this.openCapture || now - this.lastVerifyCaptureTs >= 10000) {
@@ -84,11 +77,8 @@ export class Role {
             const optionsImg = bindDm.capturePng(verifyCodeTextPos.x + 200, verifyCodeTextPos.y + 30, verifyCodeTextPos.x + 250, verifyCodeTextPos.y + 110, `${VERIFY_CODE_OPTIONS_PATH}`);
             if (String(questionImg) === '1' && String(optionsImg) === '1') {
               const safeCheckPos: VerifyCodeTextPos = checkPos;
-              // 调用AI识别验证码
-              // this.verifyCode = verifyCodeImg;
               const optionsUrl = readVerifyCodeImage(`${VERIFY_CODE_OPTIONS_PATH}`, 'ali');
               const questionUrl = readVerifyCodeImage(`${VERIFY_CODE_QUESTION_PATH}`, 'tujian');
-              // console.log(VERIFY_CODE_OPTIONS_PATH, 'optionsUrl');
               if (!optionsUrl || !questionUrl) {
                 return;
               }
@@ -99,12 +89,15 @@ export class Role {
               const isOff = isOffline(this.bindDm, this.bindWindowSize);
               console.log(isOff, 'isOffisOff');
               if (isOff) {
+                // 发送邮件
+                emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色离线', text: `角色 ${this.name} 已掉线` });
+                // 断线后取消注册，终止
                 this.unregisterRole();
+                return;
               }
               Promise.all([getVerifyCodeByAliQW(optionsUrl), getVerifyCodeByTuJian(questionUrl)]).then(([Ali = '', TuJian = '']) => {
-                console.log('验证码识别结果', [Ali, TuJian]);
-                console.log('Ali', Ali);
-                console.log('TuJian', TuJian);
+                console.log('验证码识别结果 Ali', Ali);
+                console.log('验证码识别结果 TuJian', TuJian);
                 const I = { x: verifyCodeTextPos.x + safeCheckPos.I.x, y: verifyCodeTextPos.y + safeCheckPos.I.y };
                 const II = { x: verifyCodeTextPos.x + safeCheckPos.II.x, y: verifyCodeTextPos.y + safeCheckPos.II.y };
                 const III = { x: verifyCodeTextPos.x + safeCheckPos.III.x, y: verifyCodeTextPos.y + safeCheckPos.III.y };
