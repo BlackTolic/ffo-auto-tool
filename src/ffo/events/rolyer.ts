@@ -15,6 +15,14 @@ export type Pos = {
   y: number;
 };
 
+export interface TaskProp {
+  taskName: string;
+  loopOriginPos: Pos;
+  action: () => void;
+  interval: number;
+  taskStatus?: 'doing' | 'done';
+}
+
 const test = async () => {
   const optionsUrl = readVerifyCodeImage(`${VERIFY_CODE_OPTIONS_PATH}`, 'ali');
   const questionUrl = readVerifyCodeImage(`${VERIFY_CODE_QUESTION_PATH}`, 'tujian');
@@ -46,7 +54,7 @@ export class Role {
   private openCapture: boolean = true; // 是否开启截图
   private lastVerifyCaptureTs: number = 0;
   private lastTaskActionTs: number = 0;
-  private task: { name: string; pos: Pos; action: () => void; taskStatus: 'doing' | 'done' } | null = null;
+  private task: TaskProp | null = null;
 
   constructor() {}
 
@@ -140,10 +148,11 @@ export class Role {
         this.selectMonster = monsterName;
         this.map = addressName;
         this.position = pos;
-        if (this.task?.taskStatus === 'doing' && isArriveAimNear(pos as Pos, this.task.pos, 10)) {
+        const taskStatus = this.task?.taskStatus ?? '';
+        if (this.task && ['', 'done'].includes(taskStatus) && isArriveAimNear(pos as Pos, this.task.loopOriginPos, 10)) {
           const now = Date.now();
-          if (now - this.lastTaskActionTs >= 10000) {
-            console.log(`[角色信息] 已到达任务位置 ${this.task.name}`);
+          if (now - this.lastTaskActionTs >= this.task.interval) {
+            console.log(`[角色信息] 已到达任务位置 ${this.task.taskName}`);
             this.task.action();
             this.lastTaskActionTs = now;
           }
@@ -166,8 +175,9 @@ export class Role {
     }
   }
 
-  addIntervalActive(task: string, pos: Pos, call: () => void) {
-    this.task = { name: task, pos, action: call, taskStatus: 'doing' };
+  addIntervalActive(props: TaskProp) {
+    const { taskName, loopOriginPos, action, interval = 10000 } = props;
+    this.task = { taskName, loopOriginPos, action, interval, taskStatus: 'doing' };
     this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
   }
 

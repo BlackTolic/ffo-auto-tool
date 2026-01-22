@@ -67,8 +67,7 @@ export class TianQuanAction {
   }
 
   public start() {
-    // 在仓库管理员处进行循环
-    this.role.addIntervalActive('刷天泉', { x: 291, y: 124 }, () => {
+    const loopAction = () => {
       console.log('开始跑步', this.role.position);
       new MoveActions(this.role).startAutoFindPath(TianDu.杨戬).then(() => {
         if (isArriveAimNear(this.role.position, TianDu.杨戬)) {
@@ -88,7 +87,9 @@ export class TianQuanAction {
           });
         }
       });
-    });
+    };
+    // 在仓库管理员处进行循环
+    this.role.addIntervalActive({ taskName: '刷天泉', loopOriginPos: { x: 291, y: 124 }, action: loopAction, interval: 10000 });
   }
 
   public stop() {

@@ -2,9 +2,12 @@
 
 import { damoBindingManager } from '..';
 import { OCR_NAN_JIAO_MONSTER } from '../../constant/monster-feature';
+import { isArriveAimNear } from '../../utils/common';
 import { MoveActions } from '../move';
 import { Role } from '../rolyer';
 import { AttackActions } from '../skills';
+
+const LOOP_INIT_POS = { x: 227, y: 53 };
 
 const pos = [
   // 无泪南郊
@@ -21,7 +24,7 @@ const pos = [
   { x: 257, y: 77 },
   { x: 182, y: 85 },
   { x: 175, y: 50 },
-  { x: 227, y: 53 },
+  LOOP_INIT_POS,
 ];
 
 // 中文注释：自动寻路切换返回结果
@@ -34,7 +37,7 @@ export interface AutoRouteToggleResult {
 
 export class WuLeiNanJiaoAction {
   private static instanceMap = new Map<number, WuLeiNanJiaoAction>();
-  private role: Role;
+  public role: Role;
   private actions: MoveActions;
   private active: AttackActions;
 
@@ -63,12 +66,17 @@ export class WuLeiNanJiaoAction {
 
   public start() {
     // 在(227,53)附近开启循环
-    this.role.addIntervalActive('无泪南郊练级', { x: 227, y: 53 }, () => {
-      console.log('无泪南郊练级任务启动！', this.role.position);
-      this.actions.startAutoFindPath(pos, this.active).then(res => {
-        this.role.updateTaskStatus('done');
-        console.log('无泪南郊练级任务完成！', this.role.position);
-      });
+    this.role.addIntervalActive({
+      taskName: '无泪南郊练级',
+      loopOriginPos: LOOP_INIT_POS,
+      action: () => {
+        console.log('无泪南郊练级任务启动！', this.role.position);
+        this.actions.startAutoFindPath(pos, this.active).then(res => {
+          this.role.updateTaskStatus('done');
+          console.log('无泪南郊练级任务完成！', this.role.position);
+        });
+      },
+      interval: 5000,
     });
   }
 
@@ -96,6 +104,13 @@ let curAction: WuLeiNanJiaoAction | null = null;
 export const toggleWuLeiNanJiao = (): AutoRouteToggleResult => {
   try {
     curAction = WuLeiNanJiaoAction.getInstance();
+    if (!curAction) {
+      return { ok: false, message: '未检测到前台窗口角色' };
+    }
+    // 检查当前位置是否是在无泪南郊循环触发点
+    if (!isArriveAimNear(curAction.role.position, LOOP_INIT_POS, 10)) {
+      return { ok: false, message: '当前位置不在无泪南郊循环触发点，无法开启自动寻路' };
+    }
     if (curAction?.isRunning()) {
       curAction.stop();
       return { ok: true, running: false };
