@@ -67,6 +67,7 @@ export class WuLeiNanJiaoAction {
       console.log('无泪南郊练级任务启动！', this.role.position);
       this.actions.startAutoFindPath(pos, this.active).then(res => {
         this.role.updateTaskStatus('done');
+        console.log('无泪南郊练级任务完成！', this.role.position);
       });
     });
   }
