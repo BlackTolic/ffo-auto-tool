@@ -48,10 +48,6 @@ export class MoveActions {
   }
 
   async move(fromPos: Pos, curAimPos: Pos) {
-    // 改成每次移动前进行攻击
-    // if (this.actions) {
-    //   this.actions.attackNearestMonster();
-    // }
     const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
     const { x, y } = getCirclePoint(angle);
     this.dm.MoveTo(x, y);
@@ -60,58 +56,21 @@ export class MoveActions {
     this.dm.LeftDown();
   }
 
-  // async asyncFormTo(fromPos: Pos, toPos: Pos[] | Pos): Promise<Pos> {
-  //   return new Promise((res, rej) => {
-  //     if (!Array.isArray(toPos)) {
-  //       toPos = [toPos];
-  //     }
-  //     console.log('当前位置', toPos);
-  //     console.log('目标位置', toPos[toPos.length - 1]);
-  //     // 第一次寻路开启连续点击
-  //     if (!isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
-  //       const curAimPos = toPos[this.recordAimPosIndex];
-  //       !this.isPause && this.move(fromPos, curAimPos);
-  //     }
-
-  //     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex < toPos.length - 1) {
-  //       this.recordAimPosIndex++;
-  //       return this.asyncFormTo(fromPos, toPos);
-  //     }
-  //     //  { x: 335, y: 126 }
-  //     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex === toPos.length - 1) {
-  //       this.dm.LeftClick();
-  //       console.log('目标已到达指定位置');
-  //       res(toPos[this.recordAimPosIndex]);
-  //     }
-  //   });
-  // }
-
   fromTo(fromPos: Pos, toPos: Pos[] | Pos): boolean {
     if (!Array.isArray(toPos)) {
       toPos = [toPos];
     }
-    // console.log('开始移动了：', fromPos, toPos[this.recordAimPosIndex]);
-    // 第一次寻路开启连续点击
-    if (!isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
+    // 判断是否达到最后一个目的坐标，没有到达就继续移动
+    if (!(isArriveAimNear(fromPos, toPos[toPos.length - 1]) && this.recordAimPosIndex === toPos.length - 1)) {
       const curAimPos = toPos[this.recordAimPosIndex];
       !this.isPause && this.move(fromPos, curAimPos);
     }
-    // 不是第一次，不需要再连续点击
-    // if (this.recordAimPosIndex > 0 && !isArriveAimNear(fromPos, toPos[toPos.length - 1])) {
-    //   const curAimPos = toPos[this.recordAimPosIndex];
-    //   // const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
-    //   // const { x, y } = getCirclePoint(angle);
-    //   // this.dm.MoveTo(x, y);
-    //   // this.dm.delay(200);
-    //   // // 嵌入攻击后
-    //   // this.actions && this.dm.LeftDown();
-    //   this.move(fromPos, curAimPos);
-    // }
+    // 已到达中途的坐标点后，切换下一个坐标
     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex < toPos.length - 1) {
       this.recordAimPosIndex++;
       return this.fromTo(fromPos, toPos);
     }
-    //  { x: 335, y: 126 }
+    // 到达最后的终点坐标
     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex === toPos.length - 1) {
       this.dm.LeftClick();
       console.log('目标已到达指定位置');
@@ -127,27 +86,24 @@ export class MoveActions {
     return new Promise((res, rej) => {
       this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
       let isArrive: boolean | undefined;
-      console.log('开启第一步');
+      console.log('执行startAutoFindPath，注册定时器');
       this.timer = setInterval(() => {
-        // console.log('定时器启动', this.role.position);
         if (this.role.position) {
-          isArrive = this.fromTo(this.role.position, toPos);
-          // console.log('开始寻路拉！！', this.role.position, toPos, isArrive);
+          // 判断是否到达目的地
+          isArrive = Array.isArray(toPos) ? this.fromTo(this.role.position, toPos) && this.recordAimPosIndex === toPos.length - 1 : this.fromTo(this.role.position, toPos);
         }
         if (isArrive) {
           this.timer && clearInterval(this.timer);
           this.timer = null;
           this.recordAimPosIndex = 0;
-          console.log('[角色信息] 已关闭自动寻路');
+          console.log('[角色信息] 已关闭自动寻路，并解除定时器');
           res(this.role.position);
         }
         // 开启自动攻击
-        // && this.actions?.currentAttackTargetPos
         if (actions) {
           actions.attackNearestMonster();
         }
       }, 300); // 中文注释：最小间隔 200ms，避免过于频繁\
-      console.log('注册定时器');
     });
   }
 
