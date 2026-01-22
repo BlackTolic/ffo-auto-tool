@@ -47,6 +47,8 @@ const damo = {
     keyName: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' = 'F1',
     intervalMs: number = 200
   ): Promise<{ ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string }> => ipcRenderer.invoke('autoKey:toggle', keyName, intervalMs),
+  // 中文注释：设置当前选中的窗口句柄
+  setSelectHwnd: (hwnd: number | null): Promise<{ ok: boolean }> => ipcRenderer.invoke('damo:setSelectHwnd', hwnd),
 };
 
 // 新增：环境校验 API，渲染进程可调用展示结果

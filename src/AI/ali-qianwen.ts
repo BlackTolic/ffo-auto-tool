@@ -2,8 +2,8 @@
 import axios from 'axios';
 const KEY = 'sk-a383696181d247b38af3088bd628bde6';
 const URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
-// const MODEL = 'qwen3-vl-plus';
-const MODEL = '2-VL-72B';
+const MODEL = 'qwen3-vl-plus';
+// const MODEL = '2-VL-72B';
 export const getVerifyCodeByAliQW = async (url: string) => {
   try {
     const response = await axios.post(
