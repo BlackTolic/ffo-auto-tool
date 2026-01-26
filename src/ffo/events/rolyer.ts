@@ -136,6 +136,7 @@ export class Role {
                 console.log('answerPos', answerPos);
                 bindDm.moveTo(answerPos.x, answerPos.y);
                 bindDm.leftClick();
+                console.log('当前时间:', new Date().toLocaleString());
                 console.log('关闭截图啦', this.openCapture);
               });
             }
