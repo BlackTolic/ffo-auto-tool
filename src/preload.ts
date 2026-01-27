@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 // 中文注释：大漠相关 API（仅示例保留核心调用）
-const damo = {
+const eventManager = {
   // 中文注释：获取当前前台窗口句柄
   getForegroundWindow: (): Promise<number> => ipcRenderer.invoke('damo:getForegroundWindow'),
   // 中文注释：查询大漠插件版本号（供渲染层显示或诊断）
@@ -75,7 +75,7 @@ const ffoActions = {
 };
 
 // 中文注释：向渲染进程暴露用于操作大漠插件的 API
-contextBridge.exposeInMainWorld('damo', damo);
+contextBridge.exposeInMainWorld('eventManager', eventManager);
 // 中文注释：向渲染进程暴露环境校验 API
 contextBridge.exposeInMainWorld('env', env);
 // 中文注释：向渲染进程暴露窗口控制 API

@@ -2,8 +2,8 @@ export {}; // 让本文件成为模块，避免与全局冲突
 
 declare global {
   interface Window {
-    // 中文注释：在 preload 暴露的 damo API，用于操作大漠插件与绑定管理
-    damo: {
+    // 中文注释：在 preload 暴露的 eventManager API，用于操作事件管理
+    eventManager: {
       ver(): Promise<string>;
       getForegroundWindow(): Promise<number>;
       bindWindow(hwnd: number, display: string, mouse: string, keypad: string, mode: number): Promise<number>;
@@ -119,7 +119,7 @@ declare global {
   // 中文注释：向全局 window 挂载 API（preload 暴露）
   declare global {
     interface Window {
-      damo: DamoAPI; // 中文注释：大漠操作 API
+      eventManager: EventManagerAPI; // 中文注释：事件管理 API
       ffoActions: FfoActionsAPI; // 中文注释：FFO 动作 API
     }
   }

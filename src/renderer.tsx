@@ -36,7 +36,7 @@ const renderDictInfo = async () => {
   const container = document.getElementById('dict-info-content');
   if (!container) return;
   try {
-    const info: DictInfo | null = await window.damo.getDictInfo();
+    const info: DictInfo | null = await window.eventManager.getDictInfo();
     const lines: string[] = [];
     if (!info) {
       lines.push('未获取到字库信息（插件未初始化或未绑定窗口）');
@@ -62,8 +62,8 @@ const subscribeDictInfoUpdates = () => {
   const container = document.getElementById('dict-info-content');
   if (!container) return;
   // 中文注释：以下事件 API 依赖 preload 暴露；若未实现，将在运行时报 warn
-  // @ts-expect-error 运行时存在 onDictInfoUpdated/类型未在 DamoAPI 中声明
-  window.damo.onDictInfoUpdated(({ hwnd, info }: { hwnd: number; info: DictInfo | null }) => {
+  // @ts-expect-error 运行时存在 onDictInfoUpdated/类型未在 EventManagerAPI 中声明
+  window.eventManager.onDictInfoUpdated(({ hwnd, info }: { hwnd: number; info: DictInfo | null }) => {
     try {
       const lines: string[] = [];
       lines.push(`窗口句柄: ${hwnd}`);
@@ -96,7 +96,7 @@ const setupBindActions = () => {
     btn.disabled = true; // 中文注释：防重入
     resultEl.textContent = '正在绑定前台窗口…';
     try {
-      const ret = await window.damo.bindForeground();
+      const ret = await window.eventManager.bindForeground();
       if (ret.ok) {
         resultEl.textContent = `绑定成功 | pid=${ret.pid} hwnd=${ret.hwnd} count=${ret.count}`;
       } else {
@@ -111,7 +111,7 @@ const setupBindActions = () => {
 };
 
 // 中文注释：确认渲染入口执行与插件版本
-window.damo
+window.eventManager
   .ver()
   .then(v => console.log('[Damo] Ver:', v))
   .catch(e => console.warn('[Damo] 不可用:', e?.message || e));
@@ -134,8 +134,8 @@ window.addEventListener('DOMContentLoaded', () => {
 // 中文注释：在页面卸载/关闭前执行清理（取消 IPC 事件订阅）
 // window.addEventListener('beforeunload', () => {
 //   try {
-//     // @ts-expect-error 运行时存在 offDictInfoUpdated/类型未在 DamoAPI 中声明
-//     window.damo.offDictInfoUpdated();
+//     // @ts-expect-error 运行时存在 offDictInfoUpdated/类型未在 EventManagerAPI 中声明
+//     window.eventManager.offDictInfoUpdated();
 //   } catch (e) {
 //     console.warn('[渲染清理] 取消字库更新订阅失败:', String((e as any)?.message || e));
 //   }
