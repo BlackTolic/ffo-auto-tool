@@ -42,6 +42,7 @@ declare global {
         keyName?: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10',
         intervalMs?: number
       ): Promise<{ ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string }>;
+      setSelectHwnd(hwnd: number | null): Promise<{ ok: boolean }>;
     };
 
     // 中文注释：环境校验 API（preload 暴露）
@@ -82,6 +83,7 @@ declare global {
       keyName?: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10',
       intervalMs?: number
     ) => Promise<{ ok: boolean; running?: boolean; hwnd?: number; key?: string; intervalMs?: number; message?: string }>; // 中文注释：切换自动按键
+    setSelectHwnd: (hwnd: number | null) => Promise<{ ok: boolean }>; // 中文注释：设置当前选中的窗口句柄
   }
 
   // 中文注释：自动路线切换结果接口（用于前端 UI 状态更新）

@@ -125,7 +125,7 @@ export class Role {
                 const map = { I, II, III };
                 let answerPos;
                 // 识别不出来直接选第一个
-                if (![Ali, TuJian].every(item => item !== null)) {
+                if ([Ali, TuJian].some(item => !item)) {
                   answerPos = map['I'];
                 }
                 const result = selectRightAnwser(Ali, TuJian);
@@ -136,6 +136,7 @@ export class Role {
                 console.log('answerPos', answerPos);
                 bindDm.moveTo(answerPos.x, answerPos.y);
                 bindDm.leftClick();
+                console.log('当前时间:', new Date().toLocaleString());
                 console.log('关闭截图啦', this.openCapture);
               });
             }
@@ -150,6 +151,7 @@ export class Role {
         this.position = pos;
         const taskStatus = this.task?.taskStatus ?? '';
         if (this.task && ['', 'done'].includes(taskStatus) && isArriveAimNear(pos as Pos, this.task.loopOriginPos, 10)) {
+          this.task.taskStatus = 'doing';
           const now = Date.now();
           if (now - this.lastTaskActionTs >= this.task.interval) {
             console.log(`[角色信息] 已到达任务位置 ${this.task.taskName}`);
@@ -177,7 +179,7 @@ export class Role {
 
   addIntervalActive(props: TaskProp) {
     const { taskName, loopOriginPos, action, interval = 10000 } = props;
-    this.task = { taskName, loopOriginPos, action, interval, taskStatus: 'doing' };
+    this.task = { taskName, loopOriginPos, action, interval };
     this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
   }
 

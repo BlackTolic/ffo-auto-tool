@@ -259,6 +259,12 @@ export function registerIpcHandlers(deps: {
       return { ok: false, message: (e as any)?.message || String(e) };
     }
   });
+
+  // 设置当前选中的窗口句柄
+  ipcMain.handle('damo:setSelectHwnd', (_event, hwnd: number | null) => {
+    damoBindingManager.selectHwnd = hwnd;
+    return { ok: true };
+  });
 }
 
 // 新增：窗口控制 - 最小化当前窗口

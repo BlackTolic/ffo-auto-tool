@@ -98,6 +98,12 @@ export default function BasicConfigView() {
     loadBoundWindows();
   }, []);
 
+  useEffect(() => {
+    if (isElectron) {
+      window.damo.setSelectHwnd(selectedHwnd);
+    }
+  }, [selectedHwnd, isElectron]);
+
   // 中文注释：绑定当前选择的句柄
   const handleBind = async () => {
     if (!selectedHwnd) {
