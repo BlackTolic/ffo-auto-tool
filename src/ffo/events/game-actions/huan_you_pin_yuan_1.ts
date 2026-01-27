@@ -1,7 +1,7 @@
 // 刷天泉
 
 import { damoBindingManager } from '..';
-import { OCR_NAN_JIAO_MONSTER } from '../../constant/monster-feature';
+import { OCR_PAN_GUI_MONSTER } from '../../constant/monster-feature';
 import { isArriveAimNear } from '../../utils/common';
 import { MoveActions } from '../move';
 import { Role } from '../rolyer';
@@ -40,7 +40,7 @@ export class HuanYouPinYuan1Action {
   constructor(role: Role) {
     this.role = role;
     this.actions = new MoveActions(role);
-    this.active = new AttackActions(role, OCR_NAN_JIAO_MONSTER);
+    this.active = new AttackActions(role, OCR_PAN_GUI_MONSTER);
   }
 
   public static getInstance(): HuanYouPinYuan1Action | null {
