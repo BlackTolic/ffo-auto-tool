@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import './index.less'; // 中文注释：引入当前视图的 Less 样式文件（替换原内联样式）
 
 // 中文注释：基本配置界面 - 增加“选择可绑定窗口”下拉框与“绑定”按钮
-// 说明：通过 preload 暴露的 window.damo API 从主进程获取候选窗口列表，并允许按句柄绑定
+// 说明：通过 preload 暴露的 window.eventManager API 从主进程获取候选窗口列表，并允许按句柄绑定
 
 interface BindableOption {
   value: number; // 中文注释：窗口句柄
@@ -22,7 +22,7 @@ export default function BasicConfigView() {
   const boundSet = new Set(boundList.map(b => b.hwnd));
 
   // 新增：判断是否处于 Electron 环境（预览模式下不具备 damo 与 env）
-  const isElectron = typeof window !== 'undefined' && !!(window as any).damo && !!(window as any).env; // 中文注释：存在 preload 暴露的 API 则认为是 Electron
+  const isElectron = typeof window !== 'undefined' && !!(window as any).eventManager && !!(window as any).env; // 中文注释：存在 preload 暴露的 API 则认为是 Electron
 
   // 中文注释：格式化候选项的显示文本
   const formatLabel = (w: any): string => {
@@ -43,7 +43,7 @@ export default function BasicConfigView() {
     setLoading(true);
     setMessage('');
     try {
-      const list = await window.damo.listBindableWindows();
+      const list = await window.eventManager.listBindableWindows();
       console.log('可绑定窗口列表:', list);
       // 中文注释：仅保留标题或类名包含“QQ幻想”的窗口（中文匹配不区分大小写）
       const targetField = 'QQ幻想';
@@ -60,7 +60,7 @@ export default function BasicConfigView() {
 
       // 新增：若查不到可绑定窗口，则批量清空所有已绑定窗口
       if (opts.length === 0) {
-        const res = await window.damo.unbindAll();
+        const res = await window.eventManager.unbindAll();
         if (res.ok) {
           setMessage('未找到可绑定窗口，已清空所有已绑定窗口');
         } else {
@@ -83,7 +83,7 @@ export default function BasicConfigView() {
       return;
     }
     try {
-      const list = await window.damo.listBoundWindows();
+      const list = await window.eventManager.listBoundWindows();
       console.log('已绑定窗口列表:', list);
       setBoundList(list || []);
     } catch (err) {
@@ -100,7 +100,7 @@ export default function BasicConfigView() {
 
   useEffect(() => {
     if (isElectron) {
-      window.damo.setSelectHwnd(selectedHwnd);
+      window.eventManager.setSelectHwnd(selectedHwnd);
     }
   }, [selectedHwnd, isElectron]);
 
@@ -118,7 +118,7 @@ export default function BasicConfigView() {
     setBinding(true);
     setMessage('');
     try {
-      const res = await window.damo.bindHwnd(selectedHwnd);
+      const res = await window.eventManager.bindHwnd(selectedHwnd);
       if (res.ok) {
         setMessage(`绑定成功：hwnd=${res.hwnd}`);
         // 中文注释：绑定成功后刷新“已绑定窗口列表”
@@ -152,7 +152,7 @@ export default function BasicConfigView() {
     setUnbinding(true);
     setMessage('');
     try {
-      const res = await window.damo.unbindHwnd(selectedHwnd);
+      const res = await window.eventManager.unbindHwnd(selectedHwnd);
       if (res.ok) {
         setMessage(`解绑成功：hwnd=${res.hwnd}`);
         await loadBoundWindows();
