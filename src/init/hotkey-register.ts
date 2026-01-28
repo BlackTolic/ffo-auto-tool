@@ -2,7 +2,7 @@ import { globalShortcut } from 'electron';
 import { ensureDamo } from '../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
-import { toggleHuanYouPinYuan1 } from '../ffo/events/game-actions/huan_you_pin_yuan_1';
+import { toggleJinHuBeiAn } from '../ffo/events/game-actions/jin-hu-bei-an';
 import { pauseCurActive, restartCurActive } from '../ffo/events/game-actions/tian-quan';
 import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
@@ -126,8 +126,9 @@ export function registerGlobalHotkeys() {
     const okRole = globalShortcut.register('Alt+R', () => {
       // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
       // const ret = toggleTianquan();
-      const ret = toggleHuanYouPinYuan1();
-      const msg = ret.ok ? `[快捷键] Alt+R 切换幻幽平原一层成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换幻幽平原一层失败 | ${ret.message}`;
+      // const ret = toggleHuanYouPinYuan1();
+      const ret = toggleJinHuBeiAn();
+      const msg = ret.ok ? `[快捷键] Alt+R 切换镜湖北岸成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换镜湖北岸失败 | ${ret.message}`;
       console.log(msg);
     });
     if (!okRole) console.warn('[快捷键] Alt+R 注册失败');
