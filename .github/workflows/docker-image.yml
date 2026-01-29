@@ -1,0 +1,60 @@
+# 中文注释：GitHub Actions 工作流，用于构建并推送 Docker 镜像到 GHCR
+# 触发条件：推送到 main、打 tag、或手动触发
+
+name: 构建并推送镜像
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ] # 中文注释：打版本标签时也触发
+  workflow_dispatch: # 中文注释：允许手动触发
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest # 中文注释：使用 Ubuntu 以便原生支持 Docker 构建
+    permissions:
+      contents: read
+      packages: write # 中文注释：推送到 GHCR 需要写权限
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 登录 GHCR（使用 GITHUB_TOKEN）
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 设置 Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 计算镜像标签
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha
+
+      - name: 构建并推送镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: . # 中文注释：使用仓库根目录作为构建上下文
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 输出镜像标签
+        run: |
+          echo "生成的镜像标签：${{ steps.meta.outputs.tags }}"
+
+# 使用说明（中文注释）：
+# - 默认会推送到 GHCR：ghcr.io/<owner>/<repo>:<tag>
+# - 在仓库 Settings -> Actions -> General 中启用 Workflows；Packages 权限需允许。
+# - 若需推送到其他注册表，请修改 docker/login-action 与 images 配置。

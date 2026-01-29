@@ -1,0 +1,26 @@
+# 中文注释：忽略不需要进入镜像的文件与目录
+node_modules/
+.git/
+.gitignore
+.idea/
+.vscode/
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 构建产物与临时文件（中文注释：避免重复拷贝）
+out/
+dist/
+build/
+coverage/
+
+# 大体积或仅本地使用的工具资源（中文注释：如需请按需调整）
+public/
+tools/
+scripts/
+lib/
+
+# 其他无关文件（中文注释：由你根据需要补充）
+*.local
+*.swp
