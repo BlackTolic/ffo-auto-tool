@@ -13,20 +13,24 @@ const PATH_POS = [
   { x: 170, y: 51 },
   { x: 158, y: 58 },
 ];
-const autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS, PATH_POS, TASK_NAME);
+
+let autoFarmingAction: AutoFarmingAction | null = null;
 
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
-export const toggleHuanYouPinYuan1 = autoFarmingAction.toggle();
+export const toggleHuanYouPinYuan1 = () => {
+  autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS, PATH_POS, TASK_NAME);
+  autoFarmingAction.toggle();
+};
 
 export const pauseCurActive = () => {
-  autoFarmingAction.pause();
+  autoFarmingAction?.pause();
 };
 
 export const restartCurActive = () => {
-  autoFarmingAction.restart();
+  autoFarmingAction?.restart();
 };
 
 // 中文注释：停止当前激活的无泪南郊动作（清空任务并停止自动寻路）
 export const stopCurActive = () => {
-  autoFarmingAction.stop();
+  autoFarmingAction?.stop();
 };
