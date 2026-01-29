@@ -1,3 +1,4 @@
+import { OCR_PAN_GUI_MONSTER } from '../../constant/monster-feature';
 import { AutoFarmingAction } from './auto-farming';
 
 const TASK_NAME = '幻幽平原一层练级';
@@ -18,7 +19,7 @@ let autoFarmingAction: AutoFarmingAction | null = null;
 
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
 export const toggleHuanYouPinYuan1 = () => {
-  autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS, PATH_POS, TASK_NAME);
+  autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS, PATH_POS, OCR_PAN_GUI_MONSTER, TASK_NAME);
   autoFarmingAction.toggle();
 };
 

@@ -1,5 +1,5 @@
 import { damoBindingManager } from '..';
-import { OCR_NAN_JIAO_MONSTER } from '../../constant/monster-feature';
+import { MonsterFeature } from '../../constant/monster-feature';
 import { isArriveAimNear } from '../../utils/common';
 import { MoveActions, Pos } from '../move';
 import { Role } from '../rolyer';
@@ -22,7 +22,7 @@ export class AutoFarmingAction {
   private pathPos: Pos[]; // 寻路位置
   private taskName: string; // 任务名称
 
-  constructor(initPos: Pos, pathPos: Pos[], taskName: string) {
+  constructor(initPos: Pos, pathPos: Pos[], ocrMonster: MonsterFeature, taskName: string) {
     const hwnd = damoBindingManager.selectHwnd;
     if (!hwnd || !damoBindingManager.isBound(hwnd)) {
       console.log('未选择已绑定的窗口', hwnd);
@@ -36,11 +36,11 @@ export class AutoFarmingAction {
     this.initPos = initPos;
     this.pathPos = [...pathPos, initPos];
     this.actions = new MoveActions(role);
-    this.active = new AttackActions(role, OCR_NAN_JIAO_MONSTER);
+    this.active = new AttackActions(role, ocrMonster);
     this.taskName = taskName;
   }
 
-  public static getInstance(initPos: Pos, pathPos: Pos[], taskName: string): AutoFarmingAction {
+  public static getInstance(initPos: Pos, pathPos: Pos[], ocrMonster: MonsterFeature, taskName: string): AutoFarmingAction {
     const hwnd = damoBindingManager.selectHwnd;
     if (!hwnd || !damoBindingManager.isBound(hwnd)) {
       console.log('未选择已绑定的窗口', hwnd);
@@ -52,7 +52,7 @@ export class AutoFarmingAction {
     }
 
     if (!this.instanceMap.has(hwnd)) {
-      const action = new AutoFarmingAction(initPos, pathPos, taskName);
+      const action = new AutoFarmingAction(initPos, pathPos, ocrMonster, taskName);
       this.instanceMap.set(hwnd, action);
       return action;
     }
