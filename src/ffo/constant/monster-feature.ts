@@ -5,6 +5,7 @@ export const MONSTER_FEATURE: Record<string, string> = {
   天泉怪物: '精英|头目',
   南郊怪物: '盾卫者|石魈|吞噬|灵|敏',
   幻幽平原一层怪物: '丧气|浊液|灰翼|鬼蝠|速|敏',
+  镜湖北岸怪物: '剧毒鬼蝎|黑翼鬼蝠|黑翼|灵斑蜥|山魔|灵|剧毒|鬼蝎|蜥|速',
 };
 
 export interface MonsterFeature {
@@ -27,3 +28,5 @@ export const OCR_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['天泉怪
 export const OCR_NAN_JIAO_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['南郊怪物'], color: 'a8a8a0-111111', sim: 1.0 };
 // 幻幽平原一层怪物
 export const OCR_PAN_GUI_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['幻幽平原一层怪物'], color: 'a8a8a0-111111', sim: 1.0 };
+// 镜湖北岸怪物
+export const OCR_JIN_HU_BEI_AN_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['镜湖北岸怪物'], color: 'a8a8a0-111111', sim: 1.0 };
