@@ -1,7 +1,14 @@
 import { AutoT } from '../../../auto-plugin';
-import { DEFAULT_ADDRESS_NAME, DEFAULT_MONSTER_NAME, DEFAULT_ROLE_POSITION, DEFAULT_SERVER_DISCONNECT, DEFAULT_VERIFY_CODE } from '../../constant/OCR-pos';
+import {
+  DEFAULT_ADDRESS_NAME,
+  DEFAULT_BLOOD_STATUS,
+  DEFAULT_MONSTER_NAME,
+  DEFAULT_ROLE_POSITION,
+  DEFAULT_SERVER_DISCONNECT,
+  DEFAULT_STATUS_ICON_POS,
+  DEFAULT_VERIFY_CODE,
+} from '../../constant/OCR-pos';
 import { parseRolePositionFromText, parseTextPos } from '../common';
-
 // 检查服务器是否断线
 export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const offlinePos = DEFAULT_SERVER_DISCONNECT[bindWindowSize];
@@ -45,4 +52,18 @@ export const getMonsterName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
   const monsterPos = DEFAULT_MONSTER_NAME[bindWindowSize];
   const monsterPosText = bindDm.ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
   return monsterPosText;
+};
+
+// 获取血量状态（获取指定区域颜色均值）
+export const getBloodStatus = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const bloodStatusPos = DEFAULT_BLOOD_STATUS[bindWindowSize];
+  const bloodStatusText = bindDm.getColor(bloodStatusPos.x1, bloodStatusPos.y1);
+  return bloodStatusText === '103848' ? 'danger' : 'safe';
+};
+
+// 是否处于回血状态
+export const getStatusBloodIcon = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const statusIconPos = (DEFAULT_STATUS_ICON_POS as any)[bindWindowSize]?.status_blood;
+  const statusIconText = bindDm.findColorE(statusIconPos.x1, statusIconPos.y1, statusIconPos.x2, statusIconPos.y2, statusIconPos.color, statusIconPos.sim);
+  return parseRolePositionFromText(statusIconText);
 };

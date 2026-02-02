@@ -56,7 +56,5 @@ export const selectRightAnwser = (options: string | null, question: string | nul
   });
   const maxSim = Math.max(...arr.map(z => z.sim));
   const result = arr.filter(z => z.sim === maxSim);
-  console.log(arr, 'arr11111');
-  console.log(result, 'result');
   return result?.[0]?.target;
 };

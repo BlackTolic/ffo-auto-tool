@@ -27,6 +27,12 @@ export const DEFAULT_MONSTER_NAME = {
   '1280*800': { x1: 95, y1: 109, x2: 200, y2: 144, color: DEFAULT_MONSTER_COLOR, sim: DEFAULT_SIM },
 };
 
+// 血量状态（获取指定区域颜色均值）
+export const DEFAULT_BLOOD_STATUS = {
+  '1600*900': { x1: 117, y1: 31 },
+  '1280*800': { x1: 1167, y1: 39, x2: 1218, y2: 56, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+};
+
 // 神医验证码
 export const DEFAULT_VERIFY_CODE = {
   '1600*900': { x1: 0, y1: 113, x2: 1598, y2: 835, color: 'e80000-111111', sim: DEFAULT_SIM },
@@ -72,5 +78,15 @@ export const DEFAULT_MENUS_POS = {
     shelf: { x: 1542, y: 862, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
     // 设置
     setting: { x: 1581, y: 860, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  },
+};
+
+// 状态图标坐标
+export const DEFAULT_STATUS_ICON_POS = {
+  '1600*900': {
+    // 血量
+    blood: { x: 1245, y: 858, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+    // 状态-人参
+    status_blood: { x: 1496, y: 254, x2: 1595, y2: 637, color: '90a070-11111|a0a080-11111|28ac48-11111', sim: DEFAULT_SIM },
   },
 };

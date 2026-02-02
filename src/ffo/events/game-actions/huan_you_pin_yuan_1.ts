@@ -5,7 +5,7 @@ const TASK_NAME = '幻幽平原一层练级';
 const INIT_POS = { x: 154, y: 44 };
 const PATH_POS = [
   { x: 184, y: 42 },
-  { x: 176, y: 51 },
+  { x: 175, y: 50 },
   { x: 194, y: 31 },
   { x: 219, y: 41 },
   { x: 224, y: 60 },
@@ -20,7 +20,7 @@ let autoFarmingAction: AutoFarmingAction | null = null;
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
 export const toggleHuanYouPinYuan1 = () => {
   autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS, PATH_POS, OCR_PAN_GUI_MONSTER, TASK_NAME);
-  autoFarmingAction.toggle();
+  return autoFarmingAction.toggle();
 };
 
 export const pauseCurActive = () => {

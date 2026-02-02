@@ -2,7 +2,7 @@ import { globalShortcut } from 'electron';
 import { ensureDamo } from '../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
-import { toggleJinHuBeiAn } from '../ffo/events/game-actions/jin-hu-bei-an';
+import { toggleHuanYouPinYuan1 } from '../ffo/events/game-actions/huan_you_pin_yuan_1';
 import { pauseCurActive, restartCurActive } from '../ffo/events/game-actions/tian-quan';
 import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
@@ -123,11 +123,11 @@ export function registerGlobalHotkeys() {
 
   // 中文注释：Alt+R 启动当前前台窗口的角色坐标轮询（每秒一次）
   try {
-    const okRole = globalShortcut.register('Alt+R', () => {
+    const okRole = globalShortcut.register('Alt+S', () => {
       // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
       // const ret = toggleTianquan();
-      // const ret = toggleHuanYouPinYuan1();
-      const ret = toggleJinHuBeiAn();
+      const ret = toggleHuanYouPinYuan1();
+      // const ret = toggleJinHuBeiAn();
       const msg = ret.ok ? `[快捷键] Alt+R 切换镜湖北岸成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换镜湖北岸失败 | ${ret.message}`;
       console.log(msg);
     });

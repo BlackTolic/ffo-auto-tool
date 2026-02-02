@@ -7,7 +7,7 @@ import { emailStrategy } from '../../utils/email';
 import { DEFAULT_MENUS_POS, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { isArriveAimNear, selectRightAnwser } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
-import { getMapName, getMonsterName, getRolePosition, getVerifyCodePos, isOffline } from '../utils/ocr-check/base';
+import { getBloodStatus, getMapName, getMonsterName, getRolePosition, getStatusBloodIcon, getVerifyCodePos, isOffline } from '../utils/ocr-check/base';
 import { MoveActions } from './move';
 
 export type Pos = {
@@ -42,7 +42,8 @@ export class Role {
   public position: Pos | null = { x: 0, y: 0 }; // 当前角色所在坐标
   public map: string = ''; // 当前所在地图名称
   private isOpenAutoRoute: boolean = false; // 是否开启自动寻路
-  private bloodStatus: string = ''; // 血量状态
+  public bloodStatus: string = ''; // 血量状态
+  public statusBloodIcon: Pos | null = null;
   private isDead: boolean = false; // 是否死亡
   public bindWindowSize: '1600*900' | '1280*800' = '1600*900'; // 绑定窗口的尺寸
   private moveActions: MoveActions | null = null; // 移动操作类
@@ -84,6 +85,10 @@ export class Role {
         const addressName = getMapName(bindDm, this.bindWindowSize);
         // 获取选中的怪物名
         const monsterName = getMonsterName(bindDm, this.bindWindowSize);
+        // 获取血量状态
+        const bloodStatus = getBloodStatus(bindDm, this.bindWindowSize);
+        // 是否处于回血状态
+        this.statusBloodIcon = getStatusBloodIcon(bindDm, this.bindWindowSize);
         // 截图
         // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
         // 获取神医坐标
@@ -138,6 +143,7 @@ export class Role {
                 bindDm.leftClick();
                 console.log('当前时间:', new Date().toLocaleString());
                 console.log('关闭截图啦', this.openCapture);
+                emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色离线', text: `角色 ${this.name} 已掉线` });
               });
             }
           }
@@ -149,6 +155,7 @@ export class Role {
         this.selectMonster = monsterName;
         this.map = addressName;
         this.position = pos;
+        this.bloodStatus = bloodStatus;
         const taskStatus = this.task?.taskStatus ?? '';
         if (this.task && ['', 'done'].includes(taskStatus) && isArriveAimNear(pos as Pos, this.task.loopOriginPos, 10)) {
           this.task.taskStatus = 'doing';
