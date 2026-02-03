@@ -11,3 +11,65 @@
   margin-top: 4px;
 }
 
+/* 中文注释：简易弹框样式 */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal {
+  width: 520px;
+  max-width: calc(100vw - 40px);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 14px 38px rgba(80, 100, 160, 0.3);
+  border: 1px solid rgba(121, 134, 199, 0.2);
+}
+.modal-header {
+  padding: 14px 16px 0 16px;
+}
+.modal-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+.modal-body {
+  padding: 12px 16px 0 16px;
+}
+.modal-footer {
+  padding: 14px 16px 16px 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.form-row label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.form-row input,
+.form-row textarea,
+.form-row select {
+  border: 1px solid rgba(121, 134, 199, 0.3);
+  border-radius: 10px;
+  padding: 8px 10px;
+  outline: none;
+  background: #f8faff;
+}
+.form-row .inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form-row .inline .sep {
+  color: var(--muted);
+}
+
