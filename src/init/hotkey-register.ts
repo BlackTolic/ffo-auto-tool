@@ -74,7 +74,7 @@ export function registerGlobalHotkeys() {
   // 中文注释：Alt+W 切换自动按键
   try {
     const ok = globalShortcut.register('Alt+W', () => {
-      const ret = toggleAutoKey('F1', 90);
+      const ret = toggleAutoKey('F1', 60 * 1000 * 65);
       const msg = ret.ok ? `[快捷键] Alt+W 切换成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+W 切换失败 | ${ret.message}`;
       console.log(msg);
     });
