@@ -44,6 +44,7 @@ export class AttackActions {
   public timerMapList: Map<string, NodeJS.Timeout> = new Map();
   private skillPropsList: KeyPressOptions[] = [];
   private ocrMonster = { ...OCR_MONSTER, string: MONSTER_FEATURE['精英|头目'] };
+  private lastTime = 0; // 记录上次执行F10的时间戳
   // 技能组
   private cdController: Map<keyof typeof VK_F, boolean> = new Map([
     ['F1', false],
@@ -107,15 +108,20 @@ export class AttackActions {
   // 检查角色血量是否健康
   checkHealthStatus() {
     const bloodStatus = this.role.bloodStatus;
-    const statusBloodIcon = this.role.statusBloodIcon;
-    console.log(statusBloodIcon, 'statusBloodIcon');
+    // const statusBloodIcon = this.role.statusBloodIcon;
     if (bloodStatus === 'danger') {
-      console.log('角色血量进入危险状态');
-      // 执行一些安全措施，如使用状态技能
-      this.bindDm.KeyDownChar('F10');
-      this.bindDm.delay(500);
-      this.bindDm.KeyUpChar('F10');
-      this.bindDm.delay(200);
+      const now = Date.now();
+      if (now - this.lastTime > 120000) {
+        // 距离上次执行F10超过120秒
+        console.log('角色血量进入危险状态，执行F10', bloodStatus);
+        this.bindDm.KeyDownChar('F10');
+        this.bindDm.delay(500);
+        this.bindDm.KeyUpChar('F10');
+        this.bindDm.delay(200);
+        this.lastTime = now; // 更新上次执行时间
+      } else {
+        console.log('角色血量危险，但距离上次执行F10不足120秒，跳过');
+      }
     }
   }
 

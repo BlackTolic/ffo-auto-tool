@@ -100,7 +100,7 @@ export class AutoFarmingAction {
   }
 
   // 中文注释：切换自动寻路（第一次开启，第二次关闭）
-  public toggle(): AutoRouteToggleResult {
+  public toggle(loopAction?: () => void): AutoRouteToggleResult {
     try {
       if (!isArriveAimNear(this.role.position, this.initPos, 10)) {
         return { ok: false, message: `当前位置不在${this.taskName}循环触发点，无法开启自动寻路` };
@@ -109,7 +109,7 @@ export class AutoFarmingAction {
         this.stop();
         return { ok: true, running: false };
       } else {
-        this.start();
+        this.start(loopAction);
         return { ok: true, running: true };
       }
     } catch (err) {
