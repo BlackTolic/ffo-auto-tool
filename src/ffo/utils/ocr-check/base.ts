@@ -18,6 +18,13 @@ export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 };
 
 // 检查角色是否死亡
+export const isDead = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): boolean => {
+  // const deadPos = DEFAULT_STATUS_ICON_POS[bindWindowSize];
+  // const deadIcon = bindDm.ocr(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.color, deadPos.sim);
+  // console.log(deadIcon, 'deadIcon');
+  // return deadIcon.includes('死亡');
+  return false;
+};
 
 // 获取神医验证码
 export const getVerifyCodePos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
@@ -66,4 +73,11 @@ export const getStatusBloodIcon = (bindDm: AutoT, bindWindowSize: '1600*900' | '
   const statusIconPos = (DEFAULT_STATUS_ICON_POS as any)[bindWindowSize]?.status_blood;
   const statusIconText = bindDm.findColorE(statusIconPos.x1, statusIconPos.y1, statusIconPos.x2, statusIconPos.y2, statusIconPos.color, statusIconPos.sim);
   return parseRolePositionFromText(statusIconText);
+};
+
+// 全屏截图
+export const fullScreenShot = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  // const fullScreenPos = DEFAULT_FULL_SCREEN[bindWindowSize];
+  // const fullScreen = bindDm.capturePng(fullScreenPos.x1, fullScreenPos.y1, fullScreenPos.x2, fullScreenPos.y2, `${FULL_SCREEN_PATH}`);
+  // return fullScreen;
 };

@@ -7,7 +7,7 @@ import { emailStrategy } from '../../utils/email';
 import { DEFAULT_MENUS_POS, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { isArriveAimNear, selectRightAnwser } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
-import { getBloodStatus, getMapName, getMonsterName, getRolePosition, getStatusBloodIcon, getVerifyCodePos, isOffline } from '../utils/ocr-check/base';
+import { fullScreenShot, getBloodStatus, getMapName, getMonsterName, getRolePosition, getStatusBloodIcon, getVerifyCodePos, isDead, isOffline } from '../utils/ocr-check/base';
 import { MoveActions } from './move';
 
 export type Pos = {
@@ -44,7 +44,7 @@ export class Role {
   private isOpenAutoRoute: boolean = false; // 是否开启自动寻路
   public bloodStatus: string = ''; // 血量状态
   public statusBloodIcon: Pos | null = null;
-  private isDead: boolean = false; // 是否死亡
+  // private isDead: boolean = false; // 是否死亡
   public bindWindowSize: '1600*900' | '1280*800' = '1600*900'; // 绑定窗口的尺寸
   private moveActions: MoveActions | null = null; // 移动操作类
   private pollTimers = new Map<number, ReturnType<typeof setInterval>>(); // 记录轮询定时器
@@ -113,11 +113,21 @@ export class Role {
               this.lastVerifyCaptureTs = now;
               // 检查是否已经离线
               const isOff = isOffline(this.bindDm, this.bindWindowSize);
-              console.log(isOff, 'isOffisOff');
               if (isOff) {
                 // 发送邮件
                 emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色离线', text: `角色 ${this.name} 已掉线` });
                 // 断线后取消注册，终止
+                this.unregisterRole();
+                return;
+              }
+              // 检查角色是否死亡
+              const roleIsDead = isDead(bindDm, this.bindWindowSize);
+              if (roleIsDead) {
+                // 全屏截图
+                fullScreenShot(bindDm, this.bindWindowSize);
+                // 发送邮件
+                emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色死亡', text: `角色 ${this.name} 已死亡` });
+                // 死亡后取消注册，终止
                 this.unregisterRole();
                 return;
               }
@@ -138,12 +148,10 @@ export class Role {
                   answerPos = map['I'];
                 }
                 answerPos = map[result as keyof typeof map];
-                console.log('answerPos', answerPos);
                 bindDm.moveTo(answerPos.x, answerPos.y);
                 bindDm.leftClick();
                 console.log('当前时间:', new Date().toLocaleString());
                 console.log('关闭截图啦', this.openCapture);
-                emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色离线', text: `角色 ${this.name} 已掉线` });
               });
             }
           }
