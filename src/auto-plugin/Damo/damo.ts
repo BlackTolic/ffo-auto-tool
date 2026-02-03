@@ -274,6 +274,18 @@ export class Damo {
     console.log('大漠插件路径：', this.dm.GetBasePath());
     return regCode;
   }
+
+  getAveRGB(x: number, y: number, w: number, h: number): string {
+    return this.dm.GetAveRGB(x, y, w, h);
+  }
+
+  getColor(x: number, y: number): string {
+    return this.dm.GetColor(x, y);
+  }
+
+  findColorE(x: number, y: number, w: number, h: number, color: string, sim: number): string {
+    return this.dm.FindColorE(x, y, w, h, color, sim, 0);
+  }
 }
 
 // 新增：返回码中文含义（汇总常见结果，便于快速定位问题）

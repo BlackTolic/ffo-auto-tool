@@ -29,11 +29,11 @@ interface KeyPressOptions {
 }
 
 const skillGroup: KeyPressOptions[] = [
-  { key: 'F1', interval: 6000, song: 500 },
-  { key: 'F2', interval: 5000, song: 750 },
-  { key: 'F3', interval: 10000, song: 0 },
-  { key: 'F4', interval: 9000, song: 0 },
-  { key: 'F9', interval: 10000, song: 0 },
+  { key: 'F1', interval: 6000, song: 500 }, // 攻击技能
+  { key: 'F2', interval: 5000, song: 750 }, // 攻击技能
+  { key: 'F3', interval: 10000, song: 0 }, // 攻击技能
+  { key: 'F4', interval: 9000, song: 0 }, // 攻击技能
+  { key: 'F9', interval: 10000, song: 0 }, // 状态技能
 ];
 
 // dm.Ocr(380,117,1254,736,"000400-555555",1.0)
@@ -99,7 +99,24 @@ export class AttackActions {
     } else {
       console.log('没有空闲技能');
     }
+    // 检查血量是否危险
+    this.checkHealthStatus();
     // this.startAutoSkill(skillGroup);
+  }
+
+  // 检查角色血量是否健康
+  checkHealthStatus() {
+    const bloodStatus = this.role.bloodStatus;
+    const statusBloodIcon = this.role.statusBloodIcon;
+    console.log(statusBloodIcon, 'statusBloodIcon');
+    if (bloodStatus === 'danger') {
+      console.log('角色血量进入危险状态');
+      // 执行一些安全措施，如使用状态技能
+      this.bindDm.KeyDownChar('F10');
+      this.bindDm.delay(500);
+      this.bindDm.KeyUpChar('F10');
+      this.bindDm.delay(200);
+    }
   }
 
   useSkill(key: keyof typeof VK_F, interval: number, song?: number) {

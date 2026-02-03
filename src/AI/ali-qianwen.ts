@@ -34,7 +34,7 @@ export const getVerifyCodeByAliQW = async (url: string) => {
       }
     );
     const res = response.data.choices[0].message.content;
-    console.log(res, 'rs');
+    // console.log(res, 'rs');
     return res;
   } catch (err) {
     console.warn('千问识别验证码失败:', String((err as any)?.message || err));
