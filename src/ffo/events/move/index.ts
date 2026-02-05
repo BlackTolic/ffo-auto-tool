@@ -41,6 +41,8 @@ export class MoveActions {
   public timer: NodeJS.Timeout | null = null;
   private actions?: AttackActions | null = null; // 赶路过程中的其他行为
   private isPause = false; // 是否暂停移动
+  private lastMoveTime = 0; // 上次移动时间戳
+  private recordPos: Pos | null = null; // 记录上次移动的位置
 
   constructor(role: Role) {
     this.dm = role.bindDm;
@@ -80,6 +82,7 @@ export class MoveActions {
   }
 
   startAutoFindPath(toPos: Pos[] | Pos, actions?: AttackActions) {
+    this.recordPos = { x: this.role?.position?.x || 0, y: this.role?.position?.y || 0 };
     if (actions) {
       this.actions = actions;
     }
@@ -99,9 +102,19 @@ export class MoveActions {
           console.log('[角色信息] 已关闭自动寻路，并解除定时器');
           res(this.role.position);
         }
-        // 开启自动攻击
+        // 这里攻击操作会在寻路过程中执行，且因为共同同一个鼠标控制，攻击可能会阻塞寻路操作
         if (actions) {
           actions.attackNearestMonster();
+          const now = Date.now();
+          const isMove = this.role?.position?.x !== this.recordPos?.x || this.role?.position?.y !== this.recordPos?.y;
+          if (now - this.lastMoveTime >= 6000 && this.role.position && !isMove) {
+            // 在this.role.position随机100内移动
+            this.dm.MoveTo(this.role.position.x + Math.floor(Math.random() * 200 - 100), this.role.position.y + Math.floor(Math.random() * 200 - 100));
+            this.dm.delay(300);
+            this.dm.LeftClick();
+            this.lastMoveTime = now;
+            this.recordPos = { x: this.role.position.x, y: this.role.position.y };
+          }
         }
       }, 300); // 中文注释：最小间隔 200ms，避免过于频繁\
     });

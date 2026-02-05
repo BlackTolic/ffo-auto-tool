@@ -114,6 +114,7 @@ export class Role {
               // 检查是否已经离线
               const isOff = isOffline(this.bindDm, this.bindWindowSize);
               if (isOff) {
+                console.log('[角色信息] 角色已掉线');
                 // 发送邮件
                 emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色离线', text: `角色 ${this.name} 已掉线` });
                 // 断线后取消注册，终止

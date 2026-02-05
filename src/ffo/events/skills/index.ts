@@ -1,4 +1,4 @@
-import { MONSTER_FEATURE, MonsterFeature, OCR_MONSTER } from '../../constant/monster-feature';
+import { MonsterFeature, OCR_MONSTER } from '../../constant/monster-feature';
 import { parseTextPos } from '../../utils/common';
 import { Pos, Role } from '../rolyer';
 
@@ -15,11 +15,6 @@ export const VK_F: Record<'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' 
   F9: 120,
   F10: 121,
 };
-
-interface AttackOptions {
-  path?: { x: number; y: number }[];
-  attackRange?: number;
-}
 
 interface KeyPressOptions {
   key: keyof typeof VK_F;
@@ -38,12 +33,12 @@ const skillGroup: KeyPressOptions[] = [
 
 // dm.Ocr(380,117,1254,736,"000400-555555",1.0)
 export class AttackActions {
-  public role: Role;
+  public role: Role; // 角色信息
   public bindDm: any = null; // 大漠类
   public timer: NodeJS.Timeout | null = null;
   public timerMapList: Map<string, NodeJS.Timeout> = new Map();
   private skillPropsList: KeyPressOptions[] = [];
-  private ocrMonster = { ...OCR_MONSTER, string: MONSTER_FEATURE['精英|头目'] };
+  private ocrMonster: MonsterFeature;
   private lastTime = 0; // 记录上次执行F10的时间戳
   // 技能组
   private cdController: Map<keyof typeof VK_F, boolean> = new Map([
@@ -66,40 +61,32 @@ export class AttackActions {
     const { x1, y1, x2, y2, string, color, sim } = this.ocrMonster;
     const result = this.bindDm.FindStrFastE(x1, y1, x2, y2, string, color, sim);
     // console.log('OCR结果', result);
-    // 识别怪物
+    // 识别怪物的坐标
     const pos = parseTextPos(result);
     if (!pos || pos.x < 0 || pos.y < 0) return null;
+    // 往怪物名字坐标下方20丢技能
     const currentAttackTargetPos = { x: pos.x, y: pos.y + 20 };
-    this.currentAttackTargetPos = currentAttackTargetPos;
     return currentAttackTargetPos;
   }
 
   // 找到最近的怪物进行攻击
   attackNearestMonster() {
     const freeSkill = this.getFreeSkill();
-    // 已经识别到怪物后就不再进行识别
+    // 判断是否有闲置的技能
     if (!freeSkill) {
-      console.log('已经识别到怪物后就不再进行识别,或者技能在CD中');
+      console.log('技能在CD中');
       return;
     }
     const pos = this.findMonsterPos();
     if (!pos) return;
     const { x, y } = pos;
-
     this.bindDm.MoveTo(x, y);
-    !this.currentAttackTargetPos && this.bindDm.RightClick();
-    // 开启技能组
-    // this.startKeyPress({ key: 'F2', interval: null });
-
-    // console.log(freeSkill, 'freeSkill');
-    const monsterName = this.role.selectMonster;
-    console.log('怪物坐标', pos, '名字', monsterName);
-    // && monsterName
-    if (freeSkill) {
-      this.useSkill(freeSkill.key, freeSkill.interval || 0);
-    } else {
-      console.log('没有空闲技能');
-    }
+    this.bindDm.delay(300);
+    // 选中目标
+    this.bindDm.RightClick();
+    // const monsterName = this.role.selectMonster;
+    // console.log('怪物坐标', pos, '名字', monsterName);
+    this.useSkill(freeSkill.key, freeSkill.interval || 0);
     // 检查血量是否危险
     this.checkHealthStatus();
     // this.startAutoSkill(skillGroup);
@@ -129,7 +116,7 @@ export class AttackActions {
     this.bindDm.KeyDownChar(key);
     this.bindDm.delay(500);
     this.bindDm.KeyUpChar(key);
-    this.bindDm.delay(200);
+    this.bindDm.delay(300);
     this.bindDm.LeftClick();
     this.cdController.set(key, true);
     setTimeout(() => {
@@ -145,20 +132,21 @@ export class AttackActions {
     return freeSkill;
   }
 
-  startAutoSkill(props: KeyPressOptions[]) {
-    this.skillPropsList = props;
-    props.forEach(item => {
-      const timer = setInterval(() => {
-        this.bindDm.KeyDownChar(item.key);
-        this.bindDm.delay(500);
-        this.bindDm.KeyUpChar(item.key);
-        this.bindDm.delay(300);
-        this.bindDm.LeftClick();
-      }, item.interval || 0);
-      this.timerMapList.set(item.key, timer);
-    });
-  }
+  // startAutoSkill(props: KeyPressOptions[]) {
+  //   this.skillPropsList = props;
+  //   props.forEach(item => {
+  //     const timer = setInterval(() => {
+  //       this.bindDm.KeyDownChar(item.key);
+  //       this.bindDm.delay(500);
+  //       this.bindDm.KeyUpChar(item.key);
+  //       this.bindDm.delay(300);
+  //       this.bindDm.LeftClick();
+  //     }, item.interval || 0);
+  //     this.timerMapList.set(item.key, timer);
+  //   });
+  // }
 
+  // 停止缺省技能
   stopAutoSkill() {
     this.skillPropsList.forEach(item => {
       const timer = this.timerMapList.get(item.key);
@@ -209,6 +197,7 @@ export class AttackActions {
     }
   }
 
+  // 识别周围有无怪物，并且识别5秒
   scanMonster() {
     return new Promise((resolve, reject) => {
       let counter = 0;
