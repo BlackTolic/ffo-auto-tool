@@ -13,7 +13,6 @@ import { parseRolePositionFromText, parseTextPos } from '../common';
 export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const offlinePos = DEFAULT_SERVER_DISCONNECT[bindWindowSize];
   const addressName = bindDm.ocr(offlinePos.x1, offlinePos.y1, offlinePos.x2, offlinePos.y2, offlinePos.color, offlinePos.sim);
-  console.log(addressName, 'addressName');
   return addressName.includes('退出游戏');
 };
 

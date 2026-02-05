@@ -3,6 +3,7 @@ import { ensureDamo } from '../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
 import { toggleHuanYouPinYuan1 } from '../ffo/events/game-actions/huan_you_pin_yuan_1';
+import { toggleHuanYouPinYuan3 } from '../ffo/events/game-actions/huan_you_pin_yuan_3';
 import { pauseCurActive, restartCurActive } from '../ffo/events/game-actions/tian-quan';
 import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
@@ -124,6 +125,32 @@ export function registerGlobalHotkeys() {
   // 中文注释：Alt+R 启动当前前台窗口的角色坐标轮询（每秒一次）
   try {
     const okRole = globalShortcut.register('Alt+S', () => {
+      // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
+      // const ret = toggleTianquan();
+      const ret = toggleHuanYouPinYuan3();
+      // const ret = toggleJinHuBeiAn();
+      const msg = ret.ok ? `[快捷键] Alt+R 切换镜湖北岸成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换镜湖北岸失败 | ${ret.message}`;
+      console.log(msg);
+    });
+    if (!okRole) console.warn('[快捷键] Alt+R 注册失败');
+  } catch (e) {
+    console.warn('[快捷键] Alt+R 注册异常：', (e as any)?.message || e);
+  }
+
+  // 中文注释：Alt+R 启动当前前台窗口的角色坐标轮询（每秒一次）
+  try {
+    const okRole = globalShortcut.register('Alt+1', () => {
+      // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
+      pauseCurActive();
+    });
+    if (!okRole) console.warn('[快捷键] Alt+1 注册失败');
+  } catch (e) {
+    console.warn('[快捷键] Alt+1 注册异常：', (e as any)?.message || e);
+  }
+
+  // 中文注释：Alt+R 启动当前前台窗口的角色坐标轮询（每秒一次）
+  try {
+    const okRole = globalShortcut.register('Alt+F1', () => {
       // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
       // const ret = toggleTianquan();
       const ret = toggleHuanYouPinYuan1();
