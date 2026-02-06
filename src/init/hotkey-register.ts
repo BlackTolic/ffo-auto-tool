@@ -2,6 +2,7 @@ import { globalShortcut } from 'electron';
 import { ensureDamo } from '../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
+import { Conversation } from '../ffo/events/conversation';
 import { toggleHuanYouPinYuan1 } from '../ffo/events/game-actions/huan_you_pin_yuan_1';
 import { toggleHuanYouPinYuan3 } from '../ffo/events/game-actions/huan_you_pin_yuan_3';
 import { pauseCurActive, restartCurActive } from '../ffo/events/game-actions/tian-quan';
@@ -75,13 +76,41 @@ export function registerGlobalHotkeys() {
   // 中文注释：Alt+W 切换自动按键
   try {
     const ok = globalShortcut.register('Alt+W', () => {
-      const ret = toggleAutoKey('F1', 60 * 1000 * 65);
+      // const ret = toggleAutoKey('F1', 60 * 1000 * 65);
+      const ret = toggleAutoKey('F1', 90);
       const msg = ret.ok ? `[快捷键] Alt+W 切换成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+W 切换失败 | ${ret.message}`;
       console.log(msg);
     });
     if (!ok) console.warn('[快捷键] Alt+W 注册失败', ok);
   } catch (e) {
     console.warn('[快捷键] Alt+W 注册异常：', (e as any)?.message || e);
+  }
+
+  try {
+    const ok = globalShortcut.register('Alt+9', () => {
+      const hwnd = damoBindingManager.selectHwnd;
+      if (!hwnd || !damoBindingManager.isBound(hwnd)) {
+        console.log('未选择已绑定的窗口', hwnd);
+        throw new Error('未选择已绑定的窗口');
+      }
+      const role = damoBindingManager.getRole(hwnd);
+      if (!role) {
+        console.log('未获取到角色', hwnd);
+        throw new Error('未获取到角色');
+      }
+
+      // const ret = toggleAutoKey('F2', 60 * 1000 * 65);
+      // const ret = toggleAutoKey('F1', 90);
+      // const ret = toggleMingYu();
+      // const msg = ret.ok ? `[快捷键] Alt+9 切换成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+9 切换失败 | ${ret.message}`;
+      // console.log(msg);
+      // new Conversation(role).closeDialog();
+
+      new Conversation(role).RongGuang();
+    });
+    if (!ok) console.warn('[快捷键] Alt+9 注册失败', ok);
+  } catch (e) {
+    console.warn('[快捷键] Alt+9 注册异常：', (e as any)?.message || e);
   }
 
   // 中文注释：Alt+B 绑定当前前台窗口所属进程（避免 Alt+Q 导致部分输入法/系统热键冲突）

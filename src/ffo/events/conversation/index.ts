@@ -3,15 +3,26 @@ import { Role } from '../rolyer';
 
 const ENTER = '天|空|之|泉';
 
-// 扫描屏幕中的位置范围以便查找杨戬
+interface Pos {
+  x: number;
+  y: number;
+}
+
+// 检测关闭按钮
+const CLOSE_FLG = {
+  '1600*900': { x1: 298, y1: 96, x2: 1223, y2: 663, color: 'b89838-111111', sim: 1.0 },
+  '1280*800': { x1: 298, y1: 96, x2: 1223, y2: 663, color: 'b89838-111111', sim: 1.0 },
+};
+
+// 扫描屏幕中的位置范围以便查找杨戬 = dm.Ocr(450,109,1390,722,"1a1b1d-111111",1.0)
 const SCAN_BOX = {
-  '1600*900': { x1: 442, y1: 148, x2: 912, y2: 511, color: '00f000-111111', sim: 1.0 },
+  '1600*900': { x1: 450, y1: 109, x2: 1390, y2: 722, color: '00f000-111111', sim: 1.0 },
   '1280*800': { x1: 78, y1: 100, x2: 1208, y2: 713, color: '00f000-111111', sim: 1.0 },
 };
 
 // 对话框选项位置
 const DIALOG_OPTIONS_POS = {
-  '1600*900': { x1: 583, y1: 354, x2: 780, y2: 451, color: 'e8f0e8-111111', sim: 1.0 },
+  '1600*900': { x1: 450, y1: 109, x2: 1390, y2: 722, color: 'e8f0e8-111111', sim: 1.0 },
   '1280*800': { x1: 420, y1: 350, x2: 680, y2: 449, color: 'e8f0e8-111111', sim: 1.0 },
 };
 
@@ -28,15 +39,94 @@ export class Conversation {
     this.role = role;
   }
 
+  private async findNPC(npcName: string, delX: number = 0, delY: number = 80): Promise<Pos | false> {
+    const key = this.role.bindWindowSize as keyof typeof SCAN_BOX;
+    const scanBox = SCAN_BOX[key];
+    // const dialog = DIALOG_OPTIONS_POS[key];
+    return new Promise((res, rej) => {
+      let YJClickPos = this.dm.FindStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, npcName, scanBox.color, scanBox.sim);
+      let trsPos = YJClickPos.split(',');
+      console.log(Number(trsPos[1] + delX), Number(trsPos[2]) + delY, `识别到"${npcName}"的点击位置`);
+      if (!YJClickPos) {
+        res(false);
+      } else {
+        res({ x: Number(trsPos[1]) + delX, y: Number(trsPos[2]) + delY });
+      }
+    });
+  }
+
+  // 打开对话框进行选项选择
+  private async openConversation(pos: Pos): Promise<boolean> {
+    const key = this.role.bindWindowSize as keyof typeof CLOSE_FLG;
+    const dialog = CLOSE_FLG[key];
+    return new Promise((res, rej) => {
+      this.dm.MoveTo(Number(pos.x), Number(pos.y));
+      this.dm.delay(1000);
+      this.dm.LeftClick();
+      this.dm.delay(1000);
+      const dialogPos = this.dm.FindStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '@X', dialog.color, dialog.sim);
+      console.log(dialogPos, '已经打开了对话框');
+      // this.dm.delay(1000);
+      if (!dialogPos) {
+        console.log('没有打开对话框');
+        res(false);
+      }
+      res(true);
+    });
+  }
+
+  // 移动到指定位置并点击
+  private moveToClick(pos: Pos) {
+    this.dm.MoveTo(Number(pos.x), Number(pos.y));
+    this.dm.delay(1000);
+    this.dm.LeftClick();
+    this.dm.delay(2000);
+  }
+
+  // 选择对话框选项
+  private selectOptions(option: string, delX: number = 0, delY: number = 0) {
+    const key = this.role.bindWindowSize as keyof typeof DIALOG_OPTIONS_POS;
+    const dialog = DIALOG_OPTIONS_POS[key];
+    return new Promise((res, rej) => {
+      const optionsPos = this.dm.FindStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, option, dialog.color, dialog.sim);
+      console.log(optionsPos, '选项位置');
+      if (!optionsPos) {
+        console.log('没有找到选项');
+        res(false);
+        return;
+      }
+      const optionsPosText = parseTextPos(optionsPos);
+      console.log(optionsPosText, '选项位置');
+      this.moveToClick({ x: Number(optionsPosText?.x || 0) + delX, y: Number(optionsPosText?.y || 0) + delY });
+      res(true);
+    });
+  }
+
+  closeDialog() {
+    const key = this.role.bindWindowSize as keyof typeof CLOSE_FLG;
+    const dialog = CLOSE_FLG[key];
+    return new Promise((res, rej) => {
+      const dialogPos = this.dm.FindStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '@X', dialog.color, dialog.sim);
+      console.log(dialogPos, '关闭标记');
+      const optionsPosText = parseTextPos(dialogPos);
+      console.log(optionsPosText, 'optionsPosText');
+      this.moveToClick({ x: Number(optionsPosText?.x || 0), y: Number(optionsPosText?.y || 0) });
+      if (!dialogPos) {
+        console.log('关闭标记');
+        res(false);
+      }
+      res(true);
+    });
+  }
+
+  // 杨戬
   YangJian() {
     const key = this.role.bindWindowSize as keyof typeof SCAN_BOX | keyof typeof DIALOG_OPTIONS_POS;
     const scanBox = SCAN_BOX[key];
     const dialog = DIALOG_OPTIONS_POS[key];
-
     return new Promise((resolve, reject) => {
       this.dm.LeftClick();
       this.dm.delay(3000);
-
       // 扫描屏幕中的位置范围以便查找杨戬
       const findYJ = () =>
         new Promise((res, rej) => {
@@ -68,9 +158,7 @@ export class Conversation {
             res(false);
             return;
           }
-          this.dm.MoveTo(Number(dialogPosText.x), Number(dialogPosText.y));
-          this.dm.delay(1000);
-          this.dm.LeftClick();
+          this.moveToClick({ x: Number(dialogPosText.x), y: Number(dialogPosText.y) });
           res(true);
         });
 
@@ -93,5 +181,65 @@ export class Conversation {
       };
       start();
     });
+  }
+
+  // 荣光使者
+  RongGuang() {
+    const start = async () => {
+      // 找到NPC并且成功开启对话框
+      let npcPos = await this.findNPC('荣光使者', 10, 50);
+      // if (!npcPos) {
+      //   npcPos = await this.findNPC('荣光使者', 10, 50);
+      // }
+      // if (!npcPos) {
+      //   console.log('没有找到荣光使者');
+      //   return;
+      // }
+      // const isOpenDialg = await this.openConversation(npcPos);
+      // console.log(isOpenDialg, '是否打开了对话框');
+      // if (!isOpenDialg) {
+      //   return;
+      // }
+      // // 这里需要判断下是否已经完成了名誉任务，有两种情况
+      // // 选择选项
+      // const isSelect = await this.selectOptions('击败了怨灵', 0, 5);
+      // console.log(isSelect, '选择“击败了怨灵”');
+      // if (!isSelect) {
+      //   return;
+      // }
+      // // 关闭对话框
+      // const isClose = await this.closeDialog();
+      // console.log(isClose, '是否已经关闭');
+      // if (!isClose) {
+      //   return;
+      // }
+      // 再次识别荣光使者
+      // npcPos = await this.findNPC('荣光使者', 10, 50);
+      // if (!npcPos) {
+      //   console.log('没有找到荣光使者');
+      //   return;
+      // }
+      // const isOpenDialg2 = await this.openConversation(npcPos);
+      // console.log(isOpenDialg2, '是否再次打开了对话框');
+      // if (!isOpenDialg2) {
+      //   return;
+      // }
+      // // 选择选项名誉任务
+      // const isSelectMingYu = await this.selectOptions('名誉任务', 0, 5);
+      // console.log(isSelectMingYu, '选择“名誉任务”');
+      // if (!isSelectMingYu) {
+      //   return;
+      // }
+      // // 选择选项名誉任务
+      // const isSelectOk = await this.selectOptions('好的', 0, 5);
+      // console.log(isSelectOk, '选择“好的”');
+      // if (!isSelectOk) {
+      //   return;
+      // }
+      // 检测当前是否有药师角色
+      // 通知药师角色已经接到名誉任务
+    };
+
+    start();
   }
 }

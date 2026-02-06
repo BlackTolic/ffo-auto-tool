@@ -56,6 +56,7 @@ export class Role {
   private lastVerifyCaptureTs: number = 0;
   private lastTaskActionTs: number = 0;
   private task: TaskProp | null = null;
+  public job: 'YS' | 'SS' | 'JK' | 'CK' | 'ZS' = 'SS'; // 角色职业JK-剑客；CK-刺客；YS-药师；SS-术士；ZS-战士
 
   constructor() {}
 

@@ -56,11 +56,16 @@ export class MoveActions {
     // 中文注释：按下左键以触发移动（修正大小写）
     this.dm.delay(200);
     this.dm.LeftDown();
+    console.log(fromPos, '移动到', curAimPos, '角度', { x, y });
   }
 
-  fromTo(fromPos: Pos, toPos: Pos[] | Pos): boolean {
+  fromTo(fromPos: Pos | null, toPos: Pos[] | Pos): boolean {
     if (!Array.isArray(toPos)) {
       toPos = [toPos];
+    }
+    if (!fromPos) {
+      console.log('未获取到角色位置', this.role);
+      return false;
     }
     // 判断是否达到最后一个目的坐标，没有到达就继续移动
     if (!(isArriveAimNear(fromPos, toPos[toPos.length - 1]) && this.recordAimPosIndex === toPos.length - 1)) {
@@ -81,7 +86,7 @@ export class MoveActions {
     return false;
   }
 
-  startAutoFindPath(toPos: Pos[] | Pos, actions?: AttackActions) {
+  startAutoFindPath(toPos: Pos[] | Pos, actions?: AttackActions, aimPos?: Pos | string) {
     this.recordPos = { x: this.role?.position?.x || 0, y: this.role?.position?.y || 0 };
     if (actions) {
       this.actions = actions;
@@ -92,15 +97,26 @@ export class MoveActions {
       console.log('执行startAutoFindPath，注册定时器');
       this.timer = setInterval(() => {
         if (this.role.position) {
-          // 判断是否到达目的地
-          isArrive = Array.isArray(toPos) ? this.fromTo(this.role.position, toPos) && this.recordAimPosIndex === toPos.length - 1 : this.fromTo(this.role.position, toPos);
+          if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
+            this.dm.LeftClick();
+            isArrive = true;
+          } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos)) {
+            this.dm.LeftClick();
+            isArrive = true;
+          } else {
+            // 判断是否到达目的地
+            isArrive = Array.isArray(toPos) ? this.fromTo(this.role.position, toPos) && this.recordAimPosIndex === toPos.length - 1 : this.fromTo(this.role.position, toPos);
+            console.log(isArrive, 'isArrive');
+          }
         }
         if (isArrive) {
           this.timer && clearInterval(this.timer);
           this.timer = null;
           this.recordAimPosIndex = 0;
-          console.log('[角色信息] 已关闭自动寻路，并解除定时器');
-          res(this.role.position);
+          console.log('[角色信息] 已关闭自动寻路，并解除定时器,同时延时2秒，确保已经静止');
+          setTimeout(() => {
+            res(this.role.position);
+          }, 2000);
         }
         // 这里攻击操作会在寻路过程中执行，且因为共同同一个鼠标控制，攻击可能会阻塞寻路操作
         if (actions) {
