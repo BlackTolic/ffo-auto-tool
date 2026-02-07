@@ -1,7 +1,7 @@
 import { damoBindingManager } from '..';
 import { OCR_PAN_GUI_MONSTER } from '../../constant/monster-feature';
 import { Conversation } from '../conversation';
-import { fromChengJiaoToMingYuNPC } from '../move/lou-lan';
+import { fromChengJiaoToMingYuNPC, fromMingYuNPCToAntHill } from '../move/lou-lan';
 import { AutoFarmingAction } from './auto-farming';
 
 const TASK_NAME = '跑名誉';
@@ -39,10 +39,15 @@ const loopAction = () => {
   //     // 从城郊到名誉NPC
   //     return fromChengJiaoToMingYuNPC(role);
   //   })
-  fromChengJiaoToMingYuNPC(role).then(res => {
-    console.log('从城交到名誉NPC111', res);
-    return new Conversation(role).RongGuang();
-  });
+  fromChengJiaoToMingYuNPC(role)
+    .then(res => {
+      console.log('从城交到名誉NPC111', res);
+      return new Conversation(role).RongGuang();
+    })
+    .then(res => {
+      console.log('当前任务获取情况', res);
+      return fromMingYuNPCToAntHill(role);
+    });
 };
 
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）

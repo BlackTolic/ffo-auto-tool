@@ -1,3 +1,4 @@
+import * as math from '../../../utils/math';
 import { ORIGIN_POSITION } from '../../constant/OCR-pos';
 import { isArriveAimNear } from '../../utils/common';
 import { Role } from '../rolyer';
@@ -8,27 +9,28 @@ export interface Pos {
   y: number;
 }
 
-const getInitPos = () => {
-  const initPos = (ORIGIN_POSITION as any)[(global as any).windowSize];
+const getInitPos = (bindWindowSize: string) => {
+  const initPos = (ORIGIN_POSITION as any)[bindWindowSize];
+  console.log(initPos, '角色的绝对位置');
   return { x: initPos.x, y: initPos.y, r: initPos.r };
 };
 
 // 计算两点之间的角度（角度制）
 export const getAngle = (x1: number, y1: number, x2: number, y2: number) => {
-  const x = x2 - x1;
-  const y = y2 - y1;
+  const x = math.sub(x2, x1);
+  const y = math.sub(y2, y1);
   return (Math.atan2(y, x) * 180) / Math.PI;
 };
 
-function getCirclePoint(angle: number) {
+function getCirclePoint(angle: number, bindWindowSize: string) {
   // 角度转弧度（JavaScript Math.sin/cos需弧度）
-  const pos = getInitPos();
+  const pos = getInitPos(bindWindowSize);
   const initX = pos.x;
   const initY = pos.y;
   const radius = pos.r;
   const rad = (angle * Math.PI) / 180;
-  const x = initX + radius * Math.cos(rad);
-  const y = initY + radius * Math.sin(rad);
+  const x = math.add(initX, math.mul(radius, Math.cos(rad)));
+  const y = math.add(initY, math.mul(radius, Math.sin(rad)));
   // 四舍五入为整数（适配鼠标坐标）
   return { x, y };
 }
@@ -51,7 +53,7 @@ export class MoveActions {
 
   async move(fromPos: Pos, curAimPos: Pos) {
     const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
-    const { x, y } = getCirclePoint(angle);
+    const { x, y } = getCirclePoint(angle, this.role.bindWindowSize);
     this.dm.MoveTo(x, y);
     // 中文注释：按下左键以触发移动（修正大小写）
     this.dm.delay(200);

@@ -15,3 +15,25 @@ export const fromChengJiaoToMingYuNPC = (role: Role) => {
     { x: 158, y: 25 },
   ]);
 };
+
+// 从名誉NPC到蚂蚁沙地北边
+export const fromMingYuNPCToAntHill = (role: Role) => {
+  console.log('从名誉NPC到蚂蚁沙地北边1111', role.map);
+  return new MoveActions(role).startAutoFindPath(
+    [
+      { x: 169, y: 33 },
+      { x: 190, y: 44 },
+      { x: 255, y: 53 },
+      { x: 250, y: 70 },
+      { x: 223, y: 81 },
+      { x: 166, y: 106 },
+      { x: 134, y: 120 },
+      { x: 196, y: 126 },
+      { x: 243, y: 106 },
+      { x: 277, y: 106 },
+      { x: 293, y: 112 },
+    ],
+    undefined,
+    '蚂蚁沙地北'
+  );
+};

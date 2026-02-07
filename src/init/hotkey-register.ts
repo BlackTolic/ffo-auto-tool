@@ -2,9 +2,9 @@ import { globalShortcut } from 'electron';
 import { ensureDamo } from '../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
-import { Conversation } from '../ffo/events/conversation';
 import { toggleHuanYouPinYuan1 } from '../ffo/events/game-actions/huan_you_pin_yuan_1';
 import { toggleHuanYouPinYuan3 } from '../ffo/events/game-actions/huan_you_pin_yuan_3';
+import { toggleMingYu } from '../ffo/events/game-actions/ming-yu';
 import { pauseCurActive, restartCurActive } from '../ffo/events/game-actions/tian-quan';
 import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
@@ -101,12 +101,12 @@ export function registerGlobalHotkeys() {
 
       // const ret = toggleAutoKey('F2', 60 * 1000 * 65);
       // const ret = toggleAutoKey('F1', 90);
-      // const ret = toggleMingYu();
-      // const msg = ret.ok ? `[快捷键] Alt+9 切换成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+9 切换失败 | ${ret.message}`;
-      // console.log(msg);
+      const ret = toggleMingYu();
+      const msg = ret.ok ? `[快捷键] Alt+9 切换成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+9 切换失败 | ${ret.message}`;
+      console.log(msg);
       // new Conversation(role).closeDialog();
 
-      new Conversation(role).RongGuang();
+      // new Conversation(role).RongGuang();
     });
     if (!ok) console.warn('[快捷键] Alt+9 注册失败', ok);
   } catch (e) {
