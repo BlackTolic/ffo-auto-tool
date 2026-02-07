@@ -11,7 +11,7 @@ interface Pos {
 // 检测关闭按钮
 const CLOSE_FLG = {
   '1600*900': { x1: 298, y1: 96, x2: 1223, y2: 663, color: 'b89838-111111', sim: 1.0 },
-  '1280*800': { x1: 298, y1: 96, x2: 1223, y2: 663, color: 'b89838-111111', sim: 1.0 },
+  '1280*800': { x1: 212, y1: 113, x2: 1074, y2: 574, color: 'b89838-111111', sim: 1.0 },
 };
 
 // 扫描屏幕中的位置范围以便查找杨戬 = dm.Ocr(450,109,1390,722,"1a1b1d-111111",1.0)
@@ -63,15 +63,11 @@ export class Conversation {
       this.dm.MoveTo(Number(pos.x), Number(pos.y));
       this.dm.delay(1000);
       this.dm.LeftClick();
-      this.dm.delay(1000);
+      // 点击之后可能还有一段距离走到面前
+      this.dm.delay(3000);
       const dialogPos = this.dm.FindStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '@X', dialog.color, dialog.sim);
-      console.log(dialogPos, '已经打开了对话框');
-      // this.dm.delay(1000);
-      if (!dialogPos) {
-        console.log('没有打开对话框');
-        res(false);
-      }
-      res(true);
+      console.log(dialogPos, '是否打开了对话框');
+      res(!!dialogPos);
     });
   }
 
@@ -253,116 +249,41 @@ export class Conversation {
         const isSelectOk = await this.selectOptions('好的', 0, 5);
         resolve(!!isSelectOk);
       }
-      // // 选择选项
-      // const isSelect = await this.selectOptions('击败了怨灵', 0, 5);
-      // console.log(isSelect, '选择“击败了怨灵”');
-      // if (!isSelect) {
-      //   return;
-      // }
-      // // 关闭对话框
-      // const isClose = await this.closeDialog();
-      // console.log(isClose, '是否已经关闭');
-      // if (!isClose) {
-      //   return;
-      // }
-      // // 再次识别荣光使者;
-      // npcPos = await this.findNPC('荣光使者', 10, 50);
-      // if (!npcPos) {
-      //   console.log('没有找到荣光使者');
-      //   return;
-      // }
-      // const isOpenDialg2 = await this.openConversation(npcPos);
-      // console.log(isOpenDialg2, '是否再次打开了对话框');
-      // if (!isOpenDialg2) {
-      //   return;
-      // }
-      // // 选择选项名誉任务
-      // const isSelectMingYu = await this.selectOptions('名誉任务', 0, 5);
-      // console.log(isSelectMingYu, '选择“名誉任务”');
-      // if (!isSelectMingYu) {
-      //   return;
-      // }
-      // // 选择选项名誉任务
-      // const isSelectOk = await this.selectOptions('好的', 0, 5);
-      // console.log(isSelectOk, '选择“好的”');
-      // if (!isSelectOk) {
-      //   return;
-      // }
+
       // 检测当前是否有药师角色
       // 通知药师角色已经接到名誉任务
     });
+  }
 
-    const start = async () => {
-      await findNpcAndOpenDialog();
-      // 检查当前是需要提交任务还是需要领取任务
-      const isSubmitTask = await this.findOptions('击败了怨灵');
-      console.log(isSubmitTask, '是否需要提交任务');
-      if (isSubmitTask) {
-        // 选择选项提交任务
-        this.moveToClick(isSubmitTask);
-        // 关闭对话框
-        const isClose = await this.closeDialog();
-        console.log(isClose, '是否已经关闭');
-        if (!isClose) {
-          return;
-        }
-        // 再次找到荣光使者并且打开对话框
-        await findNpcAndOpenDialog();
+  // 斯芬尼克
+  async Sphinx() {
+    return new Promise(async (resolve, reject) => {
+      // 找到斯芬尼克并且打开对话框
+      let npcPos = await this.findNPC('斯芬尼克', 10, 50);
+      if (!npcPos) {
+        npcPos = await this.findNPC('斯芬尼克', 10, 50);
       }
-
-      // 选择选项领取任务
-      const isReceive = await this.findOptions('名誉任务');
-      console.log(isReceive, '是否具有领取名誉任务的选项');
-      if (!isReceive) {
+      if (!npcPos) {
+        console.log('没有找到斯芬尼克');
         return;
-      } else {
-        this.moveToClick(isReceive);
-        // 选择选项名誉任务
-        const isSelectOk = await this.selectOptions('好的', 0, 5);
-        console.log(isSelectOk, '选择“好的”');
-        if (!isSelectOk) {
-          return;
-        }
       }
-      // // 选择选项
-      // const isSelect = await this.selectOptions('击败了怨灵', 0, 5);
-      // console.log(isSelect, '选择“击败了怨灵”');
-      // if (!isSelect) {
-      //   return;
-      // }
-      // // 关闭对话框
-      // const isClose = await this.closeDialog();
-      // console.log(isClose, '是否已经关闭');
-      // if (!isClose) {
-      //   return;
-      // }
-      // // 再次识别荣光使者;
-      // npcPos = await this.findNPC('荣光使者', 10, 50);
-      // if (!npcPos) {
-      //   console.log('没有找到荣光使者');
-      //   return;
-      // }
-      // const isOpenDialg2 = await this.openConversation(npcPos);
-      // console.log(isOpenDialg2, '是否再次打开了对话框');
-      // if (!isOpenDialg2) {
-      //   return;
-      // }
-      // // 选择选项名誉任务
-      // const isSelectMingYu = await this.selectOptions('名誉任务', 0, 5);
-      // console.log(isSelectMingYu, '选择“名誉任务”');
-      // if (!isSelectMingYu) {
-      //   return;
-      // }
-      // // 选择选项名誉任务
-      // const isSelectOk = await this.selectOptions('好的', 0, 5);
-      // console.log(isSelectOk, '选择“好的”');
-      // if (!isSelectOk) {
-      //   return;
-      // }
-      // 检测当前是否有药师角色
-      // 通知药师角色已经接到名誉任务
-    };
-
-    start();
+      const isOpenDialg = await this.openConversation(npcPos);
+      console.log(isOpenDialg, '是否打开了对话框');
+      if (!isOpenDialg) {
+        return;
+      }
+      // 进入副本
+      const isPass = await this.findOptions('进入神殿');
+      console.log(isPass, '是否具有进入神殿的选项');
+      if (!isPass) {
+        // 关闭弹框
+        await this.closeDialog();
+        console.log('没有领取任务无法进入');
+        resolve(false);
+      } else {
+        this.moveToClick(isPass);
+        resolve(true);
+      }
+    });
   }
 }
