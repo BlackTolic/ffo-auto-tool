@@ -16,7 +16,7 @@ import { AutoFarmingAction } from './auto-farming';
 
 const TASK_NAME = '跑名誉';
 
-const INIT_POS = { x: 278, y: 79 };
+// const INIT_POS = { x: 278, y: 79 };
 // const INIT_POS = { x: 191, y: 45 };
 // const INIT_POS = { x: 235, y: 53 };
 // const INIT_POS = { x: 218, y: 214 };
@@ -24,6 +24,8 @@ const INIT_POS = { x: 278, y: 79 };
 // const INIT_POS = { x: 318, y: 136 };
 // const INIT_POS = { x: 161, y: 78 };
 // const INIT_POS = { x: 75, y: 78 };
+
+const INIT_POS = { x: 27, y: 95 };
 
 const PATH_POS = [
   { x: 326, y: 92 },
@@ -52,21 +54,11 @@ const loopAction = () => {
     console.log('未获取到角色', hwnd);
     throw new Error('未获取到角色');
   }
-  // if (test) {
-  //   const atackActions = new AttackActions(role, OCR_MING_YU_BOSS);
-  //   // 添加buff
-  //   console.log('开始添加buff');
-  //   atackActions.addBuff();
-  //   // 杀怪
-  //   return atackActions.scanMonster().then(res => {
-  //     console.log('完成杀怪', res);
-  //     // 停止添加buff
-  //     atackActions.stopAddBuff();
-  //     return res;
-  //   });
-  //   return;
-  // }
-
+  if (test) {
+    fromLostTempleToMingYuBoss(role);
+    return;
+  }
+  let atackActions = new AttackActions(role, OCR_MING_YU_BOSS);
   // 从楼兰城郊到城郊;
   fromLouLanToChengJiao(role)
     .then(res => {
@@ -130,28 +122,30 @@ const loopAction = () => {
         throw new Error('未完成从失落神殿一层前往名誉BOSS');
       }
       console.log('从失落神殿一层前往名誉BOSS', res);
-      const atackActions = new AttackActions(role, OCR_MING_YU_BOSS);
-      // if (res) {
       // 下马
       atackActions.startKeyPress({ key: 'F5', interval: null });
       role.bindDm.delay(1000);
       // 添加buff
       atackActions.addBuff();
       // 杀怪
-      return atackActions.scanMonster().then(res => {
+      return atackActions.scanMonster('single').then(res => {
         // 停止添加buff
         atackActions.stopAddBuff();
-        role.bindDm.delay(1000);
-        // 下马
-        atackActions.startKeyPress({ key: 'F5', interval: null });
+        role.bindDm.delay(2000);
       });
       // }
     })
     .then(res => {
       console.log('当前已经没有怪物了', role.position);
-      setTimeout(() => {
-        new BaseAction(role).backCity({ x: 278, y: 79 });
-      }, 1000);
+      role.bindDm.delay(1000);
+      return new BaseAction(role).backCity({ x: 278, y: 79 }, 'F9');
+    })
+    .then(res => {
+      console.log('成功回城', res);
+      // 上马
+      atackActions.startKeyPress({ key: 'F5', interval: null });
+      role.bindDm.delay(2000);
+      role.updateTaskStatus('done');
     })
     .catch(err => {
       console.log('完成名誉任务失败', err);

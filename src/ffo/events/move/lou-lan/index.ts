@@ -67,7 +67,17 @@ export const fromSunsetDuneWestToSphinx = (role: Role) => {
 
 // 从失落神殿一层前往名誉BOSS
 export const fromLostTempleToMingYuBoss = (role: Role) => {
-  return new MoveActions(role).startAutoFindPath([
+  // 距离短但是雷多
+  const route1 = [
+    { x: 44, y: 94 },
+    { x: 127, y: 134 },
+    { x: 151, y: 115 },
+    { x: 184, y: 135 },
+    { x: 257, y: 106 },
+    { x: 314, y: 119 },
+  ];
+  // 距离长但是安全
+  const route2 = [
     { x: 44, y: 94 },
     { x: 127, y: 134 },
     { x: 151, y: 115 },
@@ -82,5 +92,20 @@ export const fromLostTempleToMingYuBoss = (role: Role) => {
     { x: 271, y: 117 },
     { x: 314, y: 139 },
     { x: 321, y: 130 },
-  ]);
+  ];
+  const route3 = [
+    { x: 44, y: 95 },
+    { x: 120, y: 132 },
+    { x: 145, y: 121 },
+    { x: 248, y: 167 },
+    { x: 260, y: 158 },
+    { x: 237, y: 138 },
+    { x: 245, y: 127 },
+    { x: 292, y: 142 },
+    { x: 266, y: 128 },
+    { x: 286, y: 127 },
+    { x: 314, y: 139 },
+    { x: 321, y: 130 },
+  ];
+  return new MoveActions(role).startAutoFindPath(route2);
 };

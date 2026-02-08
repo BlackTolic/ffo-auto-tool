@@ -17,7 +17,7 @@ export const DEFAULT_ROLE_POSITION = {
 
 // 原点坐标
 export const ORIGIN_POSITION = {
-  '1600*900': { x: 800, y: 450, r: 300, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1600*900': { x: 800, y: 450, r: 350, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
   '1280*800': { x: 633, y: 399, r: 350, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
 };
 

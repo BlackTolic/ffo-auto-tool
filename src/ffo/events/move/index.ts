@@ -19,7 +19,7 @@ const getInitPos = (bindWindowSize: string) => {
 export const getAngle = (x1: number, y1: number, x2: number, y2: number) => {
   const x = math.sub(x2, x1);
   const y = math.sub(y2, y1);
-  return (Math.atan2(y, x) * 180) / Math.PI;
+  return Number(((Math.atan2(y, x) * 180) / Math.PI).toFixed(2));
 };
 
 function getCirclePoint(angle: number, bindWindowSize: string) {
@@ -28,9 +28,12 @@ function getCirclePoint(angle: number, bindWindowSize: string) {
   const initX = pos.x;
   const initY = pos.y;
   const radius = pos.r;
-  const rad = (angle * Math.PI) / 180;
-  const x = math.add(initX, math.mul(radius, Math.cos(rad)));
-  const y = math.add(initY, math.mul(radius, Math.sin(rad)));
+  // 角度转弧度（JavaScript Math.sin/cos需弧度）
+  const rad = Number(((angle * Math.PI) / 180).toFixed(2));
+  // console.log(rad, '弧度');
+  const x = math.add(initX, math.mul(radius, Number(Math.cos(rad).toFixed(2))));
+  const y = math.add(initY, math.mul(radius, Number(Math.sin(rad).toFixed(2))));
+  // console.log(Math.cos(rad), Math.sin(rad), '圆上cos sin');
   // 四舍五入为整数（适配鼠标坐标）
   return { x, y };
 }
@@ -58,7 +61,7 @@ export class MoveActions {
     // 中文注释：按下左键以触发移动（修正大小写）
     this.dm.delay(200);
     this.dm.LeftDown();
-    console.log(fromPos, '移动到', curAimPos, '角度', { x, y });
+    // console.log(fromPos, '移动到', curAimPos, '角度', angle, { x, y });
   }
 
   fromTo(fromPos: Pos | null, toPos: Pos[] | Pos): boolean {
@@ -112,12 +115,12 @@ export class MoveActions {
       console.log('执行startAutoFindPath，注册定时器');
       this.timer = setInterval(() => {
         if (this.role.position) {
-          console.log('当前地图', this.role.map, '目标地图', aimPos);
+          // console.log('当前地图', this.role.map, '目标地图', aimPos);
           if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
             this.dm.LeftClick();
             console.log('点击停止', aimPos);
             isArrive = true;
-          } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos)) {
+          } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, 4)) {
             this.dm.LeftClick();
             isArrive = true;
           } else {

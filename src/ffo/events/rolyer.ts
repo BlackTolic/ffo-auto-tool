@@ -167,6 +167,7 @@ export class Role {
         this.position = pos;
         this.bloodStatus = bloodStatus;
         const taskStatus = this.task?.taskStatus ?? '';
+        // console.log('任务状态', ['', 'done'].includes(taskStatus), taskStatus);
         if (this.task && ['', 'done'].includes(taskStatus) && isArriveAimNear(pos as Pos, this.task.loopOriginPos, 10)) {
           this.task.taskStatus = 'doing';
           const now = Date.now();

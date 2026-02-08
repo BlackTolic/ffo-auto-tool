@@ -273,7 +273,7 @@ export class Conversation {
         return;
       }
       // 进入副本
-      const isPass = await this.findOptions('进入神殿');
+      const isPass = await this.findOptions('需要组队');
       console.log(isPass, '是否具有进入神殿的选项');
       if (!isPass) {
         // 关闭弹框

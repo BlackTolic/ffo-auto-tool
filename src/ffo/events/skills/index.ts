@@ -3,7 +3,7 @@ import { parseTextPos } from '../../utils/common';
 import { Pos, Role } from '../rolyer';
 
 // 中文注释：Windows 虚拟键码映射（F1-F10），便于统一复用
-export const VK_F: Record<'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10', number> = {
+export const VK_F: Record<'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' | 'F11', number> = {
   F1: 112,
   F2: 113,
   F3: 114,
@@ -14,6 +14,7 @@ export const VK_F: Record<'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' 
   F8: 119,
   F9: 120,
   F10: 121,
+  F11: 122,
 };
 
 interface KeyPressOptions {
@@ -32,13 +33,13 @@ const skillGroup: KeyPressOptions[] = [
 
   { key: 'F1', interval: 6000, song: 0 }, // 攻击技能
   { key: 'F2', interval: 6000, song: 0 }, // 攻击技能
-  { key: 'F3', interval: 8000, song: 0 }, // 攻击技能
+  { key: 'F3', interval: 4000, song: 0 }, // 攻击技能
   { key: 'F4', interval: 5000, song: 0 }, // 攻击技能
 ];
 
 const buffGroup: KeyPressOptions[] = [
-  { key: 'F6', interval: 100 * 1000, song: 0 }, // 状态技能
-  { key: 'F7', interval: 90 * 1000, song: 0 }, // 状态技能
+  { key: 'F6', interval: 90 * 1000, song: 0 }, // 状态技能
+  { key: 'F7', interval: 100 * 1000, song: 0 }, // 状态技能
   { key: 'F8', interval: 120 * 1000, song: 0 }, // 状态技能
 ];
 
@@ -69,7 +70,7 @@ export class AttackActions {
     this.ocrMonster = ocrMonster || OCR_MONSTER;
   }
 
-  findMonsterPos() {
+  findMonsterPos(delX = 10, delY = 40) {
     const { x1, y1, x2, y2, string, color, sim } = this.ocrMonster;
     const result = this.bindDm.FindStrFastE(x1, y1, x2, y2, string, color, sim);
     // console.log('OCR结果', result);
@@ -77,11 +78,11 @@ export class AttackActions {
     const pos = parseTextPos(result);
     if (!pos || pos.x < 0 || pos.y < 0) return null;
     // 往怪物名字坐标下方20丢技能
-    const currentAttackTargetPos = { x: pos.x, y: pos.y + 20 };
+    const currentAttackTargetPos = { x: pos.x + delX, y: pos.y + delY };
     return currentAttackTargetPos;
   }
 
-  // 找到最近的怪物进行攻击
+  // 找到最近的怪物进行攻击 - 适用于群攻场景
   attackNearestMonster() {
     const freeSkill = this.getFreeSkill();
     // 判断是否有闲置的技能
@@ -104,6 +105,30 @@ export class AttackActions {
     this.checkHealthStatus();
     // this.startAutoSkill(skillGroup);
   }
+  // 找到最近的怪物进行攻击 - 适用于单体攻击场景
+  attackNearestMonsterForSingle() {
+    const freeSkill = this.getFreeSkill();
+    // 判断是否有闲置的技能
+    if (!freeSkill) {
+      console.log('技能在CD中');
+      return;
+    }
+    const pos = this.findMonsterPos();
+    console.log(pos, 'pos');
+    if (!pos) return;
+    const { x, y } = pos;
+    this.bindDm.MoveTo(x, y);
+    this.bindDm.delay(300);
+    // 选中目标,如果已经选中目标就不在
+    !this.role.selectMonster && this.bindDm.LeftClick();
+    this.bindDm.delay(300);
+    // const monsterName = this.role.selectMonster;
+    // console.log('怪物坐标', pos, '名字', monsterName);
+    this.useSkill(freeSkill.key, freeSkill.interval || 0);
+    // 检查血量是否危险
+    this.checkHealthStatus();
+    // this.startAutoSkill(skillGroup);
+  }
 
   // 开启自动攻击
   startAutoAttack() {
@@ -116,17 +141,17 @@ export class AttackActions {
   // 检查角色血量是否健康
   checkHealthStatus() {
     const bloodStatus = this.role.bloodStatus;
+    console.log('血量状态', bloodStatus);
     // const statusBloodIcon = this.role.statusBloodIcon;
     if (bloodStatus === 'danger') {
       const now = Date.now();
       if (now - this.lastTime > 120000) {
         // 距离上次执行F10超过120秒
         console.log('角色血量进入危险状态，执行F10', bloodStatus);
-        // this.bindDm.KeyDownChar('F10');
-        // this.bindDm.delay(500);
-        // this.bindDm.KeyUpChar('F10');
-        // this.bindDm.delay(200);
-        this.bindDm.KeyPress(VK_F['F10']);
+        this.bindDm.KeyDownChar('F10');
+        this.bindDm.delay(300);
+        this.bindDm.KeyUpChar('F10');
+        this.bindDm.delay(300);
         this.lastTime = now; // 更新上次执行时间
       } else {
         console.log('角色血量危险，但距离上次执行F10不足120秒，跳过');
@@ -257,11 +282,11 @@ export class AttackActions {
   }
 
   // 识别周围有无怪物，并且识别5秒
-  scanMonster() {
+  scanMonster(attackType?: 'group' | 'single') {
     return new Promise((resolve, reject) => {
       let counter = 0;
       let timer: NodeJS.Timeout | null = setInterval(() => {
-        this.attackNearestMonster();
+        attackType === 'single' ? this.attackNearestMonsterForSingle() : this.attackNearestMonster();
         const findMonsterPos = this.findMonsterPos();
         if (findMonsterPos) {
           counter = 0;
