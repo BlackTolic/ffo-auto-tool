@@ -282,7 +282,16 @@ export class Conversation {
         resolve(false);
       } else {
         this.moveToClick(isPass);
-        resolve(true);
+        setTimeout(() => {
+          console.log(this.role.map, 'map');
+          if (this.role.map === '失落神殿') {
+            console.log('进入失落神殿');
+            resolve(true);
+          } else {
+            console.log('没有进入失落神殿');
+            resolve(false);
+          }
+        }, 3000);
       }
     });
   }

@@ -87,7 +87,7 @@ export function registerGlobalHotkeys() {
   }
 
   try {
-    const ok = globalShortcut.register('Alt+9', () => {
+    const ok = globalShortcut.register('Alt+5', () => {
       const hwnd = damoBindingManager.selectHwnd;
       if (!hwnd || !damoBindingManager.isBound(hwnd)) {
         console.log('未选择已绑定的窗口', hwnd);

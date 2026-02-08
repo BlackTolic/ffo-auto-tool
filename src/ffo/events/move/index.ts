@@ -11,7 +11,7 @@ export interface Pos {
 
 const getInitPos = (bindWindowSize: string) => {
   const initPos = (ORIGIN_POSITION as any)[bindWindowSize];
-  console.log(initPos, '角色的绝对位置');
+  // console.log(initPos, '角色的绝对位置');
   return { x: initPos.x, y: initPos.y, r: initPos.r };
 };
 
@@ -88,6 +88,19 @@ export class MoveActions {
     return false;
   }
 
+  // 在范围内随机移动
+  randomMoveInRange(initPos: Pos, R: number, action: () => void, end: () => boolean) {
+    return new Promise((res, rej) => {
+      let timer = setInterval(() => {
+        const randomPos = this.randomMoveInRange(initPos, R);
+        action();
+        if (typeof end === 'function' && end() === true) {
+          res(randomPos);
+        }
+      }, 1000);
+    });
+  }
+
   startAutoFindPath(toPos: Pos[] | Pos, actions?: AttackActions, aimPos?: Pos | string) {
     this.recordPos = { x: this.role?.position?.x || 0, y: this.role?.position?.y || 0 };
     if (actions) {
@@ -99,8 +112,10 @@ export class MoveActions {
       console.log('执行startAutoFindPath，注册定时器');
       this.timer = setInterval(() => {
         if (this.role.position) {
+          console.log('当前地图', this.role.map, '目标地图', aimPos);
           if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
             this.dm.LeftClick();
+            console.log('点击停止', aimPos);
             isArrive = true;
           } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos)) {
             this.dm.LeftClick();
@@ -108,16 +123,17 @@ export class MoveActions {
           } else {
             // 判断是否到达目的地
             isArrive = Array.isArray(toPos) ? this.fromTo(this.role.position, toPos) && this.recordAimPosIndex === toPos.length - 1 : this.fromTo(this.role.position, toPos);
-            console.log(isArrive, 'isArrive');
           }
         }
         if (isArrive) {
           this.timer && clearInterval(this.timer);
           this.timer = null;
           this.recordAimPosIndex = 0;
-          console.log('[角色信息] 已关闭自动寻路，并解除定时器,同时延时2秒，确保已经静止');
           setTimeout(() => {
-            res(this.role.position);
+            console.log(`[角色信息] 已关闭自动寻路，并解除定时器,同时延时2000毫秒，确保已经静止`);
+            console.log(this.role.position);
+            // 这里刚进入地图没法读取坐标
+            res(true);
           }, 2000);
         }
         // 这里攻击操作会在寻路过程中执行，且因为共同同一个鼠标控制，攻击可能会阻塞寻路操作

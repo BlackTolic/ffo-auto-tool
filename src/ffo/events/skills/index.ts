@@ -24,11 +24,22 @@ interface KeyPressOptions {
 }
 
 const skillGroup: KeyPressOptions[] = [
-  { key: 'F1', interval: 6000, song: 500 }, // 攻击技能
-  { key: 'F2', interval: 5000, song: 750 }, // 攻击技能
-  { key: 'F3', interval: 10000, song: 0 }, // 攻击技能
-  { key: 'F4', interval: 9000, song: 0 }, // 攻击技能
-  { key: 'F9', interval: 10000, song: 0 }, // 状态技能
+  // { key: 'F1', interval: 6000, song: 500 }, // 攻击技能
+  // { key: 'F2', interval: 5000, song: 750 }, // 攻击技能
+  // { key: 'F3', interval: 10000, song: 0 }, // 攻击技能
+  // { key: 'F4', interval: 9000, song: 0 }, // 攻击技能
+  // { key: 'F9', interval: 10000, song: 0 }, // 状态技能
+
+  { key: 'F1', interval: 6000, song: 0 }, // 攻击技能
+  { key: 'F2', interval: 6000, song: 0 }, // 攻击技能
+  { key: 'F3', interval: 8000, song: 0 }, // 攻击技能
+  { key: 'F4', interval: 5000, song: 0 }, // 攻击技能
+];
+
+const buffGroup: KeyPressOptions[] = [
+  { key: 'F6', interval: 100 * 1000, song: 0 }, // 状态技能
+  { key: 'F7', interval: 90 * 1000, song: 0 }, // 状态技能
+  { key: 'F8', interval: 120 * 1000, song: 0 }, // 状态技能
 ];
 
 // dm.Ocr(380,117,1254,736,"000400-555555",1.0)
@@ -37,6 +48,7 @@ export class AttackActions {
   public bindDm: any = null; // 大漠类
   public timer: NodeJS.Timeout | null = null;
   public timerMapList: Map<string, NodeJS.Timeout> = new Map();
+  public buffTimerMapList: Map<string, NodeJS.Timeout> = new Map();
   private skillPropsList: KeyPressOptions[] = [];
   private ocrMonster: MonsterFeature;
   private lastTime = 0; // 记录上次执行F10的时间戳
@@ -78,6 +90,7 @@ export class AttackActions {
       return;
     }
     const pos = this.findMonsterPos();
+    console.log(pos, 'pos');
     if (!pos) return;
     const { x, y } = pos;
     this.bindDm.MoveTo(x, y);
@@ -92,6 +105,14 @@ export class AttackActions {
     // this.startAutoSkill(skillGroup);
   }
 
+  // 开启自动攻击
+  startAutoAttack() {
+    // const timer = setInterval(() => {
+    //   this.attackNearestMonster();
+    // }, 1000);
+    return this.scanMonster();
+  }
+
   // 检查角色血量是否健康
   checkHealthStatus() {
     const bloodStatus = this.role.bloodStatus;
@@ -101,10 +122,11 @@ export class AttackActions {
       if (now - this.lastTime > 120000) {
         // 距离上次执行F10超过120秒
         console.log('角色血量进入危险状态，执行F10', bloodStatus);
-        this.bindDm.KeyDownChar('F10');
-        this.bindDm.delay(500);
-        this.bindDm.KeyUpChar('F10');
-        this.bindDm.delay(200);
+        // this.bindDm.KeyDownChar('F10');
+        // this.bindDm.delay(500);
+        // this.bindDm.KeyUpChar('F10');
+        // this.bindDm.delay(200);
+        this.bindDm.KeyPress(VK_F['F10']);
         this.lastTime = now; // 更新上次执行时间
       } else {
         console.log('角色血量危险，但距离上次执行F10不足120秒，跳过');
@@ -195,6 +217,43 @@ export class AttackActions {
       this.timerMapList.delete(key);
       console.log(`[自动按键] 已停止：key=${key}`);
     }
+  }
+
+  // 循环添加buff
+  addBuff() {
+    buffGroup.forEach(item => {
+      console.log(`[自动按键] 已启动：key=${item.key}`);
+      this.bindDm.KeyDownChar(item.key);
+      this.bindDm.delay(300);
+      this.bindDm.KeyUpChar(item.key);
+      this.bindDm.delay(300);
+      const timer = setInterval(() => {
+        try {
+          // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
+          this.bindDm.KeyDownChar(item.key);
+          this.bindDm.delay(300);
+          this.bindDm.KeyUpChar(item.key);
+          this.bindDm.delay(300);
+        } catch (err) {
+          // 中文注释：按键失败后立即退出定时器并清理状态
+          console.warn('[自动按键] 按键失败，自动停止：', String((err as any)?.message || err));
+          this.stopKeyPress(item.key);
+        }
+      }, item.interval || 0);
+      this.buffTimerMapList.set(item.key, timer);
+    });
+  }
+
+  // 停止添加buff
+  stopAddBuff() {
+    buffGroup.forEach(item => {
+      const timer = this.buffTimerMapList.get(item.key);
+      if (timer) {
+        clearInterval(timer);
+        this.buffTimerMapList.delete(item.key);
+        console.log(`[自动按键] 已停止：key=${item.key}`);
+      }
+    });
   }
 
   // 识别周围有无怪物，并且识别5秒
