@@ -16,7 +16,7 @@ import { AutoFarmingAction } from './auto-farming';
 
 const TASK_NAME = '跑名誉';
 
-// const INIT_POS = { x: 278, y: 79 };
+const INIT_POS = { x: 278, y: 79 };
 // const INIT_POS = { x: 191, y: 45 };
 // const INIT_POS = { x: 235, y: 53 };
 // const INIT_POS = { x: 218, y: 214 };
@@ -25,7 +25,7 @@ const TASK_NAME = '跑名誉';
 // const INIT_POS = { x: 161, y: 78 };
 // const INIT_POS = { x: 75, y: 78 };
 
-const INIT_POS = { x: 27, y: 95 };
+// const INIT_POS = { x: 27, y: 95 };
 
 const PATH_POS = [
   { x: 326, y: 92 },
@@ -54,10 +54,10 @@ const loopAction = () => {
     console.log('未获取到角色', hwnd);
     throw new Error('未获取到角色');
   }
-  if (test) {
-    fromLostTempleToMingYuBoss(role);
-    return;
-  }
+  // if (test) {
+  //   fromLostTempleToMingYuBoss(role);
+  //   return;
+  // }
   let atackActions = new AttackActions(role, OCR_MING_YU_BOSS);
   // 从楼兰城郊到城郊;
   fromLouLanToChengJiao(role)
