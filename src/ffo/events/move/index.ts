@@ -19,7 +19,10 @@ const getInitPos = (bindWindowSize: string) => {
 export const getAngle = (x1: number, y1: number, x2: number, y2: number) => {
   const x = math.sub(x2, x1);
   const y = math.sub(y2, y1);
-  return Number(((Math.atan2(y, x) * 180) / Math.PI).toFixed(2));
+  // 求出弧度制
+  const rad = Math.atan2(y, x);
+  // 转换成角度值
+  return Number(((rad * 180) / Math.PI).toFixed(2));
 };
 
 function getCirclePoint(angle: number, bindWindowSize: string) {
@@ -31,6 +34,7 @@ function getCirclePoint(angle: number, bindWindowSize: string) {
   // 角度转弧度（JavaScript Math.sin/cos需弧度）
   const rad = Number(((angle * Math.PI) / 180).toFixed(2));
   // console.log(rad, '弧度');
+  // todo
   const x = math.add(initX, math.mul(radius, Number(Math.cos(rad).toFixed(2))));
   const y = math.add(initY, math.mul(radius, Number(Math.sin(rad).toFixed(2))));
   // console.log(Math.cos(rad), Math.sin(rad), '圆上cos sin');
