@@ -4,6 +4,9 @@ import { isArriveAimNear } from '../../utils/common';
 import { Role } from '../rolyer';
 import { AttackActions } from '../skills';
 
+// 节点半径（用于判断是否到达当前节点范围内，如果到达，就切换到下一个节点）
+const pointR = 6;
+
 export interface Pos {
   x: number;
   y: number;
@@ -19,7 +22,10 @@ const getInitPos = (bindWindowSize: string) => {
 export const getAngle = (x1: number, y1: number, x2: number, y2: number) => {
   const x = math.sub(x2, x1);
   const y = math.sub(y2, y1);
-  return Number(((Math.atan2(y, x) * 180) / Math.PI).toFixed(2));
+  // 求出弧度制
+  const rad = Math.atan2(y, x);
+  // 转换成角度值
+  return Number(((rad * 180) / Math.PI).toFixed(2));
 };
 
 function getCirclePoint(angle: number, bindWindowSize: string) {
@@ -31,6 +37,7 @@ function getCirclePoint(angle: number, bindWindowSize: string) {
   // 角度转弧度（JavaScript Math.sin/cos需弧度）
   const rad = Number(((angle * Math.PI) / 180).toFixed(2));
   // console.log(rad, '弧度');
+  // todo
   const x = math.add(initX, math.mul(radius, Number(Math.cos(rad).toFixed(2))));
   const y = math.add(initY, math.mul(radius, Number(Math.sin(rad).toFixed(2))));
   // console.log(Math.cos(rad), Math.sin(rad), '圆上cos sin');
@@ -73,17 +80,21 @@ export class MoveActions {
       return false;
     }
     // 判断是否达到最后一个目的坐标，没有到达就继续移动
-    if (!(isArriveAimNear(fromPos, toPos[toPos.length - 1]) && this.recordAimPosIndex === toPos.length - 1)) {
+    if (!(isArriveAimNear(fromPos, toPos[toPos.length - 1], pointR) && this.recordAimPosIndex === toPos.length - 1)) {
       const curAimPos = toPos[this.recordAimPosIndex];
       !this.isPause && this.move(fromPos, curAimPos);
     }
-    // 已到达中途的坐标点后，切换下一个坐标
-    if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex < toPos.length - 1) {
+    // 已到达/或者超过中途的坐标点后，切换下一个坐标
+    // 已到达
+    const isArriveStation = isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], pointR) && this.recordAimPosIndex < toPos.length - 1;
+    // 已超过
+    // const isOverStation = isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], 10) && this.recordAimPosIndex > 0;
+    if (isArriveStation) {
       this.recordAimPosIndex++;
       return this.fromTo(fromPos, toPos);
     }
     // 到达最后的终点坐标
-    if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex]) && this.recordAimPosIndex === toPos.length - 1) {
+    if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], pointR) && this.recordAimPosIndex === toPos.length - 1) {
       this.dm.LeftClick();
       console.log('目标已到达指定位置');
       return true;
@@ -115,12 +126,13 @@ export class MoveActions {
       console.log('执行startAutoFindPath，注册定时器');
       this.timer = setInterval(() => {
         if (this.role.position) {
-          // console.log('当前地图', this.role.map, '目标地图', aimPos);
+          // 到达下一张地图退出寻路
           if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
             this.dm.LeftClick();
             console.log('点击停止', aimPos);
             isArrive = true;
-          } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, 4)) {
+            // 到达目标点位退出寻路
+          } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, pointR)) {
             this.dm.LeftClick();
             isArrive = true;
           } else {
