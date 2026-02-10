@@ -61,7 +61,7 @@ export class MoveActions {
     // 中文注释：按下左键以触发移动（修正大小写）
     this.dm.delay(200);
     this.dm.LeftDown();
-    // console.log(fromPos, '移动到', curAimPos, '角度', angle, { x, y });
+    console.log(fromPos, '移动到', curAimPos, '角度', angle, { x, y });
   }
 
   fromTo(fromPos: Pos | null, toPos: Pos[] | Pos): boolean {

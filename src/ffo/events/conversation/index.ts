@@ -46,7 +46,7 @@ export class Conversation {
     return new Promise((res, rej) => {
       let YJClickPos = this.dm.FindStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, npcName, scanBox.color, scanBox.sim);
       let trsPos = YJClickPos.split(',');
-      console.log(Number(trsPos[1] + delX), Number(trsPos[2]) + delY, `识别到"${npcName}"的点击位置`);
+      console.log(YJClickPos, 'YJClickPos');
       if (!YJClickPos) {
         res(false);
       } else {
