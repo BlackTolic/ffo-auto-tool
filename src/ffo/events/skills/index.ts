@@ -1,5 +1,6 @@
 import { MonsterFeature, OCR_MONSTER } from '../../constant/monster-feature';
 import { parseTextPos } from '../../utils/common';
+import { isBlocked } from '../../utils/ocr-check/base';
 import { Pos, Role } from '../rolyer';
 
 // 中文注释：Windows 虚拟键码映射（F1-F10），便于统一复用
@@ -19,9 +20,11 @@ export const VK_F: Record<'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' 
 
 interface KeyPressOptions {
   key: keyof typeof VK_F;
-  interval?: number | null;
+  interval: number | null;
   isCd?: boolean;
   song?: number;
+  sort?: number;
+  type?: 'lock' | 'normal';
 }
 
 const skillGroup: KeyPressOptions[] = [
@@ -31,16 +34,16 @@ const skillGroup: KeyPressOptions[] = [
   // { key: 'F4', interval: 9000, song: 0 }, // 攻击技能
   // { key: 'F9', interval: 10000, song: 0 }, // 状态技能
 
-  { key: 'F1', interval: 6000, song: 0 }, // 攻击技能
-  { key: 'F2', interval: 6000, song: 0 }, // 攻击技能
-  { key: 'F3', interval: 4000, song: 0 }, // 攻击技能
-  { key: 'F4', interval: 5000, song: 0 }, // 攻击技能
+  { key: 'F1', interval: 6000, song: 0, sort: 1 }, // 攻击技能
+  { key: 'F2', interval: 6000, song: 0, sort: 2 }, // 攻击技能
+  { key: 'F3', interval: 2000, song: 0, sort: 4, type: 'lock' }, // 攻击技能
+  { key: 'F4', interval: 5000, song: 0, sort: 3 }, // 攻击技能
 ];
 
 const buffGroup: KeyPressOptions[] = [
   { key: 'F6', interval: 90 * 1000, song: 0 }, // 状态技能
   { key: 'F7', interval: 100 * 1000, song: 0 }, // 状态技能
-  { key: 'F8', interval: 120 * 1000, song: 0 }, // 状态技能
+  { key: 'F8', interval: 30 * 1000, song: 0, type: 'lock' }, // 状态技能
 ];
 
 // dm.Ocr(380,117,1254,736,"000400-555555",1.0)
@@ -100,7 +103,8 @@ export class AttackActions {
     this.bindDm.RightClick();
     // const monsterName = this.role.selectMonster;
     // console.log('怪物坐标', pos, '名字', monsterName);
-    this.useSkill(freeSkill.key, freeSkill.interval || 0);
+    // 即将使用带lock技能
+    this.useSkill(freeSkill);
     // 检查血量是否危险
     this.checkHealthStatus();
     // this.startAutoSkill(skillGroup);
@@ -124,7 +128,8 @@ export class AttackActions {
     this.bindDm.delay(300);
     // const monsterName = this.role.selectMonster;
     // console.log('怪物坐标', pos, '名字', monsterName);
-    this.useSkill(freeSkill.key, freeSkill.interval || 0);
+    // 即将使用带lock技能
+    this.useSkill(freeSkill);
     // 检查血量是否危险
     this.checkHealthStatus();
     // this.startAutoSkill(skillGroup);
@@ -141,7 +146,7 @@ export class AttackActions {
   // 检查角色血量是否健康
   checkHealthStatus() {
     const bloodStatus = this.role.bloodStatus;
-    console.log('血量状态', bloodStatus);
+    // console.log('血量状态', bloodStatus);
     // const statusBloodIcon = this.role.statusBloodIcon;
     if (bloodStatus === 'danger') {
       const now = Date.now();
@@ -159,22 +164,30 @@ export class AttackActions {
     }
   }
 
-  useSkill(key: keyof typeof VK_F, interval: number, song?: number) {
-    this.bindDm.KeyDownChar(key);
-    this.bindDm.delay(500);
-    this.bindDm.KeyUpChar(key);
-    this.bindDm.delay(300);
-    this.bindDm.LeftClick();
-    this.cdController.set(key, true);
-    setTimeout(() => {
-      this.cdController.set(key, false);
-    }, interval || 0);
+  useSkill(skill: KeyPressOptions) {
+    // console.log(skill, 'skill');
+    const { key, interval = 0 } = skill;
+    if (skill.type === 'lock' && !this.role.selectMonster) {
+      this.bindDm.LeftClick();
+    } else {
+      this.bindDm.KeyDownChar(key);
+      this.bindDm.delay(500);
+      this.bindDm.KeyUpChar(key);
+      this.bindDm.delay(300);
+      this.bindDm.LeftClick();
+      this.cdController.set(key, true);
+      setTimeout(() => {
+        this.cdController.set(key, false);
+      }, interval || 0);
+    }
   }
 
   // 获取空闲时间的技能
   getFreeSkill(): KeyPressOptions | null {
-    // 在cdController中找到一个为false的技能
-    const freeSkill = skillGroup.find(item => this.cdController.get(item.key) === false);
+    // 在cdController中找到一个为false的技能,且优先级最高的
+    const filterSkill = skillGroup.filter(item => this.cdController.get(item.key) === false).sort((a, b) => a.sort! - b.sort!);
+    // console.log(filterSkill, 'filterSkill技能顺序');
+    const freeSkill = filterSkill[0] || null;
     if (!freeSkill) return null;
     return freeSkill;
   }
@@ -246,19 +259,26 @@ export class AttackActions {
 
   // 循环添加buff
   addBuff() {
+    if (this.buffTimerMapList.get('F6')) {
+      return;
+    }
     buffGroup.forEach(item => {
-      console.log(`[自动按键] 已启动：key=${item.key}`);
+      console.log(`[buff] 已启动：key=${item.key}`);
       this.bindDm.KeyDownChar(item.key);
       this.bindDm.delay(300);
       this.bindDm.KeyUpChar(item.key);
       this.bindDm.delay(300);
       const timer = setInterval(() => {
         try {
+          if (item.type === 'lock' && !this.role.selectMonster) {
+            console.log(`当前技能${item.key}为锁定技能，未选择目标，不执行`);
+          } else {
+            this.bindDm.KeyDownChar(item.key);
+            this.bindDm.delay(300);
+            this.bindDm.KeyUpChar(item.key);
+            this.bindDm.delay(300);
+          }
           // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
-          this.bindDm.KeyDownChar(item.key);
-          this.bindDm.delay(300);
-          this.bindDm.KeyUpChar(item.key);
-          this.bindDm.delay(300);
         } catch (err) {
           // 中文注释：按键失败后立即退出定时器并清理状态
           console.warn('[自动按键] 按键失败，自动停止：', String((err as any)?.message || err));
@@ -282,17 +302,23 @@ export class AttackActions {
   }
 
   // 识别周围有无怪物，并且识别5秒
-  scanMonster(attackType?: 'group' | 'single') {
+  scanMonster(attackType?: 'group' | 'single', times = 5) {
     return new Promise((resolve, reject) => {
       let counter = 0;
       let timer: NodeJS.Timeout | null = setInterval(() => {
+        // 对怪物进行攻击
         attackType === 'single' ? this.attackNearestMonsterForSingle() : this.attackNearestMonster();
         const findMonsterPos = this.findMonsterPos();
         if (findMonsterPos) {
           counter = 0;
         }
         console.log('counter', counter, findMonsterPos);
-        if (!findMonsterPos && counter > 5) {
+        // 检测到与怪物有隔离
+        const isIsolate = isBlocked(this.bindDm, this.role.bindWindowSize);
+        if (isIsolate) {
+          console.log('与怪物有隔离，不攻击');
+        }
+        if ((!findMonsterPos && counter > times) || isIsolate) {
           timer && clearInterval(timer);
           timer = null;
           resolve(findMonsterPos);

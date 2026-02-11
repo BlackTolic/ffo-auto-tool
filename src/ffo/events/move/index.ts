@@ -12,6 +12,13 @@ export interface Pos {
   y: number;
 }
 
+export interface AutoFindPathConfig {
+  toPos: Pos[] | Pos;
+  actions?: AttackActions;
+  aimPos?: Pos | string;
+  stationR?: number;
+}
+
 const getInitPos = (bindWindowSize: string) => {
   const initPos = (ORIGIN_POSITION as any)[bindWindowSize];
   // console.log(initPos, '角色的绝对位置');
@@ -71,7 +78,7 @@ export class MoveActions {
     console.log(fromPos, '移动到', curAimPos, '角度', angle, { x, y });
   }
 
-  fromTo(fromPos: Pos | null, toPos: Pos[] | Pos): boolean {
+  fromTo(fromPos: Pos | null, toPos: Pos[] | Pos, stationR: number): boolean {
     if (!Array.isArray(toPos)) {
       toPos = [toPos];
     }
@@ -80,21 +87,21 @@ export class MoveActions {
       return false;
     }
     // 判断是否达到最后一个目的坐标，没有到达就继续移动
-    if (!(isArriveAimNear(fromPos, toPos[toPos.length - 1], pointR) && this.recordAimPosIndex === toPos.length - 1)) {
+    if (!(isArriveAimNear(fromPos, toPos[toPos.length - 1], stationR) && this.recordAimPosIndex === toPos.length - 1)) {
       const curAimPos = toPos[this.recordAimPosIndex];
       !this.isPause && this.move(fromPos, curAimPos);
     }
     // 已到达/或者超过中途的坐标点后，切换下一个坐标
     // 已到达
-    const isArriveStation = isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], pointR) && this.recordAimPosIndex < toPos.length - 1;
+    const isArriveStation = isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], stationR) && this.recordAimPosIndex < toPos.length - 1;
     // 已超过
     // const isOverStation = isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], 10) && this.recordAimPosIndex > 0;
     if (isArriveStation) {
       this.recordAimPosIndex++;
-      return this.fromTo(fromPos, toPos);
+      return this.fromTo(fromPos, toPos, stationR);
     }
     // 到达最后的终点坐标
-    if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], pointR) && this.recordAimPosIndex === toPos.length - 1) {
+    if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], stationR) && this.recordAimPosIndex === toPos.length - 1) {
       this.dm.LeftClick();
       console.log('目标已到达指定位置');
       return true;
@@ -104,18 +111,19 @@ export class MoveActions {
 
   // 在范围内随机移动
   randomMoveInRange(initPos: Pos, R: number, action: () => void, end: () => boolean) {
-    return new Promise((res, rej) => {
-      let timer = setInterval(() => {
-        const randomPos = this.randomMoveInRange(initPos, R);
-        action();
-        if (typeof end === 'function' && end() === true) {
-          res(randomPos);
-        }
-      }, 1000);
-    });
+    // return new Promise((res, rej) => {
+    //   let timer = setInterval(() => {
+    //     const randomPos = this.randomMoveInRange(initPos, R);
+    //     action();
+    //     if (typeof end === 'function' && end() === true) {
+    //       res(randomPos);
+    //     }
+    //   }, 1000);
+    // });
   }
 
-  startAutoFindPath(toPos: Pos[] | Pos, actions?: AttackActions, aimPos?: Pos | string) {
+  startAutoFindPath(config: AutoFindPathConfig) {
+    const { toPos, actions, aimPos, stationR = pointR } = config;
     this.recordPos = { x: this.role?.position?.x || 0, y: this.role?.position?.y || 0 };
     if (actions) {
       this.actions = actions;
@@ -132,12 +140,12 @@ export class MoveActions {
             console.log('点击停止', aimPos);
             isArrive = true;
             // 到达目标点位退出寻路
-          } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, pointR)) {
+          } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, stationR)) {
             this.dm.LeftClick();
             isArrive = true;
           } else {
             // 判断是否到达目的地
-            isArrive = Array.isArray(toPos) ? this.fromTo(this.role.position, toPos) && this.recordAimPosIndex === toPos.length - 1 : this.fromTo(this.role.position, toPos);
+            isArrive = Array.isArray(toPos) ? this.fromTo(this.role.position, toPos, stationR) && this.recordAimPosIndex === toPos.length - 1 : this.fromTo(this.role.position, toPos, stationR);
           }
         }
         if (isArrive) {

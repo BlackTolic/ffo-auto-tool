@@ -7,7 +7,7 @@ export const parseRolePositionFromText = (text: string) => {
   if (!numbers || numbers.length < 2) return null;
   const x = Math.round(Number(numbers[0]) || 0);
   const y = Math.round(Number(numbers[1]) || 0);
-  return { x, y, text: s };
+  return x < 0 || y < 0 ? null : { x, y, text: s };
 };
 
 export const parseTextPos = (text: string) => {

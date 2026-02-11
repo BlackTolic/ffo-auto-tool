@@ -68,8 +68,8 @@ export class AutoFarmingAction {
         typeof loopAction === 'function'
           ? loopAction
           : () => {
-              console.log(`${this.taskName}任务启动！`, this.role.position);
-              this.actions.startAutoFindPath(this.pathPos, this.active).then(res => {
+              console.log(`非自定义${this.taskName}任务启动！`, this.role.position);
+              this.actions.startAutoFindPath({ toPos: this.pathPos, actions: this.active }).then(res => {
                 this.role.updateTaskStatus('done');
                 console.log(`本轮${this.taskName}任务完成！`, this.role.position);
               });
@@ -96,7 +96,7 @@ export class AutoFarmingAction {
 
   // 中文注释：重新启动自动寻路
   public restart() {
-    this.actions.startAutoFindPath(this.pathPos, this.active);
+    this.actions.startAutoFindPath({ toPos: this.pathPos, actions: this.active });
   }
 
   // 中文注释：切换自动寻路（第一次开启，第二次关闭）

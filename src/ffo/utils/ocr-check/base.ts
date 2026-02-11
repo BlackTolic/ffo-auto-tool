@@ -2,6 +2,7 @@ import { AutoT } from '../../../auto-plugin';
 import {
   DEFAULT_ADDRESS_NAME,
   DEFAULT_BLOOD_STATUS,
+  DEFAULT_ISOLATE,
   DEFAULT_MONSTER_NAME,
   DEFAULT_ROLE_POSITION,
   DEFAULT_SERVER_DISCONNECT,
@@ -63,8 +64,8 @@ export const getMonsterName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 // 获取血量状态（获取指定区域颜色均值）
 export const getBloodStatus = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const bloodStatusPos = DEFAULT_BLOOD_STATUS[bindWindowSize];
-  const bloodStatusText = bindDm.getColor(bloodStatusPos.x1, bloodStatusPos.y1);
-  return bloodStatusText === '103848' ? 'danger' : 'safe';
+  const bloodStatusText = bindDm.findColorE(bloodStatusPos.x1, bloodStatusPos.y1, bloodStatusPos.x2, bloodStatusPos.y2, bloodStatusPos.color, bloodStatusPos.sim);
+  return parseRolePositionFromText(bloodStatusText) ? 'danger' : 'safe';
 };
 
 // 是否处于回血状态
@@ -79,4 +80,11 @@ export const fullScreenShot = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
   // const fullScreenPos = DEFAULT_FULL_SCREEN[bindWindowSize];
   // const fullScreen = bindDm.capturePng(fullScreenPos.x1, fullScreenPos.y1, fullScreenPos.x2, fullScreenPos.y2, `${FULL_SCREEN_PATH}`);
   // return fullScreen;
+};
+
+// 是否与目标直接有阻挡
+export const isBlocked = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const blockedPos = DEFAULT_ISOLATE[bindWindowSize];
+  const blockedText = bindDm.ocr(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, '有阻挡', blockedPos.sim);
+  return parseRolePositionFromText(blockedText);
 };

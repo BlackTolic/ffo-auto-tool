@@ -1,6 +1,7 @@
 const DEFAULT_COLOR = 'e8f0e8-111111';
 const DEFAULT_MONSTER_COLOR = 'a8a8a0-111111';
 const DEFAULT_SIM = 1.0;
+const DEFAULT_COLOR_RED = 'e85048-111111';
 
 // 地图名称
 export const DEFAULT_ADDRESS_NAME = {
@@ -29,7 +30,8 @@ export const DEFAULT_MONSTER_NAME = {
 
 // 血量状态（获取指定区域颜色均值）
 export const DEFAULT_BLOOD_STATUS = {
-  '1600*900': { x1: 117, y1: 31 },
+  // 检测当前位置是黄色和绿色，如果没有黄色和绿色，说明血条空了
+  '1600*900': { x1: 116, y1: 12, x2: 139, y2: 39, color: 'e89828-111111|e89828-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 1167, y1: 39, x2: 1218, y2: 56, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
 };
 
@@ -95,4 +97,10 @@ export const DEFAULT_STATUS_ICON_POS = {
     // 状态-人参
     status_blood: { x: 1496, y: 254, x2: 1595, y2: 637, color: '90a070-11111|a0a080-11111|28ac48-11111', sim: DEFAULT_SIM },
   },
+};
+
+// 与怪物有隔离
+export const DEFAULT_ISOLATE = {
+  '1600*900': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
+  '1280*800': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
 };

@@ -3,9 +3,9 @@ import { ensureDamo } from '../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
 import { toggleHuanYouPinYuan1 } from '../ffo/events/game-actions/huan_you_pin_yuan_1';
-import { toggleHuanYouPinYuan3 } from '../ffo/events/game-actions/huan_you_pin_yuan_3';
 import { toggleMingYu } from '../ffo/events/game-actions/ming-yu';
 import { pauseCurActive, restartCurActive } from '../ffo/events/game-actions/tian-quan';
+import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
 import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 
@@ -156,7 +156,8 @@ export function registerGlobalHotkeys() {
     const okRole = globalShortcut.register('Alt+S', () => {
       // 中文注释：Alt+R 切换自动寻路（第一次开启，第二次关闭）
       // const ret = toggleTianquan();
-      const ret = toggleHuanYouPinYuan3();
+      // const ret = toggleHuanYouPinYuan3();
+      const ret = toggleYunHuang1West();
       // const ret = toggleJinHuBeiAn();
       const msg = ret.ok ? `[快捷键] Alt+R 切换镜湖北岸成功 | hwnd=${ret.hwnd} running=${ret.running}` : `[快捷键] Alt+R 切换镜湖北岸失败 | ${ret.message}`;
       console.log(msg);

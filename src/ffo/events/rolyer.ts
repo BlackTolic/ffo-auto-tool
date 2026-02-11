@@ -88,6 +88,7 @@ export class Role {
         const monsterName = getMonsterName(bindDm, this.bindWindowSize);
         // 获取血量状态
         const bloodStatus = getBloodStatus(bindDm, this.bindWindowSize);
+        // console.log(bloodStatus, 'bloodStatus');
         // 是否处于回血状态
         this.statusBloodIcon = getStatusBloodIcon(bindDm, this.bindWindowSize);
         // 截图
