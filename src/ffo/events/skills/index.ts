@@ -24,7 +24,7 @@ interface KeyPressOptions {
   isCd?: boolean;
   song?: number;
   sort?: number;
-  type?: 'lock' | 'normal';
+  type?: 'lock' | 'delay' | 'normal'; // 技能类型，lock 为锁定技能，delay 为延迟技能，normal 为普通技能
 }
 
 const skillGroup: KeyPressOptions[] = [
@@ -36,7 +36,7 @@ const skillGroup: KeyPressOptions[] = [
 
   { key: 'F1', interval: 6000, song: 0, sort: 1 }, // 攻击技能
   { key: 'F2', interval: 6000, song: 0, sort: 2 }, // 攻击技能
-  { key: 'F3', interval: 2000, song: 0, sort: 4, type: 'lock' }, // 攻击技能
+  { key: 'F3', interval: 2500, song: 0, sort: 4, type: 'lock' }, // 攻击技能
   { key: 'F4', interval: 5000, song: 0, sort: 3 }, // 攻击技能
 ];
 
@@ -166,15 +166,17 @@ export class AttackActions {
 
   useSkill(skill: KeyPressOptions) {
     // console.log(skill, 'skill');
-    const { key, interval = 0 } = skill;
-    if (skill.type === 'lock' && !this.role.selectMonster) {
+    const { key, interval = 0, type } = skill;
+    console.log(key, interval, type, 'useSkill', this.role.selectMonster);
+    if (type === 'lock' && !this.role.selectMonster) {
       this.bindDm.LeftClick();
     } else {
       this.bindDm.KeyDownChar(key);
-      this.bindDm.delay(500);
+      this.bindDm.delay(300);
       this.bindDm.KeyUpChar(key);
       this.bindDm.delay(300);
-      this.bindDm.LeftClick();
+      // 延时技能需要左键点击释放
+      type === 'delay' && this.bindDm.LeftClick();
       this.cdController.set(key, true);
       setTimeout(() => {
         this.cdController.set(key, false);
@@ -186,9 +188,10 @@ export class AttackActions {
   getFreeSkill(): KeyPressOptions | null {
     // 在cdController中找到一个为false的技能,且优先级最高的
     const filterSkill = skillGroup.filter(item => this.cdController.get(item.key) === false).sort((a, b) => a.sort! - b.sort!);
-    // console.log(filterSkill, 'filterSkill技能顺序');
+    // console.log(filterSkill, '空闲技能');
     const freeSkill = filterSkill[0] || null;
     if (!freeSkill) return null;
+
     return freeSkill;
   }
 
@@ -305,6 +308,7 @@ export class AttackActions {
   scanMonster(attackType?: 'group' | 'single', times = 5) {
     return new Promise((resolve, reject) => {
       let counter = 0;
+      let lastIsolateTime = 0;
       let timer: NodeJS.Timeout | null = setInterval(() => {
         // 对怪物进行攻击
         attackType === 'single' ? this.attackNearestMonsterForSingle() : this.attackNearestMonster();
@@ -312,13 +316,20 @@ export class AttackActions {
         if (findMonsterPos) {
           counter = 0;
         }
-        console.log('counter', counter, findMonsterPos);
+        // console.log('counter', counter, findMonsterPos);
         // 检测到与怪物有隔离
         const isIsolate = isBlocked(this.bindDm, this.role.bindWindowSize);
-        if (isIsolate) {
+        // console.log(isIsolate, 'isIsolate');
+        const now = Date.now();
+        if (isIsolate && now - lastIsolateTime > 5000) {
+          // 连续5S内都有隔离，认为是与怪物有隔离
           console.log('与怪物有隔离，不攻击');
+          lastIsolateTime = now;
+          timer && clearInterval(timer);
+          timer = null;
+          resolve(findMonsterPos);
         }
-        if ((!findMonsterPos && counter > times) || isIsolate) {
+        if (!findMonsterPos && counter > times) {
           timer && clearInterval(timer);
           timer = null;
           resolve(findMonsterPos);

@@ -12,7 +12,7 @@ const PATH_POS = [
   { x: 119, y: 58 },
   { x: 40, y: 92 },
 ];
-const checkTime = 2;
+const checkTime = 1;
 const stationR = 3;
 
 let autoFarmingAction: AutoFarmingAction | null = null;
@@ -36,24 +36,24 @@ const loopAction = () => {
   // 添加buff
   atackActions.addBuff();
   return moveActions
-    .startAutoFindPath({ toPos: [{ x: 146, y: 79 }] })
+    .startAutoFindPath({ toPos: [{ x: 146, y: 79 }], stationR, delay: 100 })
     .then(() => {
       return atackActions.scanMonster('single', checkTime);
     })
     .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 119, y: 58 }, stationR });
-    })
-    .then(() => {
-      return atackActions.scanMonster('single', checkTime);
-    })
-    .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 48, y: 88 }, stationR });
+      return moveActions.startAutoFindPath({ toPos: { x: 138, y: 84 }, stationR, delay: 100 });
     })
     .then(() => {
       return atackActions.scanMonster('single', checkTime);
     })
     .then(() => {
-      moveActions.startAutoFindPath({ toPos: { x: 91, y: 114 }, stationR });
+      return moveActions.startAutoFindPath({ toPos: { x: 48, y: 88 }, stationR, delay: 100 });
+    })
+    .then(() => {
+      return atackActions.scanMonster('single', checkTime);
+    })
+    .then(() => {
+      moveActions.startAutoFindPath({ toPos: { x: 91, y: 114 }, stationR, delay: 100 });
       atackActions.scanMonster('single', checkTime);
     })
     .then(() => {

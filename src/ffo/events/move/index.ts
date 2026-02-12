@@ -13,10 +13,11 @@ export interface Pos {
 }
 
 export interface AutoFindPathConfig {
-  toPos: Pos[] | Pos;
-  actions?: AttackActions;
-  aimPos?: Pos | string;
-  stationR?: number;
+  toPos: Pos[] | Pos; // 目标位置（可以是多个位置，也可以是单个位置）
+  actions?: AttackActions; // 赶路过程中的其他行为
+  aimPos?: Pos | string; // 目标位置（可以是坐标，也可以是文本描述）
+  stationR?: number; // 到达当前节点范围内半径（默认6）
+  delay?: number; // 检查到达当前节点范围内时间间隔（默认2000ms）
 }
 
 const getInitPos = (bindWindowSize: string) => {
@@ -123,7 +124,7 @@ export class MoveActions {
   }
 
   startAutoFindPath(config: AutoFindPathConfig) {
-    const { toPos, actions, aimPos, stationR = pointR } = config;
+    const { toPos, actions, aimPos, stationR = pointR, delay = 2000 } = config;
     this.recordPos = { x: this.role?.position?.x || 0, y: this.role?.position?.y || 0 };
     if (actions) {
       this.actions = actions;
@@ -153,11 +154,11 @@ export class MoveActions {
           this.timer = null;
           this.recordAimPosIndex = 0;
           setTimeout(() => {
-            console.log(`[角色信息] 已关闭自动寻路，并解除定时器,同时延时2000毫秒，确保已经静止`);
+            console.log(`[角色信息] 已关闭自动寻路，并解除定时器,同时延时${delay}毫秒，确保已经静止`);
             console.log(this.role.position);
             // 这里刚进入地图没法读取坐标
             res(true);
-          }, 2000);
+          }, delay);
         }
         // 这里攻击操作会在寻路过程中执行，且因为共同同一个鼠标控制，攻击可能会阻塞寻路操作
         if (actions) {

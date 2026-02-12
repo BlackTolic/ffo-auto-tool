@@ -85,6 +85,6 @@ export const fullScreenShot = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 // 是否与目标直接有阻挡
 export const isBlocked = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const blockedPos = DEFAULT_ISOLATE[bindWindowSize];
-  const blockedText = bindDm.ocr(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, '有阻挡', blockedPos.sim);
-  return parseRolePositionFromText(blockedText);
+  const blockedText = bindDm.findStrFastE(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, '有阻挡', blockedPos.color, blockedPos.sim);
+  return !!parseRolePositionFromText(blockedText);
 };
