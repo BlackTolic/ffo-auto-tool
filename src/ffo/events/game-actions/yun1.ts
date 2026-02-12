@@ -38,23 +38,25 @@ const loopAction = () => {
   return moveActions
     .startAutoFindPath({ toPos: [{ x: 146, y: 79 }], stationR, delay: 100 })
     .then(() => {
-      return atackActions.scanMonster('single', checkTime);
+      return atackActions.scanMonster({ attackType: 'single', times: checkTime });
     })
     .then(() => {
       return moveActions.startAutoFindPath({ toPos: { x: 138, y: 84 }, stationR, delay: 100 });
     })
     .then(() => {
-      return atackActions.scanMonster('single', checkTime);
+      return atackActions.scanMonster({ attackType: 'single', times: checkTime });
     })
     .then(() => {
       return moveActions.startAutoFindPath({ toPos: { x: 48, y: 88 }, stationR, delay: 100 });
     })
     .then(() => {
-      return atackActions.scanMonster('single', checkTime);
+      return atackActions.scanMonster({ attackType: 'single', times: checkTime });
     })
     .then(() => {
-      moveActions.startAutoFindPath({ toPos: { x: 91, y: 114 }, stationR, delay: 100 });
-      atackActions.scanMonster('single', checkTime);
+      return moveActions.startAutoFindPath({ toPos: { x: 91, y: 114 }, stationR, delay: 100 });
+    })
+    .then(() => {
+      return atackActions.scanMonster({ attackType: 'single', times: checkTime });
     })
     .then(() => {
       role.updateTaskStatus('done');

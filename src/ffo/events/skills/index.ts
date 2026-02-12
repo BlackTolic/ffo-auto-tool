@@ -1,7 +1,7 @@
 import { MonsterFeature, OCR_MONSTER } from '../../constant/monster-feature';
-import { parseTextPos } from '../../utils/common';
+import { isArriveAimNear, parseTextPos } from '../../utils/common';
 import { isBlocked } from '../../utils/ocr-check/base';
-import { Pos, Role } from '../rolyer';
+import { Role } from '../rolyer';
 
 // 中文注释：Windows 虚拟键码映射（F1-F10），便于统一复用
 export const VK_F: Record<'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' | 'F11', number> = {
@@ -27,6 +27,15 @@ interface KeyPressOptions {
   type?: 'lock' | 'delay' | 'normal'; // 技能类型，lock 为锁定技能，delay 为延迟技能，normal 为普通技能
 }
 
+export interface ScanMonsterOptions {
+  attackType?: 'group' | 'single';
+  times?: number;
+  attackRange?: {
+    x: number;
+    y: number;
+    r: number;
+  };
+}
 const skillGroup: KeyPressOptions[] = [
   // { key: 'F1', interval: 6000, song: 500 }, // 攻击技能
   // { key: 'F2', interval: 5000, song: 750 }, // 攻击技能
@@ -62,10 +71,7 @@ export class AttackActions {
     ['F2', false],
     ['F3', false],
     ['F4', false],
-    ['F9', false],
   ]);
-  // 当前正在攻击的对象的坐标
-  public currentAttackTargetPos: Pos | null = null;
 
   constructor(role: Role, ocrMonster?: MonsterFeature) {
     this.role = role;
@@ -118,30 +124,25 @@ export class AttackActions {
       return;
     }
     const pos = this.findMonsterPos();
-    console.log(pos, 'pos');
     if (!pos) return;
     const { x, y } = pos;
-    this.bindDm.MoveTo(x, y);
-    this.bindDm.delay(300);
-    // 选中目标,如果已经选中目标就不在
-    !this.role.selectMonster && this.bindDm.LeftClick();
-    this.bindDm.delay(300);
-    // const monsterName = this.role.selectMonster;
-    // console.log('怪物坐标', pos, '名字', monsterName);
+    // 选中目标,如果已经选中目标就不再重复选中
+    if (!this.role.selectMonster) {
+      this.bindDm.MoveTo(x, y);
+      this.bindDm.delay(300);
+      this.bindDm.LeftClick();
+      this.bindDm.delay(300);
+    }
     // 即将使用带lock技能
     this.useSkill(freeSkill);
     // 检查血量是否危险
     this.checkHealthStatus();
-    // this.startAutoSkill(skillGroup);
   }
 
   // 开启自动攻击
-  startAutoAttack() {
-    // const timer = setInterval(() => {
-    //   this.attackNearestMonster();
-    // }, 1000);
-    return this.scanMonster();
-  }
+  // startAutoAttack(options: AttackOptions) {
+  //   return this.scanMonster(options);
+  // }
 
   // 检查角色血量是否健康
   checkHealthStatus() {
@@ -150,8 +151,8 @@ export class AttackActions {
     // const statusBloodIcon = this.role.statusBloodIcon;
     if (bloodStatus === 'danger') {
       const now = Date.now();
-      if (now - this.lastTime > 120000) {
-        // 距离上次执行F10超过120秒
+      if (now - this.lastTime > 100 * 1000) {
+        // 距离上次执行F10超过100秒
         console.log('角色血量进入危险状态，执行F10', bloodStatus);
         this.bindDm.KeyDownChar('F10');
         this.bindDm.delay(300);
@@ -159,7 +160,7 @@ export class AttackActions {
         this.bindDm.delay(300);
         this.lastTime = now; // 更新上次执行时间
       } else {
-        console.log('角色血量危险，但距离上次执行F10不足120秒，跳过');
+        console.log('角色血量危险，但距离上次执行F10不足100秒，跳过');
       }
     }
   }
@@ -194,20 +195,6 @@ export class AttackActions {
 
     return freeSkill;
   }
-
-  // startAutoSkill(props: KeyPressOptions[]) {
-  //   this.skillPropsList = props;
-  //   props.forEach(item => {
-  //     const timer = setInterval(() => {
-  //       this.bindDm.KeyDownChar(item.key);
-  //       this.bindDm.delay(500);
-  //       this.bindDm.KeyUpChar(item.key);
-  //       this.bindDm.delay(300);
-  //       this.bindDm.LeftClick();
-  //     }, item.interval || 0);
-  //     this.timerMapList.set(item.key, timer);
-  //   });
-  // }
 
   // 停止缺省技能
   stopAutoSkill() {
@@ -267,19 +254,25 @@ export class AttackActions {
     }
     buffGroup.forEach(item => {
       console.log(`[buff] 已启动：key=${item.key}`);
-      this.bindDm.KeyDownChar(item.key);
-      this.bindDm.delay(300);
-      this.bindDm.KeyUpChar(item.key);
-      this.bindDm.delay(300);
+      const isUseless = item.type === 'lock' && !this.role.selectMonster;
+      const useSkill = () => {
+        this.bindDm.KeyDownChar(item.key);
+        this.bindDm.delay(300);
+        this.bindDm.KeyUpChar(item.key);
+        this.bindDm.delay(300);
+      };
+      if (isUseless) {
+        console.log(`当前技能${item.key}为锁定技能，未选择目标，不执行`);
+      } else {
+        useSkill();
+      }
+
       const timer = setInterval(() => {
         try {
-          if (item.type === 'lock' && !this.role.selectMonster) {
+          if (isUseless) {
             console.log(`当前技能${item.key}为锁定技能，未选择目标，不执行`);
           } else {
-            this.bindDm.KeyDownChar(item.key);
-            this.bindDm.delay(300);
-            this.bindDm.KeyUpChar(item.key);
-            this.bindDm.delay(300);
+            useSkill();
           }
           // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
         } catch (err) {
@@ -305,34 +298,43 @@ export class AttackActions {
   }
 
   // 识别周围有无怪物，并且识别5秒
-  scanMonster(attackType?: 'group' | 'single', times = 5) {
+  scanMonster(options: ScanMonsterOptions) {
+    const { attackType, times = 5, attackRange } = options;
     return new Promise((resolve, reject) => {
       let counter = 0;
       let lastIsolateTime = 0;
       let timer: NodeJS.Timeout | null = setInterval(() => {
         // 对怪物进行攻击
-        attackType === 'single' ? this.attackNearestMonsterForSingle() : this.attackNearestMonster();
+        const isRange = attackRange && isArriveAimNear(this.role.position, { x: attackRange.x, y: attackRange.y }, attackRange.r);
+        console.log(isRange, '我是否在据点范围内');
+        if (attackType === 'single' && isRange) {
+          this.attackNearestMonsterForSingle();
+        }
+        if (attackType !== 'single' && isRange) {
+          this.attackNearestMonster();
+        }
+        // todo 缩小范围
         const findMonsterPos = this.findMonsterPos();
         if (findMonsterPos) {
           counter = 0;
         }
-        // console.log('counter', counter, findMonsterPos);
         // 检测到与怪物有隔离
         const isIsolate = isBlocked(this.bindDm, this.role.bindWindowSize);
         // console.log(isIsolate, 'isIsolate');
         const now = Date.now();
+        // 这里需要打开世界频道，刷新掉弹出的红字
         if (isIsolate && now - lastIsolateTime > 5000) {
           // 连续5S内都有隔离，认为是与怪物有隔离
-          console.log('与怪物有隔离，不攻击');
+          console.log('与怪物有隔离5S，不再进行攻击，前往下一个据点');
           lastIsolateTime = now;
           timer && clearInterval(timer);
           timer = null;
-          resolve(findMonsterPos);
+          resolve(true);
         }
         if (!findMonsterPos && counter > times) {
           timer && clearInterval(timer);
           timer = null;
-          resolve(findMonsterPos);
+          resolve(true);
         }
         counter++;
       }, 1000);
