@@ -1,6 +1,7 @@
 import { MonsterFeature, OCR_MONSTER } from '../../constant/monster-feature';
 import { isArriveAimNear, parseTextPos } from '../../utils/common';
 import { isBlocked } from '../../utils/ocr-check/base';
+import { MoveActions } from '../move';
 import { Role } from '../rolyer';
 
 // 中文注释：Windows 虚拟键码映射（F1-F10），便于统一复用
@@ -45,7 +46,8 @@ const skillGroup: KeyPressOptions[] = [
 
   { key: 'F1', interval: 6000, song: 0, sort: 1 }, // 攻击技能
   { key: 'F2', interval: 6000, song: 0, sort: 2 }, // 攻击技能
-  { key: 'F3', interval: 2500, song: 0, sort: 4, type: 'lock' }, // 攻击技能
+  // { key: 'F3', interval: 2500, song: 0, sort: 4, type: 'lock' }, // 攻击技能
+  { key: 'F3', interval: 5000, song: 0, sort: 4, type: 'delay' }, // 攻击技能
   { key: 'F4', interval: 5000, song: 0, sort: 3 }, // 攻击技能
 ];
 
@@ -100,7 +102,7 @@ export class AttackActions {
       return;
     }
     const pos = this.findMonsterPos();
-    console.log(pos, 'pos');
+    // console.log(pos, 'pos');
     if (!pos) return;
     const { x, y } = pos;
     this.bindDm.MoveTo(x, y);
@@ -168,7 +170,7 @@ export class AttackActions {
   useSkill(skill: KeyPressOptions) {
     // console.log(skill, 'skill');
     const { key, interval = 0, type } = skill;
-    console.log(key, interval, type, 'useSkill', this.role.selectMonster);
+    // console.log(key, interval, type, 'useSkill', this.role.selectMonster);
     if (type === 'lock' && !this.role.selectMonster) {
       this.bindDm.LeftClick();
     } else {
@@ -306,7 +308,13 @@ export class AttackActions {
       let timer: NodeJS.Timeout | null = setInterval(() => {
         // 对怪物进行攻击
         const isRange = attackRange && isArriveAimNear(this.role.position, { x: attackRange.x, y: attackRange.y }, attackRange.r);
-        console.log(isRange, '我是否在据点范围内');
+        if (!isRange && attackRange) {
+          const { x, y } = attackRange;
+          const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
+          new MoveActions(this.role).move({ x: roleX, y: roleY }, { x, y });
+        }
+
+        // console.log(isRange, '我是否在据点范围内');
         if (attackType === 'single' && isRange) {
           this.attackNearestMonsterForSingle();
         }
@@ -320,16 +328,15 @@ export class AttackActions {
         }
         // 检测到与怪物有隔离
         const isIsolate = isBlocked(this.bindDm, this.role.bindWindowSize);
-        // console.log(isIsolate, 'isIsolate');
+        // todo技能卡住移动
+
         const now = Date.now();
         // 这里需要打开世界频道，刷新掉弹出的红字
-        if (isIsolate && now - lastIsolateTime > 5000) {
+        if (isIsolate && now - lastIsolateTime > 5000 && attackRange) {
           // 连续5S内都有隔离，认为是与怪物有隔离
-          console.log('与怪物有隔离5S，不再进行攻击，前往下一个据点');
-          lastIsolateTime = now;
-          timer && clearInterval(timer);
-          timer = null;
-          resolve(true);
+          const { x, y } = attackRange;
+          const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
+          new MoveActions(this.role).move({ x: roleX, y: roleY }, { x, y });
         }
         if (!findMonsterPos && counter > times) {
           timer && clearInterval(timer);

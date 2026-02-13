@@ -1,7 +1,7 @@
-const green = '40bc00-111111';
-const yellow = 'd8cc18-111111';
-const red = 'e85048-111111';
-const white = 'a8a8a0-111111';
+export const MONSTER_GREEN = '40bc00-111111';
+export const MONSTER_YELLOW = 'd8cc18-111111';
+export const MONSTER_RED = 'e85048-111111';
+export const MONSTER_WHITE = 'a8a8a0-111111';
 
 export const MONSTER_FEATURE: Record<string, string> = {
   QQ糖: 'QQ糖',
@@ -31,16 +31,16 @@ export const AttackRange1 = { x1: 574, y1: 236, x2: 1026, y2: 578 };
 // 攻击范围2
 export const AttackRange2 = { x1: 364, y1: 152, x2: 1293, y2: 677 };
 // 天泉怪物
-export const OCR_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['天泉怪物'], color: white, sim: 1.0 };
+export const OCR_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['天泉怪物'], color: MONSTER_WHITE, sim: 1.0 };
 // 无泪南郊怪物
-export const OCR_NAN_JIAO_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['南郊怪物'], color: white, sim: 1.0 };
+export const OCR_NAN_JIAO_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['南郊怪物'], color: MONSTER_WHITE, sim: 1.0 };
 // 幻幽平原一层怪物
-export const OCR_PAN_GUI_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['幻幽平原一层怪物'], color: white, sim: 1.0 };
+export const OCR_PAN_GUI_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['幻幽平原一层怪物'], color: MONSTER_WHITE, sim: 1.0 };
 // 幻幽平原三层怪物
-export const OCR_PAN_GUI_MONSTER_3 = { ...AttackRange1, string: MONSTER_FEATURE['幻幽平原三层怪物'], color: white, sim: 1.0 };
+export const OCR_PAN_GUI_MONSTER_3 = { ...AttackRange1, string: MONSTER_FEATURE['幻幽平原三层怪物'], color: MONSTER_WHITE, sim: 1.0 };
 // 镜湖北岸怪物
-export const OCR_JIN_HU_BEI_AN_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['镜湖北岸怪物'], color: white, sim: 1.0 };
+export const OCR_JIN_HU_BEI_AN_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['镜湖北岸怪物'], color: MONSTER_WHITE, sim: 1.0 };
 // 名誉BOSS
-export const OCR_MING_YU_BOSS = { ...AttackRange2, string: MONSTER_FEATURE['怨灵'], color: white, sim: 1.0 };
+export const OCR_MING_YU_BOSS = { ...AttackRange2, string: MONSTER_FEATURE['怨灵'], color: MONSTER_WHITE, sim: 1.0 };
 // 云荒一层
-export const OCR_YUN_HUAN_1_MONSTER = { ...AttackRange2, string: MONSTER_FEATURE['云荒一层'], color: `${green} | ${yellow}| ${red}`, sim: 1.0 };
+export const OCR_YUN_HUAN_1_MONSTER = { ...AttackRange2, string: MONSTER_FEATURE['云荒一层'], color: `${MONSTER_GREEN} | ${MONSTER_YELLOW}| ${MONSTER_RED}`, sim: 1.0 };

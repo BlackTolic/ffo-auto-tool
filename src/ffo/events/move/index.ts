@@ -79,6 +79,16 @@ export class MoveActions {
     console.log(fromPos, '移动到', curAimPos, '角度', angle, { x, y });
   }
 
+  randomMove() {
+    const angle = Math.random() * 360;
+    const { x, y } = getCirclePoint(angle, this.role.bindWindowSize);
+    this.dm.MoveTo(x, y);
+    // 中文注释：按下左键以触发移动（修正大小写）
+    this.dm.delay(400);
+    this.dm.LeftDown();
+    console.log('开始进行随机移动');
+  }
+
   fromTo(fromPos: Pos | null, toPos: Pos[] | Pos, stationR: number): boolean {
     if (!Array.isArray(toPos)) {
       toPos = [toPos];
@@ -101,6 +111,13 @@ export class MoveActions {
       this.recordAimPosIndex++;
       return this.fromTo(fromPos, toPos, stationR);
     }
+    const isM = this.isMove(10);
+    // console.log(isM, 'isM');
+    // if (this.isMove(6) === false) {
+    //   // 在this.role.position随机100内移动
+    //   this.randomMove();
+    // }
+
     // 到达最后的终点坐标
     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], stationR) && this.recordAimPosIndex === toPos.length - 1) {
       this.dm.LeftClick();
@@ -108,6 +125,23 @@ export class MoveActions {
       return true;
     }
     return false;
+  }
+
+  // 判断6S内是否进行了移动
+  isMove(time = 6) {
+    this.recordPos = { x: this.role?.position?.x || 0, y: this.role?.position?.y || 0 };
+    // 如果超过6S没有移动，就进行随机移动
+    const now = Date.now();
+    // console.log('记录坐标', now, this.lastMoveTime, this.recordPos);
+    if (now - this.lastMoveTime >= time * 1000 && this.role.position) {
+      // console.log('6S后的坐标', this.role.position);
+      const { x, y } = this.role.position ?? {};
+      const isM = !(x === this.recordPos.x && y === this.recordPos.y);
+      setTimeout(() => {
+        this.lastMoveTime = now;
+      }, 1000);
+      return isM;
+    }
   }
 
   // 在范围内随机移动
@@ -125,7 +159,6 @@ export class MoveActions {
 
   startAutoFindPath(config: AutoFindPathConfig) {
     const { toPos, actions, aimPos, stationR = pointR, delay = 2000 } = config;
-    this.recordPos = { x: this.role?.position?.x || 0, y: this.role?.position?.y || 0 };
     if (actions) {
       this.actions = actions;
     }
@@ -155,7 +188,6 @@ export class MoveActions {
           this.recordAimPosIndex = 0;
           setTimeout(() => {
             console.log(`[角色信息] 已关闭自动寻路，并解除定时器,同时延时${delay}毫秒，确保已经静止`);
-            console.log(this.role.position);
             // 这里刚进入地图没法读取坐标
             res(true);
           }, delay);
@@ -163,16 +195,6 @@ export class MoveActions {
         // 这里攻击操作会在寻路过程中执行，且因为共同同一个鼠标控制，攻击可能会阻塞寻路操作
         if (actions) {
           actions.attackNearestMonster();
-          const now = Date.now();
-          const isMove = this.role?.position?.x !== this.recordPos?.x || this.role?.position?.y !== this.recordPos?.y;
-          if (now - this.lastMoveTime >= 6000 && this.role.position && !isMove) {
-            // 在this.role.position随机100内移动
-            this.dm.MoveTo(this.role.position.x + Math.floor(Math.random() * 200 - 100), this.role.position.y + Math.floor(Math.random() * 200 - 100));
-            this.dm.delay(300);
-            this.dm.LeftClick();
-            this.lastMoveTime = now;
-            this.recordPos = { x: this.role.position.x, y: this.role.position.y };
-          }
         }
       }, 300); // 中文注释：最小间隔 200ms，避免过于频繁\
     });

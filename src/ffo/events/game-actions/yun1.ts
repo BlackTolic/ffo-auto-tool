@@ -10,10 +10,10 @@ const INIT_POS = { x: 91, y: 114 };
 const PATH_POS = [
   { x: 146, y: 79 },
   { x: 119, y: 58 },
-  { x: 40, y: 92 },
+  { x: 40, y: 91 },
 ];
 const checkTime = 1;
-const stationR = 3;
+const stationR = 8;
 
 let autoFarmingAction: AutoFarmingAction | null = null;
 let i = 0;
@@ -36,27 +36,27 @@ const loopAction = () => {
   // 添加buff
   atackActions.addBuff();
   return moveActions
-    .startAutoFindPath({ toPos: [{ x: 146, y: 79 }], stationR, delay: 100 })
+    .startAutoFindPath({ toPos: [{ x: 143, y: 81 }], stationR, delay: 100 })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: checkTime });
+      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 143, y: 81, r: stationR } });
     })
     .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 138, y: 84 }, stationR, delay: 100 });
+      return moveActions.startAutoFindPath({ toPos: { x: 114, y: 58 }, stationR, delay: 100 });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: checkTime });
+      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 114, y: 58, r: stationR } });
     })
     .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 48, y: 88 }, stationR, delay: 100 });
+      return moveActions.startAutoFindPath({ toPos: { x: 40, y: 91 }, stationR, delay: 100 });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: checkTime });
+      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 40, y: 91, r: stationR } });
     })
     .then(() => {
       return moveActions.startAutoFindPath({ toPos: { x: 91, y: 114 }, stationR, delay: 100 });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: checkTime });
+      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 91, y: 114, r: stationR } });
     })
     .then(() => {
       role.updateTaskStatus('done');

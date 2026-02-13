@@ -221,6 +221,10 @@ export class Role {
     }
     this.task.taskStatus = status;
   }
+
+  getSelectMonster() {
+    return;
+  }
 }
 
 // 66 72 78 84 90 96 102 6次机会

@@ -1,3 +1,5 @@
+import { MONSTER_GREEN, MONSTER_RED, MONSTER_WHITE, MONSTER_YELLOW } from './monster-feature';
+
 const DEFAULT_COLOR = 'e8f0e8-111111';
 const DEFAULT_MONSTER_COLOR = 'a8a8a0-111111';
 const DEFAULT_SIM = 1.0;
@@ -24,8 +26,8 @@ export const ORIGIN_POSITION = {
 
 // 怪物名称
 export const DEFAULT_MONSTER_NAME = {
-  '1600*900': { x1: 95, y1: 109, x2: 200, y2: 144, color: DEFAULT_MONSTER_COLOR, sim: DEFAULT_SIM },
-  '1280*800': { x1: 95, y1: 109, x2: 200, y2: 144, color: DEFAULT_MONSTER_COLOR, sim: DEFAULT_SIM },
+  '1600*900': { x1: 95, y1: 109, x2: 200, y2: 144, color: `${MONSTER_GREEN} | ${MONSTER_YELLOW} |${MONSTER_WHITE} |${MONSTER_RED}`, sim: DEFAULT_SIM },
+  '1280*800': { x1: 95, y1: 109, x2: 200, y2: 144, color: `${MONSTER_GREEN} | ${MONSTER_YELLOW} |${MONSTER_WHITE} |${MONSTER_RED}`, sim: DEFAULT_SIM },
 };
 
 // 血量状态（获取指定区域颜色均值）
