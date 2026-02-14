@@ -86,6 +86,32 @@ export class BaseAction {
       }
     });
   }
+
+  // 打开物品栏切换到装备页
+  openItemBoxToEquip() {
+    // const { itemBox } = this.role?.menusPos ?? {};
+    // if (itemBox) {
+    //   this.moveToClick({ x: itemBox.x, y: itemBox.y });
+  }
+
+  // 打开宠物栏
+
+  // 关闭宠物栏
+
+  // 激活宠物
+
+  // 存放金币
+
+  // 从仓库提取金币
+
+  // 存放装备
+
+  // 丢弃装备
+
+  // 检查装备是否有用
+  checkEquipUseful() {
+    const { equip } = this.role?.menusPos ?? {};
+  }
 }
 
 // 破月 鬼刃 邪剑 银剑 九幽 苍月

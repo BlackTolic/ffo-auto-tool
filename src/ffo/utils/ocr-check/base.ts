@@ -2,14 +2,16 @@ import { AutoT } from '../../../auto-plugin';
 import {
   DEFAULT_ADDRESS_NAME,
   DEFAULT_BLOOD_STATUS,
+  DEFAULT_GOLD,
   DEFAULT_ISOLATE,
+  DEFAULT_ITEM_BOX,
   DEFAULT_MONSTER_NAME,
   DEFAULT_ROLE_POSITION,
   DEFAULT_SERVER_DISCONNECT,
   DEFAULT_STATUS_ICON_POS,
   DEFAULT_VERIFY_CODE,
 } from '../../constant/OCR-pos';
-import { parseRolePositionFromText, parseTextPos } from '../common';
+import { parseFFOCurrencyToGoldLabel, parseRolePositionFromText, parseTextPos } from '../common';
 // 检查服务器是否断线
 export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const offlinePos = DEFAULT_SERVER_DISCONNECT[bindWindowSize];
@@ -87,4 +89,22 @@ export const isBlocked = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
   const blockedPos = DEFAULT_ISOLATE[bindWindowSize];
   const blockedText = bindDm.findStrFastE(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, '有阻挡', blockedPos.color, blockedPos.sim);
   return !!parseRolePositionFromText(blockedText);
+};
+
+// 查看当前金币
+export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const goldPos = DEFAULT_GOLD[bindWindowSize];
+  const goldText = bindDm.ocr(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, goldPos.color, goldPos.sim);
+  console.log(parseFFOCurrencyToGoldLabel(goldText), 'goldText');
+  return parseFFOCurrencyToGoldLabel(goldText);
+};
+
+// 检查物品栏是否打开
+export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const itemBoxPos = DEFAULT_ITEM_BOX[bindWindowSize];
+  const itemBoxText = bindDm.findStrFastE(itemBoxPos.x1, itemBoxPos.y1, itemBoxPos.x2, itemBoxPos.y2, '物品栏', itemBoxPos.color, itemBoxPos.sim);
+  console.log(itemBoxText, 'itemBoxText');
+  const z = parseRolePositionFromText(itemBoxText);
+  console.log(z, 'z');
+  return z;
 };

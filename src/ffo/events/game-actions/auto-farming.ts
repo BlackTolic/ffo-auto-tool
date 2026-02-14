@@ -103,7 +103,7 @@ export class AutoFarmingAction {
   public toggle(loopAction?: () => void): AutoRouteToggleResult {
     try {
       if (!isArriveAimNear(this.role.position, this.initPos, 10)) {
-        return { ok: false, message: `当前位置不在${this.taskName}循环触发点，无法开启自动寻路` };
+        return { ok: false, message: `当前位置${JSON.stringify(this.role.position)}不在${this.taskName}循环触发点，无法开启自动寻路` };
       }
       if (this.isRunning()) {
         this.stop();

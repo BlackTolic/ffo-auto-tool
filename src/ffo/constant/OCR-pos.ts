@@ -106,3 +106,21 @@ export const DEFAULT_ISOLATE = {
   '1600*900': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
   '1280*800': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
 };
+
+// 检查是否有物品栏打开
+export const DEFAULT_ITEM_BOX = {
+  '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+};
+
+// 金币
+export const DEFAULT_GOLD = {
+  '1600*900': { x1: 872, y1: 713, x2: 986, y2: 729, color: 'e8f0e8-111111|d0a028-111111|989490-000000|986450-555555', sim: DEFAULT_SIM },
+  '1280*800': { x1: 872, y1: 713, x2: 986, y2: 729, color: 'e8f0e8-111111|d0a028-111111|989490-000000|986450-555555', sim: DEFAULT_SIM },
+};
+
+// 检查宠物是否激活
+export const DEFAULT_PET_ACTIVE = {
+  '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+};

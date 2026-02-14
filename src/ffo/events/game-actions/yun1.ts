@@ -1,12 +1,13 @@
 import { damoBindingManager } from '..';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
 import { MoveActions } from '../move';
+import { Role } from '../rolyer';
 import { AttackActions } from '../skills';
 import { AutoFarmingAction } from './auto-farming';
 
 const TASK_NAME = '云荒打怪捡装备';
 const INIT_POS = { x: 91, y: 114 };
-// const INIT_POS = { x: 114, y: 94 };
+// const INIT_POS = { x: 148, y: 96 };
 const PATH_POS = [
   { x: 146, y: 79 },
   { x: 119, y: 58 },
@@ -18,21 +19,8 @@ const stationR = 8;
 let autoFarmingAction: AutoFarmingAction | null = null;
 let i = 0;
 
-const loopAction = () => {
-  const hwnd = damoBindingManager.selectHwnd;
-  if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-    console.log('未选择已绑定的窗口', hwnd);
-    throw new Error('未选择已绑定的窗口');
-  }
-  const role = damoBindingManager.getRole(hwnd);
-  if (!role) {
-    console.log('未获取到角色', hwnd);
-    throw new Error('未获取到角色');
-  }
-  console.log(`当前开始执行第${i + 1}次任务`, role.position);
-
-  let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
-  let moveActions = new MoveActions(role);
+// 循环打怪
+const autoAttackInWest = (role: Role, moveActions: MoveActions, atackActions: AttackActions) => {
   // 添加buff
   atackActions.addBuff();
   return moveActions
@@ -65,6 +53,28 @@ const loopAction = () => {
     .catch(err => {
       console.log('云荒打怪失败', err);
     });
+};
+
+const loopAction = () => {
+  const hwnd = damoBindingManager.selectHwnd;
+  if (!hwnd || !damoBindingManager.isBound(hwnd)) {
+    console.log('未选择已绑定的窗口', hwnd);
+    throw new Error('未选择已绑定的窗口');
+  }
+  const role = damoBindingManager.getRole(hwnd);
+  if (!role) {
+    console.log('未获取到角色', hwnd);
+    throw new Error('未获取到角色');
+  }
+  console.log(`当前开始执行第${i + 1}次任务`, role.position);
+
+  let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
+  let moveActions = new MoveActions(role);
+
+  // const isOpen = isItemBoxOpen(role.bindDm, role.bindWindowSize);
+  // const gold = getCurrentGold(role.bindDm, role.bindWindowSize);
+
+  return autoAttackInWest(role, moveActions, atackActions);
 };
 
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
