@@ -34,7 +34,7 @@ export const DEFAULT_MONSTER_NAME = {
 export const DEFAULT_BLOOD_STATUS = {
   // 检测当前位置是黄色和绿色，如果没有黄色和绿色，说明血条空了
   '1600*900': { x1: 116, y1: 12, x2: 139, y2: 39, color: 'e89828-111111|e89828-111111', sim: DEFAULT_SIM },
-  '1280*800': { x1: 1167, y1: 39, x2: 1218, y2: 56, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1280*800': { x1: 116, y1: 12, x2: 139, y2: 39, color: 'e89828-111111|e89828-111111', sim: DEFAULT_SIM },
 };
 
 // 神医验证码
@@ -104,13 +104,19 @@ export const DEFAULT_STATUS_ICON_POS = {
 // 与怪物有隔离
 export const DEFAULT_ISOLATE = {
   '1600*900': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
-  '1280*800': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1280*800': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
 };
 
 // 检查是否有物品栏打开
 export const DEFAULT_ITEM_BOX = {
   '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
   '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+};
+
+// 检查物品栏切换的tab页
+export const DEFAULT_ITEM_BOX_TAB = {
+  '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1280*800': { x1: 867, y1: 471, x2: 1270, y2: 507, color: 'e8e4e0-111111', sim: DEFAULT_SIM },
 };
 
 // 金币
@@ -121,6 +127,18 @@ export const DEFAULT_GOLD = {
 
 // 检查宠物是否激活
 export const DEFAULT_PET_ACTIVE = {
+  '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+};
+
+// 检查装备是否损坏
+export const DEFAULT_EQUIP_DAMAGE = {
+  '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+};
+
+// 检查红药数量
+export const DEFAULT_RED_PILL = {
   '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
   '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
 };
