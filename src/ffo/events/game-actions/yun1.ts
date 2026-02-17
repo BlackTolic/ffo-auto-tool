@@ -1,6 +1,5 @@
 import { damoBindingManager } from '..';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
-import { isItemBoxOpen } from '../../utils/ocr-check/base';
 import { BaseAction } from '../base-action';
 import { MoveActions } from '../move';
 import { Role } from '../rolyer';
@@ -8,8 +7,8 @@ import { AttackActions } from '../skills';
 import { AutoFarmingAction } from './auto-farming';
 
 const TASK_NAME = '云荒打怪捡装备';
-// const INIT_POS = { x: 91, y: 114 };
-const INIT_POS = { x: 148, y: 96 };
+const INIT_POS = { x: 91, y: 114 };
+// const INIT_POS = { x: 148, y: 96 };
 const PATH_POS = [
   { x: 146, y: 79 },
   { x: 119, y: 58 },
@@ -85,17 +84,17 @@ const loopAction = () => {
   // }
 
   // 检查物品栏是否已经打开
-  const box = isItemBoxOpen(role.bindDm, role.bindWindowSize);
-  if (!box) {
-    console.log('物品栏未打开');
-    // 打开物品栏并且切换到装备页面
-    baseAction.openItemBox('equip');
-  }
-  if (box !== '装备') {
-    console.log('物品栏不是装备页面');
-    // 切换到装备页面
-    baseAction.openItemBox('equip');
-  }
+  // const box = isItemBoxOpen(role.bindDm, role.bindWindowSize);
+  // if (!box) {
+  //   console.log('物品栏未打开');
+  //   // 打开物品栏并且切换到装备页面
+  //   baseAction.openItemBox('equip');
+  // }
+  // if (box !== '装备') {
+  //   console.log('物品栏不是装备页面');
+  //   // 切换到装备页面
+  //   baseAction.openItemBox('equip');
+  // }
 
   // // 检查装备是否已经填满
   // const isEquipFull = checkEquipFull(role.bindDm, role.bindWindowSize);
@@ -104,7 +103,7 @@ const loopAction = () => {
   //   return;
   // }
 
-  // return autoAttackInWest(role, moveActions, atackActions);
+  return autoAttackInWest(role, moveActions, atackActions);
 };
 
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
