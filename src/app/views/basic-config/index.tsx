@@ -28,7 +28,9 @@ export default function BasicConfigView() {
   const formatLabel = (w: any): string => {
     const title = w.title || '(无标题)';
     const cls = w.className || '(无类名)';
-    return `${title} | ${cls} | hwnd=${w.hwnd} | pid=${w.pid}`;
+    const name = w.name || '';
+    const namePart = name ? `${name} | ` : '';
+    return `${namePart}${title} | ${cls} | hwnd=${w.hwnd} | pid=${w.pid}`;
   };
 
   // 中文注释：加载候选窗口列表

@@ -70,8 +70,8 @@ function ensureDmComRegisteredAtRuntime(): DmRegRuntimeAttempt {
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1080,
+    height: 800,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
     },
@@ -84,7 +84,7 @@ function createWindow() {
   // 中文注释：默认不自动打开开发者工具；如需调试，可通过 Ctrl+Shift+I 手动打开
   // const shouldOpenDevTools = process.env.OPEN_DEVTOOLS === '1'; // 中文注释：可选开关，设置为 1 时打开
   // if (shouldOpenDevTools) {
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
   // }
 }
 
@@ -111,7 +111,7 @@ function setupAppLifecycle() {
     registerGlobalHotkeys();
     console.log('[应用生命周期] 全局快捷键注册完成');
     // 设置默认窗口大小为 1600*900 1280*800
-    (global as any).windowSize = '1600*900';
+    // (global as any).windowSize = '1600*900';
   });
 
   app.on('window-all-closed', () => {

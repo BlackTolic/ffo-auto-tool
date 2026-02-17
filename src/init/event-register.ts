@@ -22,9 +22,7 @@ export const registerBoundEventHandlers = () => {
     lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄（供其他逻辑参考，不参与快捷键切换）
     const rec = damoBindingManager.get(hwnd);
     const role = new Role();
-    // 注册角色信息 1280*800  1600*900
-    role.registerRole('1600*900', hwnd);
-    // role.registerRole('1280*800', hwnd);
+
     // 中文注释：设置角色信息
     damoBindingManager.setRole(hwnd, role);
 
@@ -73,6 +71,10 @@ export const registerBoundEventHandlers = () => {
       } catch (err) {
         console.log(`[截图失败] HWND=${hwnd}`, err);
       }
+
+      // 注册角色信息 1280*800  1600*900
+      role.registerRole('1600*900', hwnd);
+      // role.registerRole('1280*800', hwnd);
     } catch (err) {
       console.warn(`[绑定事件] 处理失败: ${String((err as any)?.message || err)}`);
     }

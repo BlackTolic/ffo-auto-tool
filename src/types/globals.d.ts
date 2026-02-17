@@ -23,10 +23,10 @@ declare global {
       bindForeground(): Promise<{ ok: boolean; count?: number; hwnd?: number; pid?: number; message?: string }>;
 
       // 中文注释：列出当前可绑定窗口（全局顶层可见窗口）
-      listBindableWindows(): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string }>>;
+      listBindableWindows(): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string; name?: string }>>;
 
       // 中文注释：读取当前已绑定窗口列表（通过绑定管理器）
-      listBoundWindows(): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string }>>;
+      listBoundWindows(): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string; name?: string }>>;
 
       // 中文注释：按句柄执行绑定（通过绑定管理器记录）
       bindHwnd(hwnd: number): Promise<{ ok: boolean; hwnd?: number; message?: string }>;
@@ -62,6 +62,7 @@ declare global {
     className: string; // 中文注释：窗口类名
     processPath?: string; // 中文注释：窗口所属进程路径（如 C:\\Path\\fo.exe）
     exeName?: string; // 中文注释：进程的可执行文件名（如 fo.exe）
+    name?: string;
   }
 
   // 中文注释：窗口控制接口类型（独立抽出，便于声明与复用）

@@ -7,6 +7,7 @@ import {
   DEFAULT_ITEM_BOX,
   DEFAULT_ITEM_BOX_TAB,
   DEFAULT_MONSTER_NAME,
+  DEFAULT_ROLE_NAME,
   DEFAULT_ROLE_POSITION,
   DEFAULT_SERVER_DISCONNECT,
   DEFAULT_STATUS_ICON_POS,
@@ -37,11 +38,11 @@ export const getVerifyCodePos = (bindDm: AutoT, bindWindowSize: '1600*900' | '12
 };
 
 // 检查角色名称
-// export const getRoleName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
-//   const roleNamePos = DEFAULT_ROLE_NAME[bindWindowSize];
-//   const roleName = bindDm.ocr(roleNamePos.x1, roleNamePos.y1, roleNamePos.x2, roleNamePos.y2, roleNamePos.color, roleNamePos.sim);
-//   return roleName;
-// }
+export const getRoleName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const roleNamePos = DEFAULT_ROLE_NAME[bindWindowSize];
+  const roleName = bindDm.ocr(roleNamePos.x1, roleNamePos.y1, roleNamePos.x2, roleNamePos.y2, roleNamePos.color, roleNamePos.sim);
+  return roleName;
+};
 
 // 获取地图名称
 export const getMapName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {

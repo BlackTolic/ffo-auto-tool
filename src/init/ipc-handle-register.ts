@@ -12,6 +12,7 @@ interface BindableWindowInfo {
   className: string; // 中文注释：窗口类名（便于技术筛选）
   processPath?: string; // 中文注释：所属进程的可执行文件全路径
   exeName?: string; // 中文注释：所属进程的可执行文件名（例如 fo.exe）
+  name?: string;
 }
 
 // 中文注释：集中注册主进程的所有 IPC 通道，避免分散在各处导致结构混乱
@@ -153,14 +154,19 @@ export function registerIpcHandlers(deps: {
       const items: BindableWindowInfo[] = [];
       for (const h of hwnds) {
         const pid = dm.getWindowProcessId?.(h) ?? (dm as any).dm?.GetWindowProcessId?.(h) ?? 0;
-        // 中文注释：获取进程路径与可执行名（若接口存在）
         const processPath: string = String((dm as any).dm?.GetWindowProcessPath?.(h) || '');
         let exeName: string = processPath ? require('path').basename(processPath) : '';
         if (!exeName && pid) {
-          // 中文注释：回退到 tasklist 解析 exe 名
           const resolved = resolveExeByPid(pid);
           exeName = resolved.exeName || '';
         }
+        let name: string | undefined;
+        try {
+          const role = typeof damoBindingManager.getRole === 'function' ? damoBindingManager.getRole(h) : undefined;
+          if (role && typeof role.getName === 'function') {
+            name = role.getName() || undefined;
+          }
+        } catch {}
         items.push({
           hwnd: h,
           pid,
@@ -168,6 +174,7 @@ export function registerIpcHandlers(deps: {
           className: String(dm.getWindowClass?.(h) || ''),
           processPath: processPath || undefined,
           exeName: exeName || undefined,
+          name,
         });
       }
 
@@ -209,17 +216,22 @@ export function registerIpcHandlers(deps: {
       for (const rec of list) {
         const hwnd = rec.hwnd;
         const pid = rec.pid;
-        // 中文注释：优先使用对应客户端获取信息，兼容性更好
         const client = rec.ffoClient;
         const title = String(client.getWindowTitle?.(hwnd) || '');
         const className = String(client.getWindowClass?.(hwnd) || '');
-        // 中文注释：补充进程路径与可执行文件名
         const processPath: string = String((dm as any).dm?.GetWindowProcessPath?.(hwnd) || '');
         let exeName: string = processPath ? require('path').basename(processPath) : '';
         if (!exeName && pid) {
           exeName = resolveExeByPid(pid).exeName || '';
         }
-        items.push({ hwnd, pid, title, className, processPath: processPath || undefined, exeName: exeName || undefined });
+        let name: string | undefined;
+        try {
+          const role = typeof damoBindingManager.getRole === 'function' ? damoBindingManager.getRole(hwnd) : undefined;
+          if (role && typeof role.getName === 'function') {
+            name = role.getName() || undefined;
+          }
+        } catch {}
+        items.push({ hwnd, pid, title, className, processPath: processPath || undefined, exeName: exeName || undefined, name });
       }
       return items;
     } catch (e) {

@@ -7,7 +7,7 @@ import { emailStrategy } from '../../utils/email';
 import { DEFAULT_MENUS_POS, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { isArriveAimNear, selectRightAnwser } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
-import { fullScreenShot, getBloodStatus, getMapName, getMonsterName, getRolePosition, getStatusBloodIcon, getVerifyCodePos, isDead, isOffline } from '../utils/ocr-check/base';
+import { fullScreenShot, getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getStatusBloodIcon, getVerifyCodePos, isDead, isOffline } from '../utils/ocr-check/base';
 import { MoveActions } from './move';
 
 export type Pos = {
@@ -78,11 +78,13 @@ export class Role {
     }
     const bindDm = rec?.ffoClient as AutoT;
     this.bindDm = rec?.ffoClient.dm;
+    const name = getRoleName(bindDm, this.bindWindowSize);
+    console.log(name, 'this.name');
+    this.name = name;
     this.timer = setInterval(() => {
       try {
         // 获取角色位置
-        const pos = getRolePosition(bindDm, this.bindWindowSize);
-        // 获取地图名
+        const pos = getRolePosition(bindDm, this.bindWindowSize); // 获取地图名
         const addressName = getMapName(bindDm, this.bindWindowSize);
         // 获取选中的怪物名
         const monsterName = getMonsterName(bindDm, this.bindWindowSize);
@@ -183,6 +185,10 @@ export class Role {
         console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
       }
     }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
+  }
+
+  getName() {
+    return this.name;
   }
 
   unregisterRole() {

@@ -142,3 +142,9 @@ export const DEFAULT_RED_PILL = {
   '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
   '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
 };
+
+// 检查角色名称
+export const DEFAULT_ROLE_NAME = {
+  '1600*900': { x1: 74, y1: 6, x2: 172, y2: 48, color: 'e8c020-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+};
