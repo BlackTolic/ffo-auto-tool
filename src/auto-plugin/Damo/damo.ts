@@ -264,10 +264,10 @@ export class Damo {
     // 中文注释：示例限时控制（保留原逻辑）
     const now = new Date();
     const deadline = new Date('2026-02-15T00:00:00');
-    if (now >= deadline) {
-      console.warn('当前时间已超过2026年2月15号，已过期');
-      return -1;
-    }
+    // if (now >= deadline) {
+    //   console.warn('当前时间已超过2026年2月15号，已过期');
+    //   return -1;
+    // }
     const regCode = this.dm.Reg(registerCode, attachCode);
     console.log('大漠插件注册返回值: ', regCode, this.describeRegResult(regCode));
     console.log('大漠插件版本：', this.dm.Ver());
