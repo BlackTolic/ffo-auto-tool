@@ -57,6 +57,11 @@ const buffGroup: KeyPressOptions[] = [
   { key: 'F8', interval: 30 * 1000, song: 0, type: 'lock' }, // 状态技能
 ];
 
+const attackRange = {
+  '1600*900': { x1: 364, y1: 152, x2: 1293, y2: 677 },
+  '1280*800': { x1: 337, y1: 154, x2: 968, y2: 587 },
+};
+
 // dm.Ocr(380,117,1254,736,"000400-555555",1.0)
 export class AttackActions {
   public role: Role; // 角色信息
@@ -78,7 +83,8 @@ export class AttackActions {
   constructor(role: Role, ocrMonster?: MonsterFeature) {
     this.role = role;
     this.bindDm = role.bindDm;
-    this.ocrMonster = ocrMonster || OCR_MONSTER;
+    // this.ocrMonster = ocrMonster || OCR_MONSTER;
+    this.ocrMonster = { ...attackRange[this.role.bindWindowSize], ...(ocrMonster || OCR_MONSTER) };
   }
 
   findMonsterPos(delX = 10, delY = 40) {

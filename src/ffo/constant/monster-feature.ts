@@ -28,8 +28,10 @@ export interface MonsterFeature {
 
 // 攻击范围1
 export const AttackRange1 = { x1: 574, y1: 236, x2: 1026, y2: 578 };
-// 攻击范围2
+// 攻击范围2 - 1600*900
 export const AttackRange2 = { x1: 364, y1: 152, x2: 1293, y2: 677 };
+// 攻击范围3 - 1280*800
+export const AttackRange3 = { x1: 337, y1: 154, x2: 968, y2: 587 };
 // 天泉怪物
 export const OCR_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['天泉怪物'], color: MONSTER_WHITE, sim: 1.0 };
 // 无泪南郊怪物

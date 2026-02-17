@@ -5,6 +5,7 @@ import {
   DEFAULT_GOLD,
   DEFAULT_ISOLATE,
   DEFAULT_ITEM_BOX,
+  DEFAULT_ITEM_BOX_TAB,
   DEFAULT_MONSTER_NAME,
   DEFAULT_ROLE_POSITION,
   DEFAULT_SERVER_DISCONNECT,
@@ -100,11 +101,32 @@ export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 };
 
 // 检查物品栏是否打开
-export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): string | false => {
   const itemBoxPos = DEFAULT_ITEM_BOX[bindWindowSize];
   const itemBoxText = bindDm.findStrFastE(itemBoxPos.x1, itemBoxPos.y1, itemBoxPos.x2, itemBoxPos.y2, '物品栏', itemBoxPos.color, itemBoxPos.sim);
   console.log(itemBoxText, 'itemBoxText');
-  const z = parseRolePositionFromText(itemBoxText);
-  console.log(z, 'z');
-  return z;
+  const isOk = !!parseRolePositionFromText(itemBoxText);
+  if (!isOk) {
+    return false;
+  }
+  const tabPos = DEFAULT_ITEM_BOX_TAB[bindWindowSize];
+  const tabText = bindDm.ocr(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.color, tabPos.sim);
+  console.log(tabText, 'tabText');
+  return tabText;
+};
+
+// 检查红药数量
+export const getRedPillCount = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const redPillPos = DEFAULT_RED_PILL[bindWindowSize];
+  const redPillText = bindDm.ocr(redPillPos.x1, redPillPos.y1, redPillPos.x2, redPillPos.y2, redPillPos.color, redPillPos.sim);
+  console.log(redPillText, 'redPillText');
+  return redPillText;
+};
+
+// 检查回城卷轴数量
+export const getBackScrollCount = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const backScrollPos = DEFAULT_BACK_SCROLL[bindWindowSize];
+  const backScrollText = bindDm.ocr(backScrollPos.x1, backScrollPos.y1, backScrollPos.x2, backScrollPos.y2, backScrollPos.color, backScrollPos.sim);
+  console.log(backScrollText, 'backScrollText');
+  return backScrollText;
 };

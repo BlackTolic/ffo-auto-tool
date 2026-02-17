@@ -1,5 +1,6 @@
 import { damoBindingManager } from '..';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
+import { BaseAction } from '../base-action';
 import { MoveActions } from '../move';
 import { Role } from '../rolyer';
 import { AttackActions } from '../skills';
@@ -70,9 +71,37 @@ const loopAction = () => {
 
   let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
   let moveActions = new MoveActions(role);
+  let baseAction = new BaseAction(role);
 
   // const isOpen = isItemBoxOpen(role.bindDm, role.bindWindowSize);
   // const gold = getCurrentGold(role.bindDm, role.bindWindowSize);
+
+  // 检查装备是否已经损坏
+  // const isEquipBroken = checkEquipBroken(role.bindDm, role.bindWindowSize);
+  // if (isEquipBroken) {
+  //   console.log('装备栏已经损坏');
+  //   return;
+  // }
+
+  // 检查物品栏是否已经打开
+  // const box = isItemBoxOpen(role.bindDm, role.bindWindowSize);
+  // if (!box) {
+  //   console.log('物品栏未打开');
+  //   // 打开物品栏并且切换到装备页面
+  //   baseAction.openItemBox('equip');
+  // }
+  // if (box !== '装备') {
+  //   console.log('物品栏不是装备页面');
+  //   // 切换到装备页面
+  //   baseAction.openItemBox('equip');
+  // }
+
+  // // 检查装备是否已经填满
+  // const isEquipFull = checkEquipFull(role.bindDm, role.bindWindowSize);
+  // if (isEquipFull) {
+  //   console.log('装备栏已经填满');
+  //   return;
+  // }
 
   return autoAttackInWest(role, moveActions, atackActions);
 };

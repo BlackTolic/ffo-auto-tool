@@ -87,14 +87,28 @@ export class BaseAction {
     });
   }
 
-  // 打开物品栏切换到装备页
-  openItemBoxToEquip() {
+  // 打开物品栏切换到/消耗/收集/装备页
+  openItemBox(changeTo: 'custom' | 'collection' | 'equip') {
     // const { itemBox } = this.role?.menusPos ?? {};
     // if (itemBox) {
     //   this.moveToClick({ x: itemBox.x, y: itemBox.y });
   }
 
-  // 打开宠物栏
+  // 关闭物品栏
+  closeItemBox() {
+    const { itemBox } = this.role?.menusPos ?? {};
+    if (itemBox) {
+      this.moveToClick({ x: itemBox.x, y: itemBox.y });
+    }
+  }
+
+  // 打开宠物栏并且激活宠物
+  openPetBoxAndActivePet() {
+    const { petBox } = this.role?.menusPos ?? {};
+    if (petBox) {
+      this.moveToClick({ x: petBox.x, y: petBox.y });
+    }
+  }
 
   // 关闭宠物栏
 
