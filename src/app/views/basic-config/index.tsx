@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import './index.less'; // 中文注释：引入当前视图的 Less 样式文件（替换原内联样式）
+import styles from './index.module.less'; // 中文注释：引入当前视图的 Less 样式文件（CSS Modules）
 
 // 中文注释：基本配置界面 - 增加“选择可绑定窗口”下拉框与“绑定”按钮
 // 说明：通过 preload 暴露的 window.eventManager API 从主进程获取候选窗口列表，并允许按句柄绑定
@@ -169,10 +169,10 @@ export default function BasicConfigView() {
   };
 
   return (
-    <div className="basic-config-container">
+    <div className={styles['basic-config-container']}>
       <h3>基本配置</h3>
-      <div className="basic-row">
-        <select className="basic-select" disabled={loading || !isElectron} value={selectedHwnd ?? ''} onChange={e => setSelectedHwnd(Number(e.target.value))}>
+      <div className={styles['basic-row']}>
+        <select className={styles['basic-select']} disabled={loading || !isElectron} value={selectedHwnd ?? ''} onChange={e => setSelectedHwnd(Number(e.target.value))}>
           {options.length === 0 ? (
             <option value="">{loading ? '加载中…' : isElectron ? '无可绑定窗口' : '预览模式不可用'}</option>
           ) : (
@@ -187,31 +187,32 @@ export default function BasicConfigView() {
             })
           )}
         </select>
-        <button className="basic-button" disabled={binding || !selectedHwnd || !isElectron} onClick={handleBind}>
+        <button className={styles['basic-button']} disabled={binding || !selectedHwnd || !isElectron} onClick={handleBind}>
           {binding ? '绑定中…' : '绑定'}
         </button>
-        <button className="basic-button" disabled={unbinding || !selectedHwnd || !isElectron} onClick={handleUnbind}>
+        <button className={styles['basic-button']} disabled={unbinding || !selectedHwnd || !isElectron} onClick={handleUnbind}>
           {unbinding ? '解绑中…' : '解绑'}
         </button>
-        <button className="basic-button" disabled={loading} onClick={handleRefresh}>
+        <button className={styles['basic-button']} disabled={loading} onClick={handleRefresh}>
           刷新
         </button>
       </div>
-      <div className="basic-hint">在下拉框中选择一个可绑定的窗口，然后点击“绑定”。</div>
-      {!isElectron && <div className="basic-hint">提示：当前为浏览器预览模式，绑定功能不可用，请在 Electron 应用中使用。</div>}
+      <div className={styles['basic-hint']}>在下拉框中选择一个可绑定的窗口，然后点击“绑定”。</div>
+      {!isElectron && <div className={styles['basic-hint']}>提示：当前为浏览器预览模式，绑定功能不可用，请在 Electron 应用中使用。</div>}
       {message && <div>{message}</div>}
 
       {/* 新增：已绑定窗口列表展示区域 */}
-      <div className="basic-bound-section">
+      <div className={styles['basic-bound-section']}>
         <h4>已绑定窗口（{boundList.length}）</h4>
         {boundList.length === 0 ? (
-          <div className="basic-hint">暂无已绑定窗口</div>
+          <div className={styles['basic-hint']}>暂无已绑定窗口</div>
         ) : (
-          <ul className="basic-bound-list">
+          <ul className={styles['basic-bound-list']}>
             {boundList.map(item => (
-              <li key={item.hwnd} className="basic-bound-item">
-                <span className="basic-bound-title">{item.title || '(无标题)'}</span>
-                <span className="basic-bound-meta">
+              <li key={item.hwnd} className={styles['basic-bound-item']}>
+                <span className={styles['basic-bound-title']}>{item.title || '(无标题)'}</span>
+                <span className={styles['basic-bound-meta']}>
+                  {item.name ? item.name + ' | ' : ''}
                   {item.className || '(无类名)'} | hwnd={item.hwnd} | pid={item.pid}
                 </span>
               </li>

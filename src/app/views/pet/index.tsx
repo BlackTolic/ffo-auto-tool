@@ -1,4 +1,5 @@
 import React from 'react';
+import Card from '../../components/card/Card';
 
 // 中文注释：抓宠视图的属性接口定义
 export interface PetProps {
@@ -7,12 +8,7 @@ export interface PetProps {
 
 // 中文注释：抓宠视图组件
 const PetView: React.FC<PetProps> = () => {
-  return (
-    <section className="card">
-      <div className="card-title">抓宠</div>
-      <div className="card-sub">此页面内容开发中（占位）</div>
-    </section>
-  );
+  return <Card title="抓宠" subtitle="此页面内容开发中（占位）" />;
 };
 
 export default PetView;

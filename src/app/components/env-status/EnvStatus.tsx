@@ -1,5 +1,6 @@
 import React from 'react';
-import './EnvStatus.less'; // 中文注释：引入环境状态组件样式（Less）
+import Card from '../card/Card';
+import styles from './EnvStatus.module.less'; // 中文注释：引入环境状态组件样式（CSS Modules）
 
 // 中文注释：环境校验项的接口类型
 export interface EnvItem {
@@ -22,16 +23,15 @@ export interface EnvStatusProps {
 // 中文注释：环境校验结果展示组件
 const EnvStatus: React.FC<EnvStatusProps> = ({ env }) => {
   return (
-    <section className="card">
-      <div className="card-title">环境校验结果</div>
+    <Card title="环境校验结果">
       {!env ? (
-        <p className="muted">正在检测...</p>
+        <p className={styles.muted}>正在检测...</p>
       ) : (
         <div>
-          <p className="status">
+          <p className={styles.status}>
             总体状态：<strong>{env.ok ? '通过 ✅' : '未通过 ❌'}</strong>
           </p>
-          <ul className="list">
+          <ul className={styles.list}>
             {env.items?.map((i, idx) => (
               <li key={idx}>
                 {i.ok ? '✅' : '❌'} <strong>{i.name}</strong>：{i.message}
@@ -40,7 +40,7 @@ const EnvStatus: React.FC<EnvStatusProps> = ({ env }) => {
           </ul>
         </div>
       )}
-    </section>
+    </Card>
   );
 };
 

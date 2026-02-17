@@ -1,5 +1,5 @@
 import React from 'react';
-import './Card.less'; // 中文注释：引入通用卡片组件样式（Less）
+import styles from './Card.module.less'; // 中文注释：引入通用卡片组件样式（CSS Modules）
 
 // 中文注释：通用卡片组件属性接口
 export interface CardProps {
@@ -13,14 +13,14 @@ export interface CardProps {
 // 中文注释：通用卡片组件，统一样式与布局
 const Card: React.FC<CardProps> = ({ title, subtitle, right, footer, children }) => {
   return (
-    <section className="card">
-      <div className="card-left">
-        <div className="card-title">{title}</div>
-        {subtitle ? <div className="card-sub">{subtitle}</div> : null}
+    <section className={styles.card}>
+      <div className={styles['card-left']}>
+        <div className={styles['card-title']}>{title}</div>
+        {subtitle ? <div className={styles['card-sub']}>{subtitle}</div> : null}
       </div>
-      <div className="card-right">{right}</div>
+      <div className={styles['card-right']}>{right}</div>
       {children}
-      {footer ? <div className="card-footer small">{footer}</div> : null}
+      {footer ? <div className={`${styles['card-footer']} ${styles.small}`}>{footer}</div> : null}
     </section>
   );
 };

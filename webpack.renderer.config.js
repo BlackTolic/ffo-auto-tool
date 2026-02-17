@@ -6,13 +6,33 @@ rules.push({
   use: [{ loader: 'style-loader' }, { loader: 'css-loader' }],
 });
 
-// 中文注释：新增 Less 支持（渲染进程）
+// 中文注释：新增 Less 支持（渲染进程）并启用 CSS Modules（仅视图层使用）
 rules.push({
   test: /\.less$/,
-  use: [
-    { loader: 'style-loader' }, // 中文注释：将样式以 <style> 注入页面
-    { loader: 'css-loader' }, // 中文注释：解析 @import、url() 等
-    { loader: 'less-loader' }, // 中文注释：编译 Less 为 CSS
+  oneOf: [
+    {
+      test: /\.module\.less$/,
+      include: /src[\/\\]app[\/\\](views|components)[\/\\]/, // 中文注释：视图与组件目录下的 *.module.less 启用 CSS Modules
+      use: [
+        { loader: 'style-loader' }, // 中文注释：将样式以 <style> 注入页面
+        {
+          loader: 'css-loader',
+          options: {
+            modules: {
+              localIdentName: '[local]__[hash:base64:5]', // 中文注释：类名保留原名并追加哈希，便于调试
+            },
+          },
+        },
+        { loader: 'less-loader' },
+      ],
+    },
+    {
+      use: [
+        { loader: 'style-loader' }, // 中文注释：将样式以 <style> 注入页面
+        { loader: 'css-loader' }, // 中文注释：解析 @import、url() 等（不启用 CSS Modules）
+        { loader: 'less-loader' }, // 中文注释：编译 Less 为 CSS
+      ],
+    },
   ],
 });
 

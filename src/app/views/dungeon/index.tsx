@@ -1,4 +1,5 @@
 import React from 'react';
+import Card from '../../components/card/Card';
 
 // 中文注释：副本视图的属性接口定义
 export interface DungeonProps {
@@ -7,12 +8,7 @@ export interface DungeonProps {
 
 // 中文注释：副本视图组件
 const DungeonView: React.FC<DungeonProps> = () => {
-  return (
-    <section className="card">
-      <div className="card-title">副本</div>
-      <div className="card-sub">此页面内容开发中（占位）</div>
-    </section>
-  );
+  return <Card title="副本" subtitle="此页面内容开发中（占位页面）" />;
 };
 
 export default DungeonView;

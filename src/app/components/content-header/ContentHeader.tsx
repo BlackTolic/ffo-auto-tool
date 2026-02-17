@@ -1,5 +1,5 @@
 import React from 'react';
-import './ContentHeader.less'; // 中文注释：引入顶部统计区组件样式（Less）
+import styles from './ContentHeader.module.less'; // 中文注释：引入顶部统计区组件样式（CSS Modules）
 
 // 中文注释：顶部统计区组件属性接口（预留可扩展）
 export interface ContentHeaderProps {
@@ -40,31 +40,31 @@ const ContentHeader: React.FC<ContentHeaderProps> = () => {
   };
 
   return (
-    <section className="content-header">
-      <div className="stat">
-        <div className="stat-icon">☁️</div>
-        <div className="stat-text">
-          <div className="stat-sub">已用</div>
-          <div className="stat-main">
-            20 <span className="unit">GB / 1700 GB</span>
+    <section className={styles['content-header']}>
+      <div className={styles.stat}>
+        <div className={styles['stat-icon']}>☁️</div>
+        <div className={styles['stat-text']}>
+          <div className={styles['stat-sub']}>已用</div>
+          <div className={styles['stat-main']}>
+            20 <span className={styles.unit}>GB / 1700 GB</span>
           </div>
         </div>
       </div>
-      <div className="stat">
-        <div className="stat-icon">🕑</div>
-        <div className="stat-text">
-          <div className="stat-sub">有效期</div>
-          <div className="stat-main">
-            330 <span className="unit">天</span>
+      <div className={styles.stat}>
+        <div className={styles['stat-icon']}>🕑</div>
+        <div className={styles['stat-text']}>
+          <div className={styles['stat-sub']}>有效期</div>
+          <div className={styles['stat-main']}>
+            330 <span className={styles.unit}>天</span>
           </div>
         </div>
       </div>
-      <div className="header-actions">
-        <button className="icon-btn">🔔</button>
-        <button className="icon-btn" onClick={handleMinimize} disabled={!isElectron}>
+      <div className={styles['header-actions']}>
+        <button className={styles['icon-btn']}>🔔</button>
+        <button className={styles['icon-btn']} onClick={handleMinimize} disabled={!isElectron}>
           —
         </button>
-        <button className="icon-btn" onClick={handleClose} disabled={!isElectron}>
+        <button className={styles['icon-btn']} onClick={handleClose} disabled={!isElectron}>
           ✕
         </button>
       </div>

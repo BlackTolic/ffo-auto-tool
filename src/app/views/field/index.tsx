@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Card from '../../components/card/Card';
-import './index.less';
+import styles from './index.module.less';
 
 export interface FieldProps {}
 
@@ -137,7 +137,7 @@ const FieldView: React.FC<FieldProps> = () => {
   };
 
   return (
-    <div className="field-root">
+    <div className={styles['field-root']}>
       <Card
         title="野外刷怪"
         subtitle="选择刷怪路线并控制自动练级"
@@ -148,19 +148,19 @@ const FieldView: React.FC<FieldProps> = () => {
         }
       />
 
-      <section className="card card-inline field-card-main">
-        <div className="card-main">
-          <div className="card-title-row">
-            <div className="card-title">无泪南郊</div>
-            <span className="tag tag-pill">练级</span>
+      <section className={styles['field-card-main']}>
+        <div className={styles['card-main']}>
+          <div className={styles['card-title-row']}>
+            <div className={styles['card-title']}>无泪南郊</div>
+            <span className={`${styles.tag} ${styles['tag-pill']}`}>练级</span>
           </div>
-          <div className="card-meta">
-            <span className="meta-item">等级 60 - 66</span>
-            <span className="meta-item">单人 / 小队</span>
+          <div className={styles['card-meta']}>
+            <span className={styles['meta-item']}>等级 60 - 66</span>
+            <span className={styles['meta-item']}>单人 / 小队</span>
           </div>
-          <div className="card-sub">适合长时间持续刷怪练级</div>
+          <div className={styles['card-sub']}>适合长时间持续刷怪练级</div>
         </div>
-        <div className="card-actions">
+        <div className={styles['card-actions']}>
           <button className="btn primary" onClick={handleStartOrPause}>
             {running ? '暂停' : '启动'}
           </button>
@@ -173,19 +173,19 @@ const FieldView: React.FC<FieldProps> = () => {
 
       {/* 中文注释：动态渲染用户自定义的新建卡片，样式与上方一致 */}
       {cards.map((c, idx) => (
-        <section key={idx} className="card card-inline field-card-main">
-          <div className="card-main">
-            <div className="card-title-row">
-              <div className="card-title">{c.title}</div>
-              <span className="tag tag-pill">{c.tagLabel}</span>
+        <section key={idx} className={styles['field-card-main']}>
+          <div className={styles['card-main']}>
+            <div className={styles['card-title-row']}>
+              <div className={styles['card-title']}>{c.title}</div>
+              <span className={`${styles.tag} ${styles['tag-pill']}`}>{c.tagLabel}</span>
             </div>
-            <div className="card-meta">
-              <span className="meta-item">{c.levelRangeLabel}</span>
-              <span className="meta-item">{c.modeLabel}</span>
+            <div className={styles['card-meta']}>
+              <span className={styles['meta-item']}>{c.levelRangeLabel}</span>
+              <span className={styles['meta-item']}>{c.modeLabel}</span>
             </div>
-            {c.desc ? <div className="card-sub">{c.desc}</div> : null}
+            {c.desc ? <div className={styles['card-sub']}>{c.desc}</div> : null}
           </div>
-          <div className="card-actions">
+          <div className={styles['card-actions']}>
             {/* 中文注释：为新建卡片预留启动/停止按钮（与默认卡片行为一致，后续可绑定不同逻辑） */}
             <button className="btn primary" onClick={handleStartOrPause}>
               {running ? '暂停' : '启动'}
@@ -199,32 +199,32 @@ const FieldView: React.FC<FieldProps> = () => {
 
       {/* 中文注释：新建卡片弹框（简易） */}
       {newOpen ? (
-        <div className="modal-mask">
-          <div className="modal">
-            <div className="modal-header">
-              <div className="modal-title">新建卡片</div>
+        <div className={styles['modal-mask']}>
+          <div className={styles['modal']}>
+            <div className={styles['modal-header']}>
+              <div className={styles['modal-title']}>新建卡片</div>
             </div>
-            <div className="modal-body">
-              <div className="form-row">
+            <div className={styles['modal-body']}>
+              <div className={styles['form-row']}>
                 <label>标题</label>
                 <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="请输入卡片标题" />
               </div>
-              <div className="form-row">
+              <div className={styles['form-row']}>
                 <label>等级范围</label>
-                <div className="inline">
+                <div className={styles['inline']}>
                   <input type="number" min={1} value={form.levelFrom} onChange={e => setForm({ ...form, levelFrom: Number(e.target.value) })} placeholder="下限" />
-                  <span className="sep">-</span>
+                  <span className={styles['sep']}>-</span>
                   <input type="number" min={1} value={form.levelTo} onChange={e => setForm({ ...form, levelTo: Number(e.target.value) })} placeholder="上限" />
                 </div>
               </div>
-              <div className="form-row">
+              <div className={styles['form-row']}>
                 <label>模式</label>
                 <select value={form.mode} onChange={e => setForm({ ...form, mode: e.target.value as NewCardFormValues['mode'] })}>
                   <option value="单人">单人</option>
                   <option value="小队">小队</option>
                 </select>
               </div>
-              <div className="form-row">
+              <div className={styles['form-row']}>
                 <label>标签</label>
                 <input value={form.tag} onChange={e => setForm({ ...form, tag: e.target.value })} placeholder="例如：练级" />
               </div>
@@ -233,7 +233,7 @@ const FieldView: React.FC<FieldProps> = () => {
                 <textarea value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} placeholder="简要说明该卡片用途" rows={3} />
               </div>
             </div>
-            <div className="modal-footer">
+            <div className={styles['modal-footer']}>
               <button className="btn" onClick={closeNewModal}>
                 取消
               </button>

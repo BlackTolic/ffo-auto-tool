@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import '../styles/global.less'; // 中文注释：引入全局基础样式与通用样式（Less）
-import './App.less'; // 中文注释：引入 App 组件专属样式（Less）
+import '../styles/global.module.less'; // 中文注释：引入全局基础样式与通用样式（Less）
+import './App.module.less'; // 中文注释：引入 App 组件专属样式（Less）
 import BindForegroundButton from './components/bind-foreground-button/BindForegroundButton';
 import ContentHeader from './components/content-header/ContentHeader';
 import Sidebar, { SidebarNavItem } from './components/sider/Sidebar';
+import AutoRefineView from './views/auto-refine';
 import BasicConfigView from './views/basic-config';
 import DungeonView from './views/dungeon';
 import EnhanceView from './views/enhance';
@@ -68,6 +69,7 @@ export const App: React.FC<AppProps> = () => {
     { id: 'field', label: '野外刷怪', path: '#/field', Component: FieldView },
     { id: 'mining', label: '挖矿', path: '#/mining', Component: MiningView },
     { id: 'enhance', label: '装备强化', path: '#/enhance', Component: EnhanceView },
+    { id: 'auto-refine', label: '全自动刷炼化', path: '#/auto-refine', Component: AutoRefineView },
     { id: 'dungeon', label: '副本', path: '#/dungeon', Component: DungeonView },
     { id: 'pet', label: '抓宠', path: '#/pet', Component: PetView },
     { id: 'reputation', label: '名誉', path: '#/reputation', Component: ReputationView },
@@ -123,9 +125,7 @@ export const App: React.FC<AppProps> = () => {
   return (
     <div className="app-shell">
       {/* 中文注释：左侧导航栏 */}
-      <aside className="sidebar">
-        <Sidebar items={sidebarItems} />
-      </aside>
+      <Sidebar items={sidebarItems} />
 
       {/* 中文注释：右侧主内容区 */}
       <main className="content">
@@ -133,35 +133,31 @@ export const App: React.FC<AppProps> = () => {
         {currentRouteId === 'home' ? (
           <>
             {/* 中文注释：顶部渐变统计区 */}
-            <section className="content-header">
-              <ContentHeader />
-            </section>
+            <ContentHeader />
 
             {/* 中文注释：卡片区：服务器 */}
-            <section className="card">
-              <div className="card-left">
-                <div className="card-title">服务器</div>
-                <div className="card-sub">53ms · 自动选择</div>
-              </div>
-              <div className="card-right">
-                <button className="btn primary">切换</button>
-                <BindForegroundButton isElectron={isElectron} onStatus={setBindText} />
-              </div>
-              <div className="card-footer small">{bindText || (!isElectron ? '预览模式下无法绑定，请在 Electron 应用中使用' : '')}</div>
-            </section>
+            <Card
+              title="服务器"
+              subtitle="53ms · 自动选择"
+              right={
+                <>
+                  <button className="btn primary">切换</button>
+                  <BindForegroundButton isElectron={isElectron} onStatus={setBindText} />
+                </>
+              }
+              footer={bindText || (!isElectron ? '预览模式下无法绑定，请在 Electron 应用中使用' : '')}
+            />
 
             {/* 中文注释：卡片区：代理模式 */}
-            <section className="card">
-              <div className="card-left">
-                <div className="card-title">代理模式</div>
-              </div>
-              <div className="card-right">
+            <Card
+              title="代理模式"
+              right={
                 <div className="seg">
                   <button className="seg-btn active">规则</button>
                   <button className="seg-btn">全局</button>
                 </div>
-              </div>
-            </section>
+              }
+            />
 
             {/* 中文注释：主操作按钮 */}
             <div className="action">
@@ -169,8 +165,7 @@ export const App: React.FC<AppProps> = () => {
             </div>
 
             {/* 中文注释：环境校验展示 */}
-            <section className="card">
-              <div className="card-title">环境校验结果</div>
+            <Card title="环境校验结果">
               {!env ? (
                 <p className="muted">正在检测...</p>
               ) : (
@@ -187,22 +182,14 @@ export const App: React.FC<AppProps> = () => {
                   </ul>
                 </div>
               )}
-            </section>
+            </Card>
           </>
         ) : (
           <>
             {/* 中文注释：非首页，渲染对应路由视图与占位提示 */}
             {(() => {
               const current = routes.find(r => r.id === currentRouteId);
-              return (
-                <>
-                  {/* <section className="card">
-                    <div className="card-title">{current?.label}</div>
-                    <div className="card-sub">路由地址：{current?.path}</div>
-                  </section> */}
-                  {current?.Component ? React.createElement(current.Component) : null}
-                </>
-              );
+              return <>{current?.Component ? React.createElement(current.Component) : null}</>;
             })()}
           </>
         )}
