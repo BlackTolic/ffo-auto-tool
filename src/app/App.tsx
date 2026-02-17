@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import '../styles/global.module.less'; // 中文注释：引入全局基础样式与通用样式（Less）
 import './App.module.less'; // 中文注释：引入 App 组件专属样式（Less）
 import BindForegroundButton from './components/bind-foreground-button/BindForegroundButton';
+import Card from './components/card/Card';
 import ContentHeader from './components/content-header/ContentHeader';
 import Sidebar, { SidebarNavItem } from './components/sider/Sidebar';
 import AutoRefineView from './views/auto-refine';
