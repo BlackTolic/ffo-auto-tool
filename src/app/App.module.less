@@ -1,12 +1,14 @@
 /* 中文注释：App 根组件样式（Less） */
 .app-shell {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  column-gap: 16px;
+  /* 中文注释：改为普通文档流容器，配合固定侧栏 */
+  /* 原布局：display: grid; grid-template-columns: 220px minmax(0, 1fr); column-gap: 16px; */
   min-height: 100vh;
   height: 100%;
-  padding: 16px 20px;
+  // padding: 16px 20px; /* 中文注释：页面内边距 */
   box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  // column-gap: 16px;
 }
 
 .content {
@@ -15,6 +17,8 @@
   padding: 16px 24px;
   max-height: 100%;
   overflow-y: auto;
+  /* 中文注释：为固定在左侧的侧栏预留空间（220px 宽 + 16px 间距） */
+  // width: calc(100% - 220px - 16px);
 }
 
 .action {
@@ -26,15 +30,12 @@
 
 @media (max-width: 960px) {
   .app-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    /* 中文注释：小屏幕下，侧栏不固定，因此无需额外栅格设置 */
   }
 
-  .sidebar {
-    margin-bottom: 12px;
-  }
-
+  /* 中文注释：小屏下侧栏在文档流中，内容不需要左侧预留 */
   .content {
     padding: 12px 16px;
+    margin-left: 0;
   }
 }

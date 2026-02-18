@@ -43,6 +43,14 @@ body {
   background: rgba(255, 255, 255, 0.3);
   color: #fff;
 }
+/* 中文注释：危险按钮（停止/告警操作使用） */
+.btn.danger {
+  background: #dc3545; /* 中文注释：红色背景 */
+  color: #fff; /* 中文注释：白色文字以保证对比度 */
+}
+.btn.danger:hover {
+  background: #c82333; /* 中文注释：悬浮时更深的红色 */
+}
 .btn.xl {
   padding: 12px 28px;
   font-size: 16px;
@@ -65,4 +73,46 @@ body {
 .seg-btn.active {
   background: #fff;
   color: var(--text-900);
+}
+
+/* 中文注释：通用弹框样式 */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal {
+  width: 560px;
+  max-width: 92vw;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(31, 36, 48, 0.26);
+  padding: 16px;
+}
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.modal-content {
+  display: grid;
+  gap: 12px;
+  margin: 8px 0 16px;
+}
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e0e5f1;
+  outline: none;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }

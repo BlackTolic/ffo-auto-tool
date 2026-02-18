@@ -84,7 +84,7 @@ function createWindow() {
   // 中文注释：默认不自动打开开发者工具；如需调试，可通过 Ctrl+Shift+I 手动打开
   // const shouldOpenDevTools = process.env.OPEN_DEVTOOLS === '1'; // 中文注释：可选开关，设置为 1 时打开
   // if (shouldOpenDevTools) {
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
   // }
 }
 

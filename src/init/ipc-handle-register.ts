@@ -3,6 +3,7 @@ import { BrowserWindow, ipcMain, screen } from 'electron';
 // 中文注释：使用大漠插件进行枚举（不再依赖天使插件）
 import { validateEnvironment } from '../envCheck';
 import { pauseCurActive as pauseWuLeiNanJiao, stopCurActive as stopWuLeiNanJiao, toggleWuLeiNanJiao } from '../ffo/events/game-actions/wu-lei-nan-jiao'; // 中文注释：引入无泪南郊切换/暂停/停止逻辑供 IPC 调用
+import type { RoleTaskSnapshot } from '../ffo/events/rolyer';
 
 // 中文注释：可绑定窗口的信息接口（在主进程内部使用）
 interface BindableWindowInfo {
@@ -12,7 +13,8 @@ interface BindableWindowInfo {
   className: string; // 中文注释：窗口类名（便于技术筛选）
   processPath?: string; // 中文注释：所属进程的可执行文件全路径
   exeName?: string; // 中文注释：所属进程的可执行文件名（例如 fo.exe）
-  name?: string;
+  name?: string; // 中文注释：绑定角色名称（若可获取）
+  task?: RoleTaskSnapshot | null; // 中文注释：绑定角色的任务快照（若可获取）
 }
 
 // 中文注释：集中注册主进程的所有 IPC 通道，避免分散在各处导致结构混乱
@@ -161,10 +163,14 @@ export function registerIpcHandlers(deps: {
           exeName = resolved.exeName || '';
         }
         let name: string | undefined;
+        let task: RoleTaskSnapshot | null | undefined;
         try {
           const role = typeof damoBindingManager.getRole === 'function' ? damoBindingManager.getRole(h) : undefined;
           if (role && typeof role.getName === 'function') {
             name = role.getName() || undefined;
+            if (typeof role.getTaskSnapshot === 'function') {
+              task = role.getTaskSnapshot();
+            }
           }
         } catch {}
         items.push({
@@ -175,6 +181,7 @@ export function registerIpcHandlers(deps: {
           processPath: processPath || undefined,
           exeName: exeName || undefined,
           name,
+          task: task ?? null,
         });
       }
 
@@ -225,13 +232,17 @@ export function registerIpcHandlers(deps: {
           exeName = resolveExeByPid(pid).exeName || '';
         }
         let name: string | undefined;
+        let task: RoleTaskSnapshot | null | undefined;
         try {
           const role = typeof damoBindingManager.getRole === 'function' ? damoBindingManager.getRole(hwnd) : undefined;
           if (role && typeof role.getName === 'function') {
             name = role.getName() || undefined;
+            if (typeof role.getTaskSnapshot === 'function') {
+              task = role.getTaskSnapshot();
+            }
           }
         } catch {}
-        items.push({ hwnd, pid, title, className, processPath: processPath || undefined, exeName: exeName || undefined, name });
+        items.push({ hwnd, pid, title, className, processPath: processPath || undefined, exeName: exeName || undefined, name, task: task ?? null });
       }
       return items;
     } catch (e) {

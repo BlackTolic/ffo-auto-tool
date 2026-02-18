@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import '../styles/global.module.less'; // 中文注释：引入全局基础样式与通用样式（Less）
-import './App.module.less'; // 中文注释：引入 App 组件专属样式（Less）
+// 中文注释：以 CSS Modules 方式引入全局样式对象（提供通用按钮、文本等样式）
+import globalStyles from '../styles/global.module.less';
+// 中文注释：以 CSS Modules 方式引入当前 App 组件样式对象（布局与页面结构样式）
+import styles from './App.module.less';
 import BindForegroundButton from './components/bind-foreground-button/BindForegroundButton';
 import Card from './components/card/Card';
 import ContentHeader from './components/content-header/ContentHeader';
@@ -124,12 +126,12 @@ export const App: React.FC<AppProps> = () => {
   };
 
   return (
-    <div className="app-shell">
+    <div className={styles['app-shell']}>
       {/* 中文注释：左侧导航栏 */}
       <Sidebar items={sidebarItems} />
 
       {/* 中文注释：右侧主内容区 */}
-      <main className="content">
+      <main className={styles.content}>
         {/* 中文注释：根据当前路由渲染内容；首页使用原有内容，其它路由渲染对应视图 */}
         {currentRouteId === 'home' ? (
           <>
@@ -142,7 +144,7 @@ export const App: React.FC<AppProps> = () => {
               subtitle="53ms · 自动选择"
               right={
                 <>
-                  <button className="btn primary">切换</button>
+                  <button className={`${globalStyles.btn} ${globalStyles.primary}`}>切换</button>
                   <BindForegroundButton isElectron={isElectron} onStatus={setBindText} />
                 </>
               }
@@ -153,28 +155,28 @@ export const App: React.FC<AppProps> = () => {
             <Card
               title="代理模式"
               right={
-                <div className="seg">
-                  <button className="seg-btn active">规则</button>
-                  <button className="seg-btn">全局</button>
+                <div className={globalStyles.seg}>
+                  <button className={`${globalStyles['seg-btn']} ${globalStyles.active}`}>规则</button>
+                  <button className={globalStyles['seg-btn']}>全局</button>
                 </div>
               }
             />
 
             {/* 中文注释：主操作按钮 */}
-            <div className="action">
-              <button className="btn xl primary">连接</button>
+            <div className={styles.action}>
+              <button className={`${globalStyles.btn} ${globalStyles.xl} ${globalStyles.primary}`}>连接</button>
             </div>
 
             {/* 中文注释：环境校验展示 */}
             <Card title="环境校验结果">
               {!env ? (
-                <p className="muted">正在检测...</p>
+                <p className={globalStyles.muted}>正在检测...</p>
               ) : (
                 <div>
-                  <p className="status">
+                  <p className={globalStyles.status}>
                     总体状态：<strong>{env.ok ? '通过 ✅' : '未通过 ❌'}</strong>
                   </p>
-                  <ul className="list">
+                  <ul className={globalStyles.list}>
                     {env.items?.map((i, idx) => (
                       <li key={idx}>
                         {i.ok ? '✅' : '❌'} <strong>{i.name}</strong>：{i.message}

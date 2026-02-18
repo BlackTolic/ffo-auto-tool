@@ -23,6 +23,12 @@ export interface TaskProp {
   taskStatus?: 'doing' | 'done';
 }
 
+// 中文注释：角色任务快照接口（用于渲染层展示简要任务信息）
+export interface RoleTaskSnapshot {
+  taskName: string; // 中文注释：任务名称
+  taskStatus?: 'doing' | 'done'; // 中文注释：任务状态：doing-进行中，done-已完成或就绪
+}
+
 const test = async () => {
   const optionsUrl = readVerifyCodeImage(`${VERIFY_CODE_OPTIONS_PATH}`, 'ali');
   const questionUrl = readVerifyCodeImage(`${VERIFY_CODE_QUESTION_PATH}`, 'tujian');
@@ -189,6 +195,12 @@ export class Role {
 
   getName() {
     return this.name;
+  }
+
+  // 中文注释：获取当前任务快照（仅包含名称与状态，便于 UI 展示）
+  public getTaskSnapshot(): RoleTaskSnapshot | null {
+    if (!this.task) return null;
+    return { taskName: this.task.taskName, taskStatus: this.task.taskStatus };
   }
 
   unregisterRole() {

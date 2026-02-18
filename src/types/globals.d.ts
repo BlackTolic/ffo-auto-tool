@@ -23,10 +23,10 @@ declare global {
       bindForeground(): Promise<{ ok: boolean; count?: number; hwnd?: number; pid?: number; message?: string }>;
 
       // 中文注释：列出当前可绑定窗口（全局顶层可见窗口）
-      listBindableWindows(): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string; name?: string }>>;
+      listBindableWindows(): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string; name?: string; task?: RoleTaskSnapshot | null }>>;
 
       // 中文注释：读取当前已绑定窗口列表（通过绑定管理器）
-      listBoundWindows(): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string; name?: string }>>;
+      listBoundWindows(): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string; name?: string; task?: RoleTaskSnapshot | null }>>;
 
       // 中文注释：按句柄执行绑定（通过绑定管理器记录）
       bindHwnd(hwnd: number): Promise<{ ok: boolean; hwnd?: number; message?: string }>;
@@ -54,6 +54,12 @@ declare global {
     windowControl: WindowControlAPI;
   }
 
+  // 中文注释：角色任务快照接口（全局声明，供前端类型提示）
+  interface RoleTaskSnapshot {
+    taskName: string; // 中文注释：任务名称
+    taskStatus?: 'doing' | 'done'; // 中文注释：任务状态：doing-进行中，done-已完成或待执行
+  }
+
   // 中文注释：已绑定窗口的接口类型
   interface BoundWindow {
     hwnd: number; // 中文注释：窗口句柄
@@ -62,7 +68,8 @@ declare global {
     className: string; // 中文注释：窗口类名
     processPath?: string; // 中文注释：窗口所属进程路径（如 C:\\Path\\fo.exe）
     exeName?: string; // 中文注释：进程的可执行文件名（如 fo.exe）
-    name?: string;
+    name?: string; // 中文注释：角色名称（若可获取）
+    task?: RoleTaskSnapshot | null; // 中文注释：角色任务快照（若可获取）
   }
 
   // 中文注释：窗口控制接口类型（独立抽出，便于声明与复用）

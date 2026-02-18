@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Card from '../../components/card/Card'; // 中文注释：引入通用卡片组件用于展示角色状态
 import styles from './index.module.less'; // 中文注释：引入当前视图的 Less 样式文件（CSS Modules）
 
 // 中文注释：基本配置界面 - 增加“选择可绑定窗口”下拉框与“绑定”按钮
@@ -200,6 +201,24 @@ export default function BasicConfigView() {
       <div className={styles['basic-hint']}>在下拉框中选择一个可绑定的窗口，然后点击“绑定”。</div>
       {!isElectron && <div className={styles['basic-hint']}>提示：当前为浏览器预览模式，绑定功能不可用，请在 Electron 应用中使用。</div>}
       {message && <div>{message}</div>}
+
+      {/* 新增：绑定角色状态卡片展示区域 */}
+      <div className={styles['role-status-section']}>
+        <h4>绑定角色状态（{boundList.length}）</h4>
+        {boundList.length === 0 ? (
+          <div className={styles['basic-hint']}>暂无角色状态</div>
+        ) : (
+          <div className={styles['role-card-grid']}>
+            {boundList.map(item => {
+              // 中文注释：卡片标题为角色名称；若无名称，则以窗口标题代替
+              const title = item.name || item.title || '未知角色';
+              // 中文注释：副标题展示当前任务名；若无任务则展示“当前任务：无”
+              const subtitle = `当前任务：${item.task?.taskName || '无'}`;
+              return <Card key={item.hwnd} title={title} subtitle={subtitle} />;
+            })}
+          </div>
+        )}
+      </div>
 
       {/* 新增：已绑定窗口列表展示区域 */}
       <div className={styles['basic-bound-section']}>

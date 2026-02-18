@@ -1,5 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+// 中文注释：角色任务快照接口（渲染层可见类型定义）
+interface RoleTaskSnapshot {
+  taskName: string; // 中文注释：任务名称
+  taskStatus?: 'doing' | 'done'; // 中文注释：任务状态
+}
+
 // 中文注释：大漠相关 API（仅示例保留核心调用）
 const eventManager = {
   // 中文注释：获取当前前台窗口句柄
@@ -37,9 +43,11 @@ const eventManager = {
   // 中文注释：按句柄绑定（通过绑定管理器）
   bindHwnd: (hwnd: number): Promise<{ ok: boolean; hwnd?: number; message?: string }> => ipcRenderer.invoke('ffo:bindHwnd', hwnd),
   // 中文注释：列出可绑定窗口
-  listBindableWindows: (): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string }>> => ipcRenderer.invoke('ffo:listBindableWindows'),
+  listBindableWindows: (): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string; name?: string; task?: RoleTaskSnapshot | null }>> =>
+    ipcRenderer.invoke('ffo:listBindableWindows'),
   // 中文注释：列出已绑定窗口
-  listBoundWindows: (): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string }>> => ipcRenderer.invoke('ffo:listBoundWindows'),
+  listBoundWindows: (): Promise<Array<{ hwnd: number; pid: number; title: string; className: string; processPath?: string; exeName?: string; name?: string; task?: RoleTaskSnapshot | null }>> =>
+    ipcRenderer.invoke('ffo:listBoundWindows'),
   // 中文注释：清空所有绑定
   unbindAll: (): Promise<{ ok: boolean; count?: number; message?: string }> => ipcRenderer.invoke('ffo:unbindAll'),
   // 中文注释：切换自动按键
