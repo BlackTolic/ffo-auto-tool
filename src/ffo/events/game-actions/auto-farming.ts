@@ -1,6 +1,5 @@
 import { damoBindingManager } from '..';
 import { MonsterFeature } from '../../constant/monster-feature';
-import { isArriveAimNear } from '../../utils/common';
 import { MoveActions, Pos } from '../move';
 import { Role } from '../rolyer';
 import { AttackActions } from '../skills';
@@ -59,23 +58,24 @@ export class AutoFarmingAction {
     return this.instanceMap.get(hwnd)!;
   }
 
-  public start(loopAction?: () => void) {
+  public start(taskList: { taskName: string; loopOriginPos: Pos; action: () => void; interval: number }[]) {
     // 中文注释：在(154,44)附近开启循环
-    this.role.addIntervalActive({
-      taskName: this.taskName,
-      loopOriginPos: this.initPos,
-      action:
-        typeof loopAction === 'function'
-          ? loopAction
-          : () => {
-              console.log(`非自定义${this.taskName}任务启动！`, this.role.position);
-              this.actions.startAutoFindPath({ toPos: this.pathPos, actions: this.active }).then(res => {
-                this.role.updateTaskStatus('done');
-                console.log(`本轮${this.taskName}任务完成！`, this.role.position);
-              });
-            },
-      interval: 5000,
-    });
+    // {
+    //   taskName: this.taskName,
+    //   loopOriginPos: this.initPos,
+    //   action:
+    //     typeof loopAction === 'function'
+    //       ? loopAction
+    //       : () => {
+    //           console.log(`非自定义${this.taskName}任务启动！`, this.role.position);
+    //           this.actions.startAutoFindPath({ toPos: this.pathPos, actions: this.active }).then(res => {
+    //             this.role.updateTaskStatus('done');
+    //             console.log(`本轮${this.taskName}任务完成！`, this.role.position);
+    //           });
+    //         },
+    //   interval: 5000,
+    // }
+    this.role.addIntervalActive(taskList);
   }
 
   // 中文注释：停止自动寻路
@@ -100,16 +100,16 @@ export class AutoFarmingAction {
   }
 
   // 中文注释：切换自动寻路（第一次开启，第二次关闭）
-  public toggle(loopAction?: () => void): AutoRouteToggleResult {
+  public toggle(taskList: { taskName: string; loopOriginPos: Pos; action: () => void; interval: number }[]): AutoRouteToggleResult {
     try {
-      if (!isArriveAimNear(this.role.position, this.initPos, 10)) {
-        return { ok: false, message: `当前位置${JSON.stringify(this.role.position)}不在${this.taskName}循环触发点，无法开启自动寻路` };
-      }
+      // if (!isArriveAimNear(this.role.position, this.initPos, 10)) {
+      //   return { ok: false, message: `当前位置${JSON.stringify(this.role.position)}不在${this.taskName}循环触发点，无法开启自动寻路` };
+      // }
       if (this.isRunning()) {
         this.stop();
         return { ok: true, running: false };
       } else {
-        this.start(loopAction);
+        this.start(taskList);
         return { ok: true, running: true };
       }
     } catch (err) {

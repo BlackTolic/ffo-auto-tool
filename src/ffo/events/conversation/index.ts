@@ -13,7 +13,7 @@ interface StoreManagerConfig {
   money?: string;
 }
 
-interface ItemMerchantConfig {
+export interface ItemMerchantConfig {
   task: 'buy' | 'fix';
   item?: '长白参' | '(大)法力药水';
   count?: number;
@@ -167,10 +167,9 @@ export class Conversation {
       this.moveToClick({ x: x1 + 400, y: y1 });
       this.bindPlugin.sendString(this.role.hwnd || 0, item.count);
       // 执行交易
-      // const inputPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '输入', INPUT_COLOR, dialog.sim);
-      // const inputPosText = parseTextPos(inputPos);
-      // inputPosText && this.moveToClick({ x: Number(inputPosText.x), y: Number(inputPosText.y) });
-      this.moveToClick({ x: 906, y: 467 });
+      const inputPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '输入', INPUT_COLOR, dialog.sim);
+      const inputPosText = parseTextPos(inputPos);
+      inputPosText && this.moveToClick({ x: Number(inputPosText.x), y: Number(inputPosText.y) });
     });
 
     // return new Promise((res, rej) => {
@@ -374,7 +373,7 @@ export class Conversation {
           // 存款
           this.moveToClick({ x: 1487, y: 285 });
           this.bindPlugin.sendString(this.role.hwnd || 0, money?.toString() || '');
-          this.moveToClick({ x: 1534, y: 260 });
+          this.moveToClick({ x: 1515, y: 263 });
         } else if (task === 'withdraw') {
           // 取款
           this.moveToClick({ x: 1510, y: 284 });
@@ -413,15 +412,31 @@ export class Conversation {
         return;
       }
       this.moveToClick(isPass);
+      //  购买道具
       const buyItems = config.filter(item => item.task === 'buy');
-      if (!buyItems) {
-        console.log('没有找到购买的选项');
-        return;
+      console.log(buyItems, '购买道具');
+      // 修理装备
+      const fix = config.filter(item => item.task === 'fix');
+      console.log(fix, '修理装备');
+      if (buyItems?.length) {
+        this.dragScrollToBuy(buyItems);
+        // 确认购买交易
+        this.moveToClick({ x: 906, y: 467 });
       }
-      this.dragScrollToBuy(buyItems);
-      const inputPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '执行', INPUT_COLOR, dialog.sim);
-      const inputPosText = parseTextPos(inputPos);
-      inputPosText && this.moveToClick({ x: Number(inputPosText.x), y: Number(inputPosText.y) });
+
+      if (fix?.length) {
+        // 全部特殊修理
+        this.moveToClick({ x: 633, y: 465 });
+        this.bindPlugin.delay(500);
+        // 确认修理
+        this.moveToClick({ x: 750, y: 538 });
+      }
+      this.bindPlugin.delay(500);
+      // 关闭
+      this.moveToClick({ x: 1117, y: 88 });
+      setTimeout(() => {
+        resolve(true);
+      }, 1000);
     });
   }
   // 购买道具

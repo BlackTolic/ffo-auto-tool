@@ -7,8 +7,7 @@ import { emailStrategy } from '../../utils/email';
 import { DEFAULT_MENUS_POS, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { isArriveAimNear, selectRightAnwser } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
-import { fullScreenShot, getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getVerifyCodePos, isDead, isOffline } from '../utils/ocr-check/base';
-import { MoveActions } from './move';
+import { getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getVerifyCodePos, isOffline } from '../utils/ocr-check/base';
 
 export type Pos = {
   x: number;
@@ -37,13 +36,10 @@ export class Role {
   private name: string = ''; // 当前控制的角色名称
   public position: Pos | null = { x: 0, y: 0 }; // 当前角色所在坐标
   public map: string = ''; // 当前所在地图名称
-  private isOpenAutoRoute: boolean = false; // 是否开启自动寻路
   public bloodStatus: string = ''; // 血量状态
   public statusBloodIcon: Pos | null = null;
   // private isDead: boolean = false; // 是否死亡
   public bindWindowSize: '1600*900' | '1280*800' = '1600*900'; // 绑定窗口的尺寸
-  private moveActions: MoveActions | null = null; // 移动操作类
-  private pollTimers = new Map<number, ReturnType<typeof setInterval>>(); // 记录轮询定时器
   public selectMonster = ''; // 已选中怪物
   public menusPos = DEFAULT_MENUS_POS['1600*900'];
   public isPauseAllActive: boolean = false; // 暂停所有行为
@@ -52,9 +48,12 @@ export class Role {
   private lastVerifyCaptureTs: number = 0;
   private lastTaskActionTs: number = 0;
   private task: TaskProp | null = null;
+  private taskList: TaskProp[] = []; // 任务队列
+  private taskStatus: 'doing' | 'done' = 'done'; // 任务状态
   public job: 'YS' | 'SS' | 'JK' | 'CK' | 'ZS' = 'SS'; // 角色职业JK-剑客；CK-刺客；YS-药师；SS-术士；ZS-战士
   public actionTimer = new Map<string, ReturnType<typeof setInterval>>(); // 其他行为中的定时器
-
+  private needCheckDead: boolean = false; // 是否需要检查死亡
+  private needCheckTeamApply: boolean = false; // 是否需要检查组队申请
   constructor() {}
 
   // 需要先绑定之后再注册角色信息
@@ -124,16 +123,16 @@ export class Role {
                 return;
               }
               // 检查角色是否死亡
-              const roleIsDead = isDead(bindDm, this.bindWindowSize);
-              if (roleIsDead) {
-                // 全屏截图
-                fullScreenShot(bindDm, this.bindWindowSize);
-                // 发送邮件
-                emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色死亡', text: `角色 ${this.name} 已死亡` });
-                // 死亡后取消注册，终止
-                this.unregisterRole();
-                return;
-              }
+              // const roleIsDead = isDead(bindDm, this.bindWindowSize);
+              // if (roleIsDead) {
+              //   // 全屏截图
+              //   fullScreenShot(bindDm, this.bindWindowSize);
+              //   // 发送邮件
+              //   emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色死亡', text: `角色 ${this.name} 已死亡` });
+              //   // 死亡后取消注册，终止
+              //   this.unregisterRole();
+              //   return;
+              // }
               Promise.all([getVerifyCodeByAliQW(optionsUrl), getVerifyCodeByTuJian(questionUrl)]).then(([Ali = '', TuJian = '']) => {
                 console.log('验证码识别结果 Ali', Ali);
                 console.log('验证码识别结果 TuJian', TuJian);
@@ -167,17 +166,45 @@ export class Role {
         this.map = addressName;
         this.position = pos;
         this.bloodStatus = bloodStatus;
-        const taskStatus = this.task?.taskStatus ?? '';
-        // console.log('任务状态', ['', 'done'].includes(taskStatus), taskStatus);
-        if (this.task && ['', 'done'].includes(taskStatus) && isArriveAimNear(pos as Pos, this.task.loopOriginPos, 10)) {
-          this.task.taskStatus = 'doing';
+        // 检查角色是否死亡
+
+        // 检查是否有人抛出组队申请
+        // 开启任务队列
+        if (!this.taskList?.length) {
+          return;
+        }
+        // 这里执行循环任务根据任务中的初始坐标来触发
+        const takeTask = this.taskList.filter(item => isArriveAimNear(pos as Pos, item.loopOriginPos, 10));
+        if (!takeTask.length) {
+          return;
+        }
+        // 指定第一个任务为最近的任务
+        this.task = takeTask[0];
+        console.log(this.task, ' this.task');
+        if (['done'].includes(this.taskStatus)) {
+          this.taskStatus = 'doing';
+          // console.log('[角色信息] 已经成功切换循环任务:', this.task.taskName);
           const now = Date.now();
+          console.log(this.lastTaskActionTs, 'this.lastTaskActionTs');
+          console.log(this.task.interval, 'this.task.interval');
+
           if (now - this.lastTaskActionTs >= this.task.interval) {
             console.log(`[角色信息] 已到达任务位置 ${this.task.taskName}`);
             this.task.action();
             this.lastTaskActionTs = now;
           }
         }
+
+        // console.log('任务状态', ['', 'done'].includes(taskStatus), taskStatus);
+        // if (this.task && ['', 'done'].includes(taskStatus) && isArriveAimNear(pos as Pos, this.task.loopOriginPos, 10)) {
+        //   this.task.taskStatus = 'doing';
+        //   const now = Date.now();
+        //   if (now - this.lastTaskActionTs >= this.task.interval) {
+        //     console.log(`[角色信息] 已到达任务位置 ${this.task.taskName}`);
+        //     this.task.action();
+        //     this.lastTaskActionTs = now;
+        //   }
+        // }
         // console.log('[角色信息] 地图名称:', `${this.map}:${this.position?.x},${this.position?.y}`);
       } catch (err) {
         console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
@@ -207,14 +234,24 @@ export class Role {
     }
   }
 
-  addIntervalActive(props: TaskProp) {
+  // 挂载循环任务
+  addIntervalActive(props: TaskProp | TaskProp[]) {
+    // 挂载多个循环任务
+    if (Array.isArray(props)) {
+      this.taskList = props;
+      return;
+    }
+    // 挂载单个循环任务
     const { taskName, loopOriginPos, action, interval = 10000 } = props;
     this.task = { taskName, loopOriginPos, action, interval };
     this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
   }
 
+  // 清空循环任务队列
   clearIntervalActive() {
     this.task = null;
+    this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
+    this.taskList = []; // 清空任务队列
   }
 
   pauseCurActive() {
@@ -230,7 +267,7 @@ export class Role {
       console.log('任务不存在!');
       return;
     }
-    this.task.taskStatus = status;
+    this.taskStatus = status;
   }
 
   getSelectMonster() {
@@ -257,7 +294,3 @@ export class Role {
     this.actionTimer.clear();
   }
 }
-
-// 66 72 78 84 90 96 102 6次机会
-// 66 120J  102 40J  80J =》 15J + 15J = 30J 一次机会
-//

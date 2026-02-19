@@ -123,7 +123,7 @@ export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*
 export const switchItemBoxTabPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', tabText: string) => {
   const tabPos = DEFAULT_ITEM_BOX_TAB_SWITCH[bindWindowSize];
   const pos = bindDm.findStrFastE(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabText, tabPos.color, tabPos.sim);
-  console.log(pos, '切换物品栏tab页');
+  console.log(pos, '切换物品栏tab页', tabText);
   return parseTextPos(pos);
 };
 

@@ -117,14 +117,6 @@ export class BaseAction {
     });
   }
 
-  // 关闭物品栏
-  // closeItemBox() {
-  //   const { itemBox } = this.role?.menusPos ?? {};
-  //   if (itemBox) {
-  //     this.bindPlugin.moveToClick({ x: itemBox.x, y: itemBox.y });
-  //   }
-  // }
-
   // 打开宠物栏并且激活宠物
   openPetBoxAndActivePet() {
     return new Promise((res, rej) => {
@@ -146,6 +138,18 @@ export class BaseAction {
     });
   }
 
+  // 按下第二栏技能栏技能
+  pressSecondSkillBarSkill(pressKey: string) {
+    return new Promise((res, rej) => {
+      // 打开物品栏
+      this.bindPlugin.keyPress(VK_F['tab']);
+      this.bindPlugin.delay(300);
+      this.bindPlugin.keyPress(VK_F[pressKey]);
+      this.bindPlugin.delay(300);
+      this.bindPlugin.keyPress(VK_F['tab']);
+      res(true);
+    });
+  }
   // 关闭宠物栏
 
   // 激活宠物
