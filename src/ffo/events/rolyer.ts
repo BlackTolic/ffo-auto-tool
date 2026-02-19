@@ -7,7 +7,7 @@ import { emailStrategy } from '../../utils/email';
 import { DEFAULT_MENUS_POS, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { isArriveAimNear, selectRightAnwser } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
-import { fullScreenShot, getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getStatusBloodIcon, getVerifyCodePos, isDead, isOffline } from '../utils/ocr-check/base';
+import { fullScreenShot, getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getVerifyCodePos, isDead, isOffline } from '../utils/ocr-check/base';
 import { MoveActions } from './move';
 
 export type Pos = {
@@ -29,20 +29,10 @@ export interface RoleTaskSnapshot {
   taskStatus?: 'doing' | 'done'; // 中文注释：任务状态：doing-进行中，done-已完成或就绪
 }
 
-const test = async () => {
-  const optionsUrl = readVerifyCodeImage(`${VERIFY_CODE_OPTIONS_PATH}`, 'ali');
-  const questionUrl = readVerifyCodeImage(`${VERIFY_CODE_QUESTION_PATH}`, 'tujian');
-  console.time('接口调用耗时');
-  // Promise.all([getVerifyCodeByDouBao(optionsUrl), getVerifyCodeByTuJian(questionUrl)]);
-  // getVerifyCodeByDouBao(optionsUrl);
-  await getVerifyCodeByAliQW(optionsUrl);
-
-  // await getVerifyCodeByTuJian(questionUrl);
-  console.timeEnd('接口调用耗时');
-};
-
 export class Role {
+  public hwnd?: number = 0; // 窗口句柄
   public bindDm: any = null; // 大漠类
+  public bindPlugin: any = null; // 绑定的插件类
   private timer: NodeJS.Timeout | null = null; // 定时器
   private name: string = ''; // 当前控制的角色名称
   public position: Pos | null = { x: 0, y: 0 }; // 当前角色所在坐标
@@ -63,17 +53,18 @@ export class Role {
   private lastTaskActionTs: number = 0;
   private task: TaskProp | null = null;
   public job: 'YS' | 'SS' | 'JK' | 'CK' | 'ZS' = 'SS'; // 角色职业JK-剑客；CK-刺客；YS-药师；SS-术士；ZS-战士
+  public actionTimer = new Map<string, ReturnType<typeof setInterval>>(); // 其他行为中的定时器
 
   constructor() {}
 
   // 需要先绑定之后再注册角色信息
   public registerRole(bindWindowSize: '1600*900' | '1280*800', hwndId?: number) {
-    // test();
     this.bindWindowSize = bindWindowSize;
     this.menusPos = DEFAULT_MENUS_POS[bindWindowSize as keyof typeof DEFAULT_MENUS_POS];
     const dm = ensureDamo();
     // 中文注释：获取当前前台窗口句柄
     const hwnd = hwndId ? hwndId : dm.getForegroundWindow();
+    this.hwnd = hwndId;
     const rec = damoBindingManager.get(hwnd);
     if (!hwnd || !dm) {
       throw new Error('[角色信息] 未提供有效的绑定记录或 dm 实例');
@@ -84,6 +75,7 @@ export class Role {
     }
     const bindDm = rec?.ffoClient as AutoT;
     this.bindDm = rec?.ffoClient.dm;
+    this.bindPlugin = bindDm;
     const name = getRoleName(bindDm, this.bindWindowSize);
     console.log(name, 'this.name');
     this.name = name;
@@ -98,7 +90,7 @@ export class Role {
         const bloodStatus = getBloodStatus(bindDm, this.bindWindowSize);
         // console.log(bloodStatus, 'bloodStatus');
         // 是否处于回血状态
-        this.statusBloodIcon = getStatusBloodIcon(bindDm, this.bindWindowSize);
+        // this.statusBloodIcon = getStatusBloodIcon(bindDm, this.bindWindowSize);
         // 截图
         // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
         // 获取神医坐标
@@ -210,6 +202,7 @@ export class Role {
       this.task = null;
       this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
       this.isPauseCurActive = false;
+      this.clearAllActionTimer();
       console.log('[角色信息] 已解除角色轮询');
     }
   }
@@ -242,6 +235,26 @@ export class Role {
 
   getSelectMonster() {
     return;
+  }
+
+  // 开启定时器
+  addActionTimer(key: string, timer: ReturnType<typeof setInterval>) {
+    this.actionTimer.set(key, timer);
+  }
+
+  // 关闭定时器
+  clearActionTimer(key: string) {
+    const timer = this.actionTimer.get(key);
+    if (timer) {
+      clearInterval(timer);
+      this.actionTimer.delete(key);
+    }
+  }
+
+  // 关闭所有定时器
+  clearAllActionTimer() {
+    this.actionTimer.forEach(timer => clearInterval(timer));
+    this.actionTimer.clear();
   }
 }
 

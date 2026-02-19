@@ -1,20 +1,22 @@
 import { BACK_CITY_PNG_PATH } from '../../../constant/config';
 import { MAIN_CITY } from '../../constant/NPC_position';
+import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
+import { isItemBoxOpen, switchItemBoxTabPos } from '../../utils/ocr-check/base';
 import { Role } from '../rolyer';
 import { AttackActions } from '../skills';
 
 type Timer = NodeJS.Timeout | null;
 
 export class BaseAction {
-  private dm: any = null;
+  private bindPlugin: any = null;
   private role: Role | null = null;
   // 回城前角色坐标
   // private beforePos: { x: number; y: number } | null = null;
 
   constructor(role: Role) {
     this.role = role;
-    this.dm = role.bindDm;
+    this.bindPlugin = role.bindPlugin;
   }
 
   // 屏蔽所有玩家
@@ -35,7 +37,7 @@ export class BaseAction {
             timer = null;
             res(true);
           } else {
-            ways === 'F9' && this.role ? new AttackActions(this.role).startKeyPress({ key: 'F9', interval: null }) : this.dm.LeftClick();
+            ways === 'F9' && this.role ? new AttackActions(this.role).startKeyPress({ key: 'F9', interval: null }) : this.bindPlugin.leftClick();
           }
         }, 4000);
       };
@@ -61,15 +63,15 @@ export class BaseAction {
         //   console.log('回城失败');
         // }
       } else {
-        this.dm.moveTo(items?.x, items?.y);
-        this.dm.LeftClick();
-        this.dm.delay(500);
+        this.bindPlugin.moveTo(items?.x, items?.y);
+        this.bindPlugin.leftClick();
+        this.bindPlugin.delay(500);
         console.log('回城卷轴路径', BACK_CITY_PNG_PATH);
-        const imgPos = this.dm.FindColorE(1190, 595, 1590, 826, 'b87848-111111|304c68-000000', 1.0, 0);
+        const imgPos = this.bindPlugin.findColorE(1190, 595, 1590, 826, 'b87848-111111|304c68-000000', 1.0, 0);
         const imgPos2 = parseRolePositionFromText(imgPos);
         if (imgPos2) {
-          this.dm.moveTo(imgPos2.x, imgPos2.y);
-          this.dm.LeftDoubleClick();
+          this.bindPlugin.moveTo(imgPos2.x, imgPos2.y);
+          this.bindPlugin.leftDoubleClick();
           // 设置了固定回城点
           if (fixPos) {
             // 重复回城直到到达目标点
@@ -88,26 +90,60 @@ export class BaseAction {
   }
 
   // 打开物品栏切换到/消耗/收集/装备页
-  openItemBox(changeTo: 'custom' | 'collection' | 'equip') {
-    // const { itemBox } = this.role?.menusPos ?? {};
-    // if (itemBox) {
-    //   this.moveToClick({ x: itemBox.x, y: itemBox.y });
+  openItemBox(changeTo: '消耗' | '收集' | '装备') {
+    return new Promise((res, rej) => {
+      const box = isItemBoxOpen(this.role?.bindDm, this.role?.bindWindowSize || '1600*900');
+      if (box === changeTo) {
+        res(true);
+      }
+      if (!box) {
+        // 打开物品栏
+        this.bindPlugin.keyPress(VK_F['alt']);
+        this.bindPlugin.keyPress(VK_F['i']);
+        this.bindPlugin.delay(1000);
+        // 切换tab页
+        const tabPos = switchItemBoxTabPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', changeTo);
+        if (tabPos) {
+          this.bindPlugin.moveToClick(tabPos.x, tabPos.y);
+        }
+        res(true);
+      }
+      // 切换tab页
+      const tabPos = switchItemBoxTabPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', changeTo);
+      if (tabPos) {
+        this.bindPlugin.moveToClick(tabPos.x, tabPos.y);
+      }
+      res(true);
+    });
   }
 
   // 关闭物品栏
-  closeItemBox() {
-    const { itemBox } = this.role?.menusPos ?? {};
-    if (itemBox) {
-      this.moveToClick({ x: itemBox.x, y: itemBox.y });
-    }
-  }
+  // closeItemBox() {
+  //   const { itemBox } = this.role?.menusPos ?? {};
+  //   if (itemBox) {
+  //     this.bindPlugin.moveToClick({ x: itemBox.x, y: itemBox.y });
+  //   }
+  // }
 
   // 打开宠物栏并且激活宠物
   openPetBoxAndActivePet() {
-    const { petBox } = this.role?.menusPos ?? {};
-    if (petBox) {
-      this.moveToClick({ x: petBox.x, y: petBox.y });
-    }
+    return new Promise((res, rej) => {
+      // 打开宠物栏
+      this.bindPlugin.moveTo(64, 82);
+      this.bindPlugin.delay(300);
+      this.bindPlugin.leftClick();
+      this.bindPlugin.delay(500);
+      // 激活宠物
+      this.bindPlugin.moveTo(627, 454);
+      this.bindPlugin.leftDoubleClick();
+      this.bindPlugin.delay(300);
+      // 关闭宠物栏
+      this.bindPlugin.moveTo(802, 84);
+      this.bindPlugin.delay(300);
+      this.bindPlugin.leftClick();
+      this.bindPlugin.delay(300);
+      res(true);
+    });
   }
 
   // 关闭宠物栏

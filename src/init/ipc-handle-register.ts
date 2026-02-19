@@ -3,6 +3,7 @@ import { BrowserWindow, ipcMain, screen } from 'electron';
 // 中文注释：使用大漠插件进行枚举（不再依赖天使插件）
 import { validateEnvironment } from '../envCheck';
 import { pauseCurActive as pauseWuLeiNanJiao, stopCurActive as stopWuLeiNanJiao, toggleWuLeiNanJiao } from '../ffo/events/game-actions/wu-lei-nan-jiao'; // 中文注释：引入无泪南郊切换/暂停/停止逻辑供 IPC 调用
+import { toggleYunHuang1West, stopCurActive as stopYunHuang1West, pauseCurActive as pauseYunHuang1West } from '../ffo/events/game-actions/yun1'; // 中文注释：引入云荒一层西南角切换/暂停/停止逻辑供 IPC 调用
 import type { RoleTaskSnapshot } from '../ffo/events/rolyer';
 
 // 中文注释：可绑定窗口的信息接口（在主进程内部使用）
@@ -330,6 +331,36 @@ ipcMain.handle('ffo:wuLeiNanJiao:pause', async () => {
 ipcMain.handle('ffo:wuLeiNanJiao:stop', async () => {
   try {
     stopWuLeiNanJiao();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: (e as any)?.message || String(e) };
+  }
+});
+
+// 中文注释：云荒一层西南角 - 切换自动寻路（渲染进程调用）
+ipcMain.handle('ffo:yunHuang1West:toggle', async () => {
+  try {
+    const ret = toggleYunHuang1West();
+    return ret; // 中文注释：返回切换结果（含running/错误信息）
+  } catch (e) {
+    return { ok: false, message: (e as any)?.message || String(e) };
+  }
+});
+
+// 中文注释：云荒一层西南角 - 暂停当前动作（渲染进程调用）
+ipcMain.handle('ffo:yunHuang1West:pause', async () => {
+  try {
+    pauseYunHuang1West();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: (e as any)?.message || String(e) };
+  }
+});
+
+// 中文注释：云荒一层西南角 - 停止当前动作（渲染进程调用）
+ipcMain.handle('ffo:yunHuang1West:stop', async () => {
+  try {
+    stopYunHuang1West();
     return { ok: true };
   } catch (e) {
     return { ok: false, message: (e as any)?.message || String(e) };

@@ -1,23 +1,9 @@
 import { MonsterFeature, OCR_MONSTER } from '../../constant/monster-feature';
+import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseTextPos } from '../../utils/common';
 import { isBlocked } from '../../utils/ocr-check/base';
 import { MoveActions } from '../move';
 import { Role } from '../rolyer';
-
-// 中文注释：Windows 虚拟键码映射（F1-F10），便于统一复用
-export const VK_F: Record<'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10' | 'F11', number> = {
-  F1: 112,
-  F2: 113,
-  F3: 114,
-  F4: 115,
-  F5: 116,
-  F6: 117,
-  F7: 118,
-  F8: 119,
-  F9: 120,
-  F10: 121,
-  F11: 122,
-};
 
 interface KeyPressOptions {
   key: keyof typeof VK_F;

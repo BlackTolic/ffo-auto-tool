@@ -4,7 +4,6 @@ import path from 'path'; // 中文注释：处理文件路径
 import { OCR_FONT_PATH, SCREENSHOT_PATH } from '../constant/config';
 import { damoBindingManager, ffoEvents } from '../ffo/events';
 import { Role } from '../ffo/events/rolyer';
-import { stopAutoCombat } from '../ffo/utils/auto-combat';
 import { stopKeyPress } from '../ffo/utils/key-press';
 
 // 中文注释：向所有渲染进程广播字库信息更新
@@ -83,7 +82,7 @@ export const registerBoundEventHandlers = () => {
   ffoEvents.on('unbind', async ({ hwnd }) => {
     try {
       // 中文注释：停止自动打怪（释放定时器）
-      stopAutoCombat(hwnd);
+      // stopAutoCombat(hwnd);
       // 中文注释：停止自动按键（释放定时器）
       stopKeyPress(hwnd);
       // 中文注释：更新自动按键状态并重置最近绑定句柄

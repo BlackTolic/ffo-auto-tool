@@ -2,11 +2,15 @@ import { AutoT } from '../../../auto-plugin';
 import {
   DEFAULT_ADDRESS_NAME,
   DEFAULT_BLOOD_STATUS,
+  DEFAULT_EQUIP_COUNT,
+  DEFAULT_EQUIP_DAMAGE,
   DEFAULT_GOLD,
   DEFAULT_ISOLATE,
   DEFAULT_ITEM_BOX,
   DEFAULT_ITEM_BOX_TAB,
+  DEFAULT_ITEM_BOX_TAB_SWITCH,
   DEFAULT_MONSTER_NAME,
+  DEFAULT_PET_ACTIVE,
   DEFAULT_ROLE_NAME,
   DEFAULT_ROLE_POSITION,
   DEFAULT_SERVER_DISCONNECT,
@@ -105,29 +109,56 @@ export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): string | false => {
   const itemBoxPos = DEFAULT_ITEM_BOX[bindWindowSize];
   const itemBoxText = bindDm.findStrFastE(itemBoxPos.x1, itemBoxPos.y1, itemBoxPos.x2, itemBoxPos.y2, '物品栏', itemBoxPos.color, itemBoxPos.sim);
-  console.log(itemBoxText, 'itemBoxText');
-  const isOk = !!parseRolePositionFromText(itemBoxText);
+  const isOk = !!parseTextPos(itemBoxText);
   if (!isOk) {
     return false;
   }
+  bindDm.delay(1000);
   const tabPos = DEFAULT_ITEM_BOX_TAB[bindWindowSize];
   const tabText = bindDm.ocr(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.color, tabPos.sim);
-  console.log(tabText, 'tabText');
   return tabText;
 };
 
-// 检查红药数量
-export const getRedPillCount = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
-  const redPillPos = DEFAULT_RED_PILL[bindWindowSize];
-  const redPillText = bindDm.ocr(redPillPos.x1, redPillPos.y1, redPillPos.x2, redPillPos.y2, redPillPos.color, redPillPos.sim);
-  console.log(redPillText, 'redPillText');
-  return redPillText;
+// 切换物品栏tab页
+export const switchItemBoxTabPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', tabText: string) => {
+  const tabPos = DEFAULT_ITEM_BOX_TAB_SWITCH[bindWindowSize];
+  const pos = bindDm.findStrFastE(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabText, tabPos.color, tabPos.sim);
+  console.log(pos, '切换物品栏tab页');
+  return parseTextPos(pos);
 };
 
-// 检查回城卷轴数量
-export const getBackScrollCount = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
-  const backScrollPos = DEFAULT_BACK_SCROLL[bindWindowSize];
-  const backScrollText = bindDm.ocr(backScrollPos.x1, backScrollPos.y1, backScrollPos.x2, backScrollPos.y2, backScrollPos.color, backScrollPos.sim);
-  console.log(backScrollText, 'backScrollText');
-  return backScrollText;
+// 检查装备是否已经损坏
+export const checkEquipBroken = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const equipBrokenPos = DEFAULT_EQUIP_DAMAGE[bindWindowSize];
+  // console.log(equipBrokenPos, bindDm, 'equipBrokenPos');
+  const equipBrokenText = bindDm.findColorE(equipBrokenPos.x1, equipBrokenPos.y1, equipBrokenPos.x2, equipBrokenPos.y2, equipBrokenPos.color, equipBrokenPos.sim);
+  // console.log(equipBrokenText, 'equipBrokenText');
+  return parseRolePositionFromText(equipBrokenText);
+};
+
+// 检查宠物是否激活
+export const checkPetActive = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const petActivePos = DEFAULT_PET_ACTIVE[bindWindowSize];
+  const petActiveText = bindDm.ocr(petActivePos.x1, petActivePos.y1, petActivePos.x2, petActivePos.y2, petActivePos.color, petActivePos.sim);
+  return petActiveText !== '暂时没有宠物';
+};
+
+// 检查物品栏物品数量
+export const checkItemBoxItemCount = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', itemSort: number = 1, message?: string) => {
+  // 第一个格子物品数量
+  const firstItem = {
+    '1600*900': { x1: 1189, y1: 599, x2: 1228, y2: 637, color: 'e8f0e8-111111', sim: 1.0 },
+    '1280*800': { x1: 1194, y1: 600, x2: 1228, y2: 638, color: 'e8f0e8-111111', sim: 1.0 },
+  };
+  //1229,597,1268,635
+  const itemPos = firstItem[bindWindowSize];
+  const itemBoxItemText = bindDm.ocr(itemPos.x1 + (itemSort - 1) * 41, itemPos.y1, itemPos.x2 + (itemSort - 1) * 41, itemPos.y2, itemPos.color, itemPos.sim);
+  return !itemBoxItemText ? 0 : Number(itemBoxItemText);
+};
+
+// 检查装备数量
+export const checkEquipCount = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const checkEquipPos = DEFAULT_EQUIP_COUNT[bindWindowSize];
+  const equipCountText = bindDm.findStrFastEx(checkEquipPos.x1, checkEquipPos.y1, checkEquipPos.x2, checkEquipPos.y2, checkEquipPos.string, checkEquipPos.color, checkEquipPos.sim);
+  return equipCountText ? equipCountText.split?.('|')?.length : 0;
 };

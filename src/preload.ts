@@ -6,6 +6,14 @@ interface RoleTaskSnapshot {
   taskStatus?: 'doing' | 'done'; // 中文注释：任务状态
 }
 
+// 中文注释：云荒/无泪等自动寻路切换的返回结果接口（供渲染层使用）
+interface AutoRouteToggleResult {
+  ok: boolean; // 中文注释：操作是否成功
+  running?: boolean; // 中文注释：当前是否处于运行状态
+  hwnd?: number; // 中文注释：本次操作作用的窗口句柄
+  message?: string; // 中文注释：失败或提示信息
+}
+
 // 中文注释：大漠相关 API（仅示例保留核心调用）
 const eventManager = {
   // 中文注释：获取当前前台窗口句柄
@@ -72,14 +80,19 @@ const windowControl = {
   close: (): Promise<void> => ipcRenderer.invoke('window:close'),
 };
 
-// 新增：FFO 动作 API（无泪南郊：切换/暂停/停止）
+// 新增：FFO 动作 API（无泪南郊/云荒一层西南角：切换/暂停/停止）
 const ffoActions = {
   // 中文注释：切换“无泪南郊”自动寻路（第一次开启，第二次关闭）
-  toggleWuLeiNanJiao: (): Promise<{ ok: boolean; running?: boolean; hwnd?: number; message?: string }> => ipcRenderer.invoke('ffo:wuLeiNanJiao:toggle'),
-  // 中文注释：暂停当前激活的无泪南郊动作（停止自动寻路但保留任务）
-  pauseCurActive: (): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('ffo:wuLeiNanJiao:pause'),
+  toggleWuLeiNanJiao: (): Promise<AutoRouteToggleResult> => ipcRenderer.invoke('ffo:wuLeiNanJiao:toggle'),
   // 中文注释：停止当前激活的无泪南郊动作（清空任务并停止自动寻路）
   stopCurActive: (): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('ffo:wuLeiNanJiao:stop'),
+
+  // 中文注释：切换“云荒一层西南角”自动寻路（第一次开启，第二次关闭）
+  toggleYunHuang1West: (): Promise<AutoRouteToggleResult> => ipcRenderer.invoke('ffo:yunHuang1West:toggle'),
+  // 中文注释：暂停当前激活的“云荒一层西南角”动作（仅停止自动寻路，保留任务）
+  pauseYunHuang1West: (): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('ffo:yunHuang1West:pause'),
+  // 中文注释：停止当前激活的“云荒一层西南角”动作（清空任务并停止自动寻路）
+  stopYunHuang1West: (): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('ffo:yunHuang1West:stop'),
 };
 
 // 中文注释：向渲染进程暴露用于操作大漠插件的 API

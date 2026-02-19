@@ -82,16 +82,41 @@ const AutoRefineView: React.FC<AutoRefineProps> = () => {
   const [configOpen, setConfigOpen] = useState<boolean>(false); // 中文注释：控制弹框显示
   const [configData, setConfigData] = useState<ConfigData>({ taskName: '云荒一层西南角', templateId: 'default' }); // 中文注释：配置表单数据
 
-  // 中文注释：点击“启动”的处理函数
-  const handleStart = (opts?: StartActionOptions) => {
-    setRunning(true);
-    console.log('启动任务', opts);
+  // 中文注释：点击“启动”的处理函数 —— 调用预加载暴露的 API 触发主进程 toggle
+  const handleStart = async (opts?: StartActionOptions) => {
+    try {
+      // @ts-ignore
+      const ret = await window.ffoActions?.toggleYunHuang1West?.();
+      if (ret?.ok) {
+        setRunning(!!ret.running);
+      } else {
+        setRunning(false);
+        if (ret?.message) {
+          // 中文注释：简单提示错误信息（可替换为全局提示组件）
+          alert(ret.message);
+        }
+      }
+      console.log('启动任务', opts, ret);
+    } catch (e) {
+      setRunning(false);
+      alert(String((e as any)?.message || e));
+    }
   };
 
-  // 中文注释：点击“停止”的处理函数
-  const handleStop = (opts?: StopActionOptions) => {
-    setRunning(false);
-    console.log('停止任务', opts);
+  // 中文注释：点击“停止”的处理函数 —— 改为调用 pause（暂停当前动作，保留任务）
+  const handleStop = async (opts?: StopActionOptions) => {
+    try {
+      // @ts-ignore
+      const ret = await window.ffoActions?.pauseYunHuang1West?.();
+      if (ret?.ok) {
+        setRunning(false);
+      } else if (ret?.message) {
+        alert(ret.message);
+      }
+      console.log('停止(暂停)任务', opts, ret);
+    } catch (e) {
+      alert(String((e as any)?.message || e));
+    }
   };
 
   // 中文注释：点击“配置”按钮打开弹框

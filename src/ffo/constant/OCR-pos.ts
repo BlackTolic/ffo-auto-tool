@@ -4,6 +4,7 @@ const DEFAULT_COLOR = 'e8f0e8-111111';
 const DEFAULT_MONSTER_COLOR = 'a8a8a0-111111';
 const DEFAULT_SIM = 1.0;
 const DEFAULT_COLOR_RED = 'e85048-111111';
+const DEFAULT_COLOR_YELLOW = 'e8c020-111111';
 
 // 地图名称
 export const DEFAULT_ADDRESS_NAME = {
@@ -109,32 +110,38 @@ export const DEFAULT_ISOLATE = {
 
 // 检查是否有物品栏打开
 export const DEFAULT_ITEM_BOX = {
-  '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1600*900': { x1: 1181, y1: 542, x2: 1595, y2: 566, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
 };
 
 // 检查物品栏切换的tab页
 export const DEFAULT_ITEM_BOX_TAB = {
-  '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1600*900': { x1: 1193, y1: 571, x2: 1403, y2: 595, color: 'e8e4e0-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 867, y1: 471, x2: 1270, y2: 507, color: 'e8e4e0-111111', sim: DEFAULT_SIM },
+};
+
+// 切换物品栏tab页
+export const DEFAULT_ITEM_BOX_TAB_SWITCH = {
+  '1600*900': { x1: 1193, y1: 571, x2: 1403, y2: 595, color: '886c38-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 867, y1: 471, x2: 1270, y2: 507, color: '886c38-111111', sim: DEFAULT_SIM },
 };
 
 // 金币
 export const DEFAULT_GOLD = {
-  '1600*900': { x1: 872, y1: 713, x2: 986, y2: 729, color: 'e8f0e8-111111|d0a028-111111|989490-000000|986450-555555', sim: DEFAULT_SIM },
+  '1600*900': { x1: 1188, y1: 806, x2: 1313, y2: 830, color: 'e8f0e8-111111|d0a028-111111|989490-000000|986450-555555', sim: DEFAULT_SIM },
   '1280*800': { x1: 872, y1: 713, x2: 986, y2: 729, color: 'e8f0e8-111111|d0a028-111111|989490-000000|986450-555555', sim: DEFAULT_SIM },
 };
 
 // 检查宠物是否激活
 export const DEFAULT_PET_ACTIVE = {
-  '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1600*900': { x1: 82, y1: 67, x2: 169, y2: 105, color: DEFAULT_COLOR_YELLOW, sim: DEFAULT_SIM },
   '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
 };
 
 // 检查装备是否损坏
 export const DEFAULT_EQUIP_DAMAGE = {
-  '1600*900': { x1: 1245, y1: 858, x2: 1344, y2: 957, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
-  '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+  '1600*900': { x1: 1085, y1: 577, x2: 1181, y2: 692, color: 'c84020-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 888, y1: 574, x2: 1000, y2: 689, color: 'c84020-111111', sim: DEFAULT_SIM },
 };
 
 // 检查红药数量
@@ -146,5 +153,11 @@ export const DEFAULT_RED_PILL = {
 // 检查角色名称
 export const DEFAULT_ROLE_NAME = {
   '1600*900': { x1: 74, y1: 6, x2: 172, y2: 48, color: 'e8c020-111111', sim: DEFAULT_SIM },
-  '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 74, y1: 6, x2: 172, y2: 48, color: 'e8c020-111111', sim: DEFAULT_SIM },
+};
+
+// 检查装备数量
+export const DEFAULT_EQUIP_COUNT = {
+  '1600*900': { x1: 1189, y1: 598, x2: 1596, y2: 807, string: '@O', color: '806c38-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 1194, y1: 600, x2: 1228, y2: 638, string: '@O', color: 'e8f0e8-111111', sim: DEFAULT_SIM },
 };

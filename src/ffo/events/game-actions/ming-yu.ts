@@ -128,7 +128,7 @@ const loopAction = () => {
       // 添加buff
       atackActions.addBuff();
       // 杀怪
-      return atackActions.scanMonster('single').then(res => {
+      return atackActions.scanMonster({ attackType: 'single' }).then(res => {
         // 停止添加buff
         atackActions.stopAddBuff();
         role.bindDm.delay(2000);

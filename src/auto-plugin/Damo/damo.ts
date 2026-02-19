@@ -21,6 +21,11 @@ export const isElevated = (): boolean => {
   }
 };
 
+interface Pos {
+  x: number;
+  y: number;
+}
+
 export class Damo {
   dm: any;
   // 中文注释：当前字库索引（UseDict 设置的活动索引）；未设置为 null
@@ -204,9 +209,17 @@ export class Damo {
     };
   }
 
+  sendString(hwnd: number, str: string): number {
+    return this.dm.SendString(hwnd, str);
+  }
+
+  findStrEx(x: number, y: number, w: number, h: number, str: string, color: string, sim: number): string {
+    return this.dm.FindStrEx(x, y, w, h, str, color, sim);
+  }
+
   // 中文注释：快速找字/识别/截图等常用方法
-  findStrFastEx(hwnd: number, x: number, y: number, w: number, h: number, str: string, mode: number): number {
-    return this.dm.FindStrFastEx(hwnd, x, y, w, h, str, mode);
+  findStrFastEx(x: number, y: number, w: number, h: number, str: string, color: string, sim: number): string {
+    return this.dm.FindStrFastEx(x, y, w, h, str, color, sim);
   }
 
   ocr(x: number, y: number, w: number, h: number, color: string, sim: number): string {
@@ -219,6 +232,38 @@ export class Damo {
 
   moveTo(x: number, y: number): number {
     return this.dm.MoveTo(x, y);
+  }
+
+  moveToClick(x: number, y: number): void {
+    this.dm.moveTo(x, y);
+    this.dm.delay(300);
+    this.dm.leftClick();
+  }
+
+  leftDown(): number {
+    return this.dm.LeftDown();
+  }
+
+  leftUp(): number {
+    return this.dm.LeftUp();
+  }
+
+  // 鼠标左键按住，从一个坐标拖到另外一个坐标ss
+  leftDownFromToMove(from: Pos, To: Pos): void {
+    this.moveTo(from.x, from.y);
+    this.delay(300);
+    this.leftDown();
+    this.delay(300);
+    this.moveTo(To.x, To.y);
+    this.leftUp();
+  }
+
+  delay(ms: number): number {
+    return this.dm.delay(ms);
+  }
+
+  keyPress(key: number): number {
+    return this.dm.KeyPress(key);
   }
 
   capturePng(x: number, y: number, w: number, h: number, filePath: string): number {
@@ -235,6 +280,10 @@ export class Damo {
   }
   leftClick(): number {
     return this.dm.LeftClick();
+  }
+
+  leftDoubleClick(): number {
+    return this.dm.LeftDoubleClick();
   }
 
   // 新增：根据窗口句柄获取窗口标题（中文注释）

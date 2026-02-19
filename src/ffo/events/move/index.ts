@@ -58,7 +58,7 @@ export class MoveActions {
   private recordAimPosIndex = 0;
   private finalPos: Pos | null = null;
   private role;
-  public timer: NodeJS.Timeout | null = null;
+  // public timer: NodeJS.Timeout | null = null;
   private actions?: AttackActions | null = null; // 赶路过程中的其他行为
   private isPause = false; // 是否暂停移动
   private lastMoveTime = 0; // 上次移动时间戳
@@ -166,43 +166,44 @@ export class MoveActions {
       this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
       let isArrive: boolean | undefined;
       console.log('执行startAutoFindPath，注册定时器');
-      this.timer = setInterval(() => {
-        if (this.role.position) {
-          // 到达下一张地图退出寻路
-          if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
-            this.dm.LeftClick();
-            console.log('点击停止', aimPos);
-            isArrive = true;
-            // 到达目标点位退出寻路
-          } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, stationR)) {
-            this.dm.LeftClick();
-            isArrive = true;
-          } else {
-            // 判断是否到达目的地
-            isArrive = Array.isArray(toPos) ? this.fromTo(this.role.position, toPos, stationR) && this.recordAimPosIndex === toPos.length - 1 : this.fromTo(this.role.position, toPos, stationR);
+      this.role.addActionTimer(
+        'autoFindPath',
+        setInterval(() => {
+          if (this.role.position) {
+            // 到达下一张地图退出寻路
+            if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
+              this.dm.LeftClick();
+              console.log('点击停止', aimPos);
+              isArrive = true;
+              // 到达目标点位退出寻路
+            } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, stationR)) {
+              this.dm.LeftClick();
+              isArrive = true;
+            } else {
+              // 判断是否到达目的地
+              isArrive = Array.isArray(toPos) ? this.fromTo(this.role.position, toPos, stationR) && this.recordAimPosIndex === toPos.length - 1 : this.fromTo(this.role.position, toPos, stationR);
+            }
           }
-        }
-        if (isArrive) {
-          this.timer && clearInterval(this.timer);
-          this.timer = null;
-          this.recordAimPosIndex = 0;
-          setTimeout(() => {
-            console.log(`[角色信息] 已关闭自动寻路，并解除定时器,同时延时${delay}毫秒，确保已经静止`);
-            // 这里刚进入地图没法读取坐标
-            res(true);
-          }, delay);
-        }
-        // 这里攻击操作会在寻路过程中执行，且因为共同同一个鼠标控制，攻击可能会阻塞寻路操作
-        if (actions) {
-          actions.attackNearestMonster();
-        }
-      }, 300); // 中文注释：最小间隔 200ms，避免过于频繁\
+          if (isArrive) {
+            this.role.clearActionTimer('autoFindPath');
+            this.recordAimPosIndex = 0;
+            setTimeout(() => {
+              console.log(`[角色信息] 已关闭自动寻路，并解除定时器,同时延时${delay}毫秒，确保已经静止`);
+              // 这里刚进入地图没法读取坐标
+              res(true);
+            }, delay);
+          }
+          // 这里攻击操作会在寻路过程中执行，且因为共同同一个鼠标控制，攻击可能会阻塞寻路操作
+          if (actions) {
+            actions.attackNearestMonster();
+          }
+        }, 300)
+      ); // 中文注释：最小间隔 200ms，避免过于频繁\
     });
   }
 
   stopAutoFindPath() {
-    this.timer && clearInterval(this.timer);
-    this.timer = null;
+    this.role.clearActionTimer('autoFindPath');
     // 中文注释：停止寻路时释放鼠标左键，避免卡住按下状态
     try {
       if (this.dm && typeof this.dm.LeftUp === 'function') {

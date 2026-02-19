@@ -8,6 +8,17 @@ interface Pos {
   y: number;
 }
 
+interface StoreManagerConfig {
+  task?: 'deposit' | 'withdraw';
+  money?: string;
+}
+
+interface ItemMerchantConfig {
+  task: 'buy' | 'fix';
+  item?: '长白参' | '(大)法力药水';
+  count?: number;
+}
+
 // 检测关闭按钮
 const CLOSE_FLG = {
   '1600*900': { x1: 298, y1: 96, x2: 1223, y2: 663, color: 'b89838-111111', sim: 1.0 },
@@ -19,23 +30,30 @@ const SCAN_BOX = {
   '1600*900': { x1: 450, y1: 109, x2: 1390, y2: 722, color: '00f000-111111', sim: 1.0 },
   '1280*800': { x1: 78, y1: 100, x2: 1208, y2: 713, color: '00f000-111111', sim: 1.0 },
 };
-
 // 对话框选项位置
 const DIALOG_OPTIONS_POS = {
   '1600*900': { x1: 450, y1: 109, x2: 1390, y2: 722, color: 'e8f0e8-111111', sim: 1.0 },
   '1280*800': { x1: 420, y1: 350, x2: 680, y2: 449, color: 'e8f0e8-111111', sim: 1.0 },
 };
 
+// 商店对话框
+const STORE_DIALOG_BOX = {
+  '1600*900': { x1: 542, y1: 53, x2: 1149, y2: 506, color: 'e8f0e8-111111', sim: 1.0 },
+  '1280*800': { x1: 420, y1: 350, x2: 680, y2: 449, color: 'e8f0e8-111111', sim: 1.0 },
+};
+
+const INPUT_COLOR = 'd8a848-111111|a87828-111111|985c20-111111|c87838-000000|c88838-000000';
+
 // s = dm.Ocr(580, 352, 931, 449, '00f000-000000', 1.0);
 
 export class Conversation {
   //这里有问题
   static readonly DIALOG_BOX = { x1: 661, y1: 416 };
-  private dm: any = null;
+  private bindPlugin: any = null;
   private role;
 
   constructor(role: Role) {
-    this.dm = role.bindDm;
+    this.bindPlugin = role.bindPlugin;
     this.role = role;
   }
 
@@ -44,7 +62,7 @@ export class Conversation {
     const scanBox = SCAN_BOX[key];
     // const dialog = DIALOG_OPTIONS_POS[key];
     return new Promise((res, rej) => {
-      let YJClickPos = this.dm.FindStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, npcName, scanBox.color, scanBox.sim);
+      let YJClickPos = this.bindPlugin.findStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, npcName, scanBox.color, scanBox.sim);
       let trsPos = YJClickPos.split(',');
       console.log(YJClickPos, 'YJClickPos');
       if (!YJClickPos) {
@@ -60,12 +78,12 @@ export class Conversation {
     const key = this.role.bindWindowSize as keyof typeof CLOSE_FLG;
     const dialog = CLOSE_FLG[key];
     return new Promise((res, rej) => {
-      this.dm.MoveTo(Number(pos.x), Number(pos.y));
-      this.dm.delay(1000);
-      this.dm.LeftClick();
+      this.bindPlugin.moveTo(Number(pos.x), Number(pos.y));
+      this.bindPlugin.delay(1000);
+      this.bindPlugin.leftClick();
       // 点击之后可能还有一段距离走到面前
-      this.dm.delay(3000);
-      const dialogPos = this.dm.FindStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '@X', dialog.color, dialog.sim);
+      this.bindPlugin.delay(3000);
+      const dialogPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '@X', dialog.color, dialog.sim);
       console.log(dialogPos, '是否打开了对话框');
       res(!!dialogPos);
     });
@@ -73,10 +91,10 @@ export class Conversation {
 
   // 移动到指定位置并点击
   private moveToClick(pos: Pos) {
-    this.dm.MoveTo(Number(pos.x), Number(pos.y));
-    this.dm.delay(1000);
-    this.dm.LeftClick();
-    this.dm.delay(2000);
+    this.bindPlugin.moveTo(Number(pos.x), Number(pos.y));
+    this.bindPlugin.delay(500);
+    this.bindPlugin.leftClick();
+    this.bindPlugin.delay(500);
   }
 
   // 选择对话框选项
@@ -84,7 +102,7 @@ export class Conversation {
     const key = this.role.bindWindowSize as keyof typeof DIALOG_OPTIONS_POS;
     const dialog = DIALOG_OPTIONS_POS[key];
     return new Promise((res, rej) => {
-      const optionsPos = this.dm.FindStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, option, dialog.color, dialog.sim);
+      const optionsPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, option, dialog.color, dialog.sim);
       console.log(optionsPos, '选项位置');
       if (!optionsPos) {
         console.log('没有找到选项');
@@ -103,7 +121,7 @@ export class Conversation {
     const key = this.role.bindWindowSize as keyof typeof DIALOG_OPTIONS_POS;
     const dialog = DIALOG_OPTIONS_POS[key];
     return new Promise((res, rej) => {
-      const optionsPos = this.dm.FindStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, option, dialog.color, dialog.sim);
+      const optionsPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, option, dialog.color, dialog.sim);
       console.log(optionsPos, '选项位置');
       if (!optionsPos) {
         console.log('没有找到选项');
@@ -120,7 +138,7 @@ export class Conversation {
     const key = this.role.bindWindowSize as keyof typeof CLOSE_FLG;
     const dialog = CLOSE_FLG[key];
     return new Promise((res, rej) => {
-      const dialogPos = this.dm.FindStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '@X', dialog.color, dialog.sim);
+      const dialogPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '@X', dialog.color, dialog.sim);
       console.log(dialogPos, '关闭标记');
       const optionsPosText = parseTextPos(dialogPos);
       console.log(optionsPosText, 'optionsPosText');
@@ -133,26 +151,57 @@ export class Conversation {
     });
   }
 
+  // 购买道具
+  dragScrollToBuy(items: ItemMerchantConfig[]) {
+    const key = this.role.bindWindowSize as keyof typeof STORE_DIALOG_BOX;
+    const dialog = STORE_DIALOG_BOX[key];
+    // 拖动滚动条
+    this.bindPlugin.leftDownFromToMove({ x: 840, y: 138 }, { x: 840, y: 244 });
+    items.forEach(item => {
+      const dialogPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, item.item, dialog.color, dialog.sim);
+      const optionsPosText = parseTextPos(dialogPos);
+      console.log(optionsPosText, 'optionsPosText');
+      const x1 = Number(optionsPosText?.x || 0);
+      const y1 = Number(optionsPosText?.y || 0);
+      this.moveToClick({ x: x1 + 50, y: y1 });
+      this.moveToClick({ x: x1 + 400, y: y1 });
+      this.bindPlugin.sendString(this.role.hwnd || 0, item.count);
+      // 执行交易
+      // const inputPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '输入', INPUT_COLOR, dialog.sim);
+      // const inputPosText = parseTextPos(inputPos);
+      // inputPosText && this.moveToClick({ x: Number(inputPosText.x), y: Number(inputPosText.y) });
+      this.moveToClick({ x: 906, y: 467 });
+    });
+
+    // return new Promise((res, rej) => {
+    //   if (!inputPos) {
+    //     console.log('关闭标记');
+    //     res(false);
+    //   }
+    //   res(true);
+    // });
+  }
+
   // 杨戬
   YangJian() {
     const key = this.role.bindWindowSize as keyof typeof SCAN_BOX | keyof typeof DIALOG_OPTIONS_POS;
     const scanBox = SCAN_BOX[key];
     const dialog = DIALOG_OPTIONS_POS[key];
     return new Promise((resolve, reject) => {
-      this.dm.LeftClick();
-      this.dm.delay(3000);
+      this.bindPlugin.leftClick();
+      this.bindPlugin.delay(3000);
       // 扫描屏幕中的位置范围以便查找杨戬
       const findYJ = () =>
         new Promise((res, rej) => {
-          let YJClickPos = this.dm.FindStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, '杨戬', scanBox.color, scanBox.sim);
+          let YJClickPos = this.bindPlugin.findStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, '杨戬', scanBox.color, scanBox.sim);
           let trsPos = YJClickPos.split(',');
           console.log(YJClickPos, '识别到"杨戬"的点击位置');
           //  杨戬Y轴下移100
-          YJClickPos && this.dm.MoveTo(Number(trsPos[1]), Number(trsPos[2]) + 80);
-          this.dm.delay(1000);
-          this.dm.LeftClick();
+          YJClickPos && this.bindPlugin.moveTo(Number(trsPos[1]), Number(trsPos[2]) + 80);
+          this.bindPlugin.delay(1000);
+          this.bindPlugin.leftClick();
           setTimeout(() => {
-            const dialogPos = this.dm.FindStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, ENTER, dialog.color, dialog.sim);
+            const dialogPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, ENTER, dialog.color, dialog.sim);
             if (dialogPos) {
               res(true);
             } else {
@@ -163,10 +212,10 @@ export class Conversation {
 
       const openDialog = () =>
         new Promise((res, rej) => {
-          const dialogPos = this.dm.FindStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, ENTER, dialog.color, dialog.sim);
+          const dialogPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, ENTER, dialog.color, dialog.sim);
           const dialogPosText = parseTextPos(dialogPos);
           console.log(dialogPosText, '对话框位置');
-          this.dm.delay(1000);
+          this.bindPlugin.delay(1000);
           if (!dialogPosText) {
             console.log('没有找到对话框');
             res(false);
@@ -295,4 +344,85 @@ export class Conversation {
       }
     });
   }
+
+  // 与仓库管理员对话
+  async StoreManager(config?: StoreManagerConfig) {
+    return new Promise(async (resolve, reject) => {
+      const { task = '', money = '' } = config || {};
+      let npcPos = await this.findNPC('仓库管理员', 30, 50);
+      if (!npcPos) {
+        npcPos = await this.findNPC('仓库管理员', 30, 50);
+      }
+      if (!npcPos) {
+        console.log('没有找到仓库管理员');
+        return;
+      }
+      const isOpenDialg = await this.openConversation(npcPos);
+      console.log(isOpenDialg, '是否打开了对话框');
+      if (!isOpenDialg) {
+        return;
+      }
+      // 打开仓库
+      const isPass = await this.findOptions('使用仓库');
+      if (!isPass) {
+        console.log('没有找到使用仓库的选项');
+        return;
+      }
+      this.moveToClick(isPass);
+      setTimeout(() => {
+        if (task === 'deposit') {
+          // 存款
+          this.moveToClick({ x: 1487, y: 285 });
+          this.bindPlugin.sendString(this.role.hwnd || 0, money?.toString() || '');
+          this.moveToClick({ x: 1534, y: 260 });
+        } else if (task === 'withdraw') {
+          // 取款
+          this.moveToClick({ x: 1510, y: 284 });
+          this.bindPlugin.sendString(this.role.hwnd || 0, money?.toString() || '');
+          this.moveToClick({ x: 1534, y: 260 });
+        }
+        // 关闭仓库
+        this.moveToClick({ x: 1540, y: 39 });
+        resolve(true);
+      }, 1000);
+    });
+  }
+
+  // 与道具商人对话
+  async ItemMerchant(config: ItemMerchantConfig[]) {
+    const key = this.role.bindWindowSize as keyof typeof STORE_DIALOG_BOX;
+    const dialog = STORE_DIALOG_BOX[key];
+    return new Promise(async (resolve, reject) => {
+      let npcPos = await this.findNPC('道具商人', 30, 50);
+      if (!npcPos) {
+        npcPos = await this.findNPC('道具商人', 30, 50);
+      }
+      if (!npcPos) {
+        console.log('没有找到道具商人');
+        return;
+      }
+      const isOpenDialg = await this.openConversation(npcPos);
+      console.log(isOpenDialg, '是否打开了对话框');
+      if (!isOpenDialg) {
+        return;
+      }
+      // 购买道具
+      const isPass = await this.findOptions('购买道具');
+      if (!isPass) {
+        console.log('没有找到购买道具的选项');
+        return;
+      }
+      this.moveToClick(isPass);
+      const buyItems = config.filter(item => item.task === 'buy');
+      if (!buyItems) {
+        console.log('没有找到购买的选项');
+        return;
+      }
+      this.dragScrollToBuy(buyItems);
+      const inputPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '执行', INPUT_COLOR, dialog.sim);
+      const inputPosText = parseTextPos(inputPos);
+      inputPosText && this.moveToClick({ x: Number(inputPosText.x), y: Number(inputPosText.y) });
+    });
+  }
+  // 购买道具
 }
