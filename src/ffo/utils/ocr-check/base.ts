@@ -6,7 +6,6 @@ import {
   DEFAULT_EQUIP_DAMAGE,
   DEFAULT_GOLD,
   DEFAULT_ISOLATE,
-  DEFAULT_ITEM_BOX,
   DEFAULT_ITEM_BOX_TAB,
   DEFAULT_ITEM_BOX_TAB_SWITCH,
   DEFAULT_MONSTER_NAME,
@@ -107,16 +106,10 @@ export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 
 // 检查物品栏是否打开
 export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): string | false => {
-  const itemBoxPos = DEFAULT_ITEM_BOX[bindWindowSize];
-  const itemBoxText = bindDm.findStrFastE(itemBoxPos.x1, itemBoxPos.y1, itemBoxPos.x2, itemBoxPos.y2, '物品栏', itemBoxPos.color, itemBoxPos.sim);
-  const isOk = !!parseTextPos(itemBoxText);
-  if (!isOk) {
-    return false;
-  }
-  bindDm.delay(1000);
   const tabPos = DEFAULT_ITEM_BOX_TAB[bindWindowSize];
   const tabText = bindDm.ocr(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.color, tabPos.sim);
-  return tabText;
+  console.log(tabText, 'tabText');
+  return tabText ? tabText : false;
 };
 
 // 切换物品栏tab页

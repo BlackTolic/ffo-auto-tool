@@ -37,6 +37,7 @@ const loopAutoAttackInWest = () => {
   console.log(`当前开始执行第${i + 1}次任务`, role.position);
   let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
   let moveActions = new MoveActions(role);
+  let baseAction = new BaseAction(role);
   // 添加buff
   atackActions.addBuff();
   return moveActions
@@ -60,9 +61,20 @@ const loopAutoAttackInWest = () => {
       return moveActions.startAutoFindPath({ toPos: { x: 91, y: 114 }, stationR, delay: 100 });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 91, y: 114, r: stationR } });
+      return atackActions.scanMonster({ attackType: 'single', times: 4, attackRange: { x: 91, y: 114, r: stationR } });
     })
     .then(() => {
+      // 检查装备栏是否已经满了
+      const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
+      console.log(equipCount, '当前装备数量');
+      if (equipCount >= 6) {
+        return baseAction.backCity({ x: 148, y: 96 }, 'F9');
+      }
+      return false;
+    })
+    .then(() => {
+      console.log('重置成功');
+      // 当前地图是云荒才开始循环
       role.updateTaskStatus('done');
       i++;
     })
@@ -85,12 +97,6 @@ const loopCheckStatus = async () => {
   }
   const rec = damoBindingManager.get(hwnd);
   console.log(`当前开始执行第${i + 1}次任务`, role.position);
-
-  // await new Promise(resolve => {
-  //   setTimeout(() => {
-  //     resolve(true);
-  //   }, 2000);
-  // });
 
   const dm = rec?.ffoClient || role.bindDm;
   let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
@@ -168,7 +174,7 @@ const loopCheckStatus = async () => {
   }
 
   // 前往云荒1打怪
-  await moveActions.startAutoFindPath({ toPos: { x: 258, y: 119 }, stationR: 1, delay: 2000 });
+  await moveActions.startAutoFindPath({ toPos: { x: 263, y: 120 }, stationR: 1, delay: 2000, aimPos: '云泽秘径' });
   await moveActions.startAutoFindPath({ toPos: INIT_POS_YUN1, stationR, delay: 2000 });
   // 下马
   await baseAction.pressSecondSkillBarSkill('F9');
@@ -181,7 +187,7 @@ export const toggleYunHuang1West = () => {
   autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS_YUN1, PATH_POS, OCR_YUN_HUAN_1_MONSTER, TASK_NAME);
   const taskList = [
     { taskName: '云荒打怪捡装备', loopOriginPos: INIT_POS_YUN1, action: loopAutoAttackInWest, interval: 2000 },
-    { taskName: '云荒打怪状态补给', loopOriginPos: INIT_POS_ROUTE, action: loopCheckStatus, interval: 4000 },
+    { taskName: '云荒打怪状态补给', loopOriginPos: INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000 },
   ];
   return autoFarmingAction.toggle(taskList);
 };

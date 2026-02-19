@@ -1,4 +1,4 @@
-export const MAIN_CITY = ['天都', '楼兰', '龙城'];
+export const MAIN_CITY = ['天都', '楼兰', '龙城', '云荒'];
 
 export const LongCity = {};
 

@@ -54,6 +54,7 @@ export class Role {
   public actionTimer = new Map<string, ReturnType<typeof setInterval>>(); // 其他行为中的定时器
   private needCheckDead: boolean = false; // 是否需要检查死亡
   private needCheckTeamApply: boolean = false; // 是否需要检查组队申请
+  private needCheckLeaveUp: boolean = false; // 是否需要检查升级状态
   constructor() {}
 
   // 需要先绑定之后再注册角色信息
@@ -180,7 +181,7 @@ export class Role {
         }
         // 指定第一个任务为最近的任务
         this.task = takeTask[0];
-        console.log(this.task, ' this.task');
+        // console.log(this.task, ' this.task');
         if (['done'].includes(this.taskStatus)) {
           this.taskStatus = 'doing';
           // console.log('[角色信息] 已经成功切换循环任务:', this.task.taskName);

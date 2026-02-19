@@ -39,6 +39,7 @@ export class BaseAction {
           } else {
             ways === 'F9' && this.role ? new AttackActions(this.role).startKeyPress({ key: 'F9', interval: null }) : this.bindPlugin.leftClick();
           }
+          // 这里必须要超过4S 否则无法读到地图坐标
         }, 4000);
       };
       const { items } = this.role?.menusPos ?? {};
@@ -50,11 +51,14 @@ export class BaseAction {
           // 重复回城直到到达目标点
           repeatBack(fixPos);
           this.blockAllPlayers();
+          return;
         }
         if (MAIN_CITY.includes(this.role?.map ?? '')) {
           console.log('回城成功');
+          res(true);
         } else {
           console.log('回城失败');
+          res(false);
         }
         //   if (MAIN_CITY.includes(this.role?.map ?? '')) {
         //     console.log('回城成功');
@@ -92,7 +96,10 @@ export class BaseAction {
   // 打开物品栏切换到/消耗/收集/装备页
   openItemBox(changeTo: '消耗' | '收集' | '装备') {
     return new Promise((res, rej) => {
+      this.bindPlugin.delay(300);
+      // 识别当前打开的页面
       const box = isItemBoxOpen(this.role?.bindDm, this.role?.bindWindowSize || '1600*900');
+      console.log('识别当前打开的页面', box);
       if (box === changeTo) {
         res(true);
       }
