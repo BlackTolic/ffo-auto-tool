@@ -8,6 +8,8 @@ export const SCREENSHOT_PATH = path.join(process.cwd(), '/public/screenshot/');
 export const VERIFY_CODE_QUESTION_PATH = path.join(process.cwd(), '/public/verify-code/code-question.png');
 export const VERIFY_CODE_ANSWER_PATH = path.join(process.cwd(), '/public/verify-code/code-answer.png');
 export const VERIFY_CODE_OPTIONS_PATH = path.join(process.cwd(), '/public/verify-code/code-options.png');
+// 死亡后截图
+export const ROLE_IS_DEAD_PATH = path.join(process.cwd(), '/public/role-is-dead.png');
 
 // 绑定的窗口
 export const BIND_WINDOW_NAME = 'FFO';

@@ -335,6 +335,13 @@ export class Damo {
   findColorE(x: number, y: number, w: number, h: number, color: string, sim: number): string {
     return this.dm.FindColorE(x, y, w, h, color, sim, 0);
   }
+
+  // 全屏截图
+  captureFullScreen(filePath: string): number {
+    const width = this.dm.GetScreenWidth();
+    const height = this.dm.GetScreenHeight();
+    return this.dm.capturePng(0, 0, width, height, filePath);
+  }
 }
 
 // 新增：返回码中文含义（汇总常见结果，便于快速定位问题）

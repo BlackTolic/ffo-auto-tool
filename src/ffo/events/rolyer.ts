@@ -2,12 +2,13 @@ import { damoBindingManager } from '.';
 import { getVerifyCodeByAliQW } from '../../AI/ali-qianwen';
 import { getVerifyCodeByTuJian } from '../../AI/tu-jian';
 import { AutoT, ensureDamo } from '../../auto-plugin/index';
-import { VERIFY_CODE_OPTIONS_PATH, VERIFY_CODE_QUESTION_PATH } from '../../constant/config';
+import { ROLE_IS_DEAD_PATH, VERIFY_CODE_OPTIONS_PATH, VERIFY_CODE_QUESTION_PATH } from '../../constant/config';
 import { emailStrategy } from '../../utils/email';
+import { debounce } from '../../utils/tool';
 import { DEFAULT_MENUS_POS, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { isArriveAimNear, selectRightAnwser } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
-import { getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getVerifyCodePos, isOffline } from '../utils/ocr-check/base';
+import { getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getVerifyCodePos, isDeadCYPos, isOffline } from '../utils/ocr-check/base';
 
 export type Pos = {
   x: number;
@@ -27,6 +28,8 @@ export interface RoleTaskSnapshot {
   taskName: string; // 中文注释：任务名称
   taskStatus?: 'doing' | 'done'; // 中文注释：任务状态：doing-进行中，done-已完成或就绪
 }
+
+const delay20S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 20 * 1000, true);
 
 export class Role {
   public hwnd?: number = 0; // 窗口句柄
@@ -52,7 +55,7 @@ export class Role {
   private taskStatus: 'doing' | 'done' = 'done'; // 任务状态
   public job: 'YS' | 'SS' | 'JK' | 'CK' | 'ZS' = 'SS'; // 角色职业JK-剑客；CK-刺客；YS-药师；SS-术士；ZS-战士
   public actionTimer = new Map<string, ReturnType<typeof setInterval>>(); // 其他行为中的定时器
-  private needCheckDead: boolean = false; // 是否需要检查死亡
+  private needCheckDead: boolean = true; // 是否需要检查死亡
   private needCheckTeamApply: boolean = false; // 是否需要检查组队申请
   private needCheckLeaveUp: boolean = false; // 是否需要检查升级状态
   constructor() {}
@@ -162,12 +165,41 @@ export class Role {
           this.openCapture = true;
         }
 
-        // console.log('[角色信息] 验证码:', verifyCode);
         this.selectMonster = monsterName;
         this.map = addressName;
         this.position = pos;
         this.bloodStatus = bloodStatus;
         // 检查角色是否死亡
+        const roleIsDeadPos = this.needCheckDead && isDeadCYPos(bindDm, this.bindWindowSize);
+        if (roleIsDeadPos) {
+          const { name } = this;
+          const delayFun = () => {
+            // 全屏截图
+            this.bindPlugin.captureFullScreen(ROLE_IS_DEAD_PATH);
+            this.bindPlugin.delay(300);
+            // 发送邮件 20S内只执行一次
+            emailStrategy.sendMessage({
+              to: '1031690983@qq.com',
+              subject: '角色死亡',
+              text: `角色 ${name} 已死亡`,
+              attachments: [
+                {
+                  filename: '阵亡截图.png', // 邮件内部的文件名（可自定义）
+                  path: ROLE_IS_DEAD_PATH, // 本地 PNG 图片路径
+                  cid: 'logoImg', // 唯一cid，需和HTML中的cid一致
+                },
+              ],
+            });
+          };
+          // 发送邮件 20S内只执行一次
+          delay20S(delayFun);
+          // 死亡后检查是否有定时器，如果有解除定时器
+          this.clearAllActionTimer();
+          this.bindPlugin.moveToClick(894, 490);
+          this.bindPlugin.delay(1000);
+          this.bindPlugin.moveToClick(799, 418);
+          return;
+        }
 
         // 检查是否有人抛出组队申请
         // 开启任务队列

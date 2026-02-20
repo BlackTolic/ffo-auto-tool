@@ -2,6 +2,8 @@ import { AutoT } from '../../../auto-plugin';
 import {
   DEFAULT_ADDRESS_NAME,
   DEFAULT_BLOOD_STATUS,
+  DEFAULT_DEAD,
+  DEFAULT_DEAD_CY,
   DEFAULT_EQUIP_COUNT,
   DEFAULT_EQUIP_DAMAGE,
   DEFAULT_GOLD,
@@ -25,12 +27,19 @@ export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 };
 
 // 检查角色是否死亡
-export const isDead = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): boolean => {
-  // const deadPos = DEFAULT_STATUS_ICON_POS[bindWindowSize];
-  // const deadIcon = bindDm.ocr(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.color, deadPos.sim);
-  // console.log(deadIcon, 'deadIcon');
-  // return deadIcon.includes('死亡');
-  return false;
+export const isDeadPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): boolean => {
+  const deadPos = DEFAULT_DEAD[bindWindowSize];
+  const deadIcon = bindDm.ocr(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.color, deadPos.sim);
+  console.log(deadIcon, 'deadIcon');
+  return deadIcon.includes('死亡');
+};
+
+// 检查角色是否死亡-彩玉复活
+export const isDeadCYPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const deadPos = DEFAULT_DEAD_CY[bindWindowSize];
+  const deadIcon = bindDm.findStrFastE(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.string, deadPos.color, deadPos.sim);
+  // console.log(deadIcon, '彩玉复活后坐标');
+  return parseTextPos(deadIcon);
 };
 
 // 获取神医验证码
