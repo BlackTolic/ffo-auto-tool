@@ -116,7 +116,8 @@ export const DEFAULT_ITEM_BOX = {
 
 // 检查物品栏切换的tab页
 export const DEFAULT_ITEM_BOX_TAB = {
-  '1600*900': { x1: 1193, y1: 571, x2: 1403, y2: 595, color: 'e8e4e0-111111', sim: DEFAULT_SIM },
+  // '1600*900': { x1: 1193, y1: 571, x2: 1403, y2: 595, color: 'e8e4e0-111111', sim: DEFAULT_SIM },
+  '1600*900': { x1: 1184, y1: 539, x2: 1480, y2: 612, color: 'e8e4e0-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 867, y1: 471, x2: 1270, y2: 507, color: 'e8e4e0-111111', sim: DEFAULT_SIM },
 };
 

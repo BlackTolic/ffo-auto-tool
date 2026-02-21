@@ -225,8 +225,9 @@ export class AttackActions {
       // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
       // this.bindDm.KeyPress(VK_F[key]);
       this.bindDm.KeyDownChar(key);
-      this.bindDm.delay(500);
+      this.bindDm.delay(300);
       this.bindDm.KeyUpChar(key);
+      this.bindDm.delay(300);
       // console.log(`[自动按键]`, this.bindDm);
       console.log(`[自动按键y] 已启动：key=${key} | 无间隔（单次按键）`);
     }

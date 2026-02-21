@@ -1,7 +1,7 @@
 import { BrowserWindow, Notification } from 'electron';
 import fs from 'fs'; // 中文注释：读取字典文件
 import path from 'path'; // 中文注释：处理文件路径
-import { OCR_FONT_PATH, SCREENSHOT_PATH } from '../constant/config';
+import { OCR_FONT_PATH } from '../constant/config';
 import { damoBindingManager, ffoEvents } from '../ffo/events';
 import { Role } from '../ffo/events/rolyer';
 import { stopKeyPress } from '../ffo/utils/key-press';
@@ -54,22 +54,22 @@ export const registerBoundEventHandlers = () => {
       }
 
       // 中文注释：示例截图（可选）
-      try {
-        // 截取当前窗口内容
-        const windowRect = dm?.GetWindowRect?.(hwnd);
-        if (!windowRect) {
-          console.warn(`[截图失败] 获取窗口矩形失败 HWND=${hwnd}`);
-          return;
-        }
-        const cap = dm?.CapturePng?.(windowRect.left, windowRect.top, windowRect.right - 1, windowRect.bottom - 1, `${SCREENSHOT_PATH}/${pid}.png`);
-        if (cap) {
-          console.log(`[截图] PNG=${cap} | ${SCREENSHOT_PATH}/${pid}.png`);
-        } else {
-          console.warn(`[截图失败] 截图返回值=${cap} HWND=${hwnd}`);
-        }
-      } catch (err) {
-        console.log(`[截图失败] HWND=${hwnd}`, err);
-      }
+      // try {
+      //   // 截取当前窗口内容
+      //   const windowRect = dm?.GetWindowRect?.(hwnd);
+      //   if (!windowRect) {
+      //     console.warn(`[截图失败] 获取窗口矩形失败 HWND=${hwnd}`);
+      //     return;
+      //   }
+      //   const cap = dm?.CapturePng?.(windowRect.left, windowRect.top, windowRect.right - 1, windowRect.bottom - 1, `${SCREENSHOT_PATH}/${pid}.png`);
+      //   if (cap) {
+      //     console.log(`[截图] PNG=${cap} | ${SCREENSHOT_PATH}/${pid}.png`);
+      //   } else {
+      //     console.warn(`[截图失败] 截图返回值=${cap} HWND=${hwnd}`);
+      //   }
+      // } catch (err) {
+      //   console.log(`[截图失败] HWND=${hwnd}`, err);
+      // }
 
       // 注册角色信息 1280*800  1600*900
       role.registerRole('1600*900', hwnd);

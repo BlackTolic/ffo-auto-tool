@@ -103,6 +103,10 @@ const loopCheckStatus = async () => {
   let moveActions = new MoveActions(role);
   let baseAction = new BaseAction(role);
 
+  await new Promise(res => setTimeout(res, 5 * 1000));
+  // 屏蔽所有人
+  baseAction.blockAllPlayers();
+
   // 检查宠物是否激活
   const isPetActive = checkPetActive(dm, role.bindWindowSize);
   if (!isPetActive) {
@@ -182,12 +186,31 @@ const loopCheckStatus = async () => {
   role.updateTaskStatus('done');
 };
 
+// 死亡时回调
+const deadCall = () => {
+  const hwnd = damoBindingManager.selectHwnd;
+  if (!hwnd || !damoBindingManager.isBound(hwnd)) {
+    console.log('未选择已绑定的窗口', hwnd);
+    throw new Error('未选择已绑定的窗口');
+  }
+  const role = damoBindingManager.getRole(hwnd);
+  if (!role) {
+    console.log('未获取到角色', hwnd);
+    throw new Error('未获取到角色');
+  }
+  console.log('云荒打怪死亡');
+  // 关闭相关的定时设置
+  role.clearAllActionTimer();
+  // 重新更新循环状态
+  role.updateTaskStatus('done');
+};
+
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
 export const toggleYunHuang1West = () => {
   autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS_YUN1, PATH_POS, OCR_YUN_HUAN_1_MONSTER, TASK_NAME);
   const taskList = [
     { taskName: '云荒打怪捡装备', loopOriginPos: INIT_POS_YUN1, action: loopAutoAttackInWest, interval: 2000 },
-    { taskName: '云荒打怪状态补给', loopOriginPos: INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000 },
+    { taskName: '云荒打怪状态补给', loopOriginPos: INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000, deadCall },
   ];
   return autoFarmingAction.toggle(taskList);
 };

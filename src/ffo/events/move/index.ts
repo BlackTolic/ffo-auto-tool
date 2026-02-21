@@ -55,6 +55,7 @@ function getCirclePoint(angle: number, bindWindowSize: string) {
 
 export class MoveActions {
   private dm: any = null;
+  private bindPlugin: any = null;
   private recordAimPosIndex = 0;
   private finalPos: Pos | null = null;
   private role;
@@ -66,6 +67,7 @@ export class MoveActions {
 
   constructor(role: Role) {
     this.dm = role.bindDm;
+    this.bindPlugin = role.bindPlugin;
     this.role = role;
   }
 
@@ -76,7 +78,7 @@ export class MoveActions {
     // 中文注释：按下左键以触发移动（修正大小写）
     this.dm.delay(200);
     this.dm.LeftDown();
-    console.log(fromPos, '移动到', curAimPos, '角度', angle, { x, y });
+    // console.log(fromPos, '移动到', curAimPos, '角度', angle, { x, y });
   }
 
   randomMove() {
@@ -166,13 +168,15 @@ export class MoveActions {
       this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
       let isArrive: boolean | undefined;
       console.log('执行startAutoFindPath，注册定时器');
-      this.role.addActionTimer(
-        'autoFindPath',
-        setInterval(() => {
+      // 中文注释：使用 setImmediate 首次触发，再用 setTimeout(300ms) 做周期轮询，避免事件循环拥塞
+      const loop = () => {
+        try {
           if (this.role.position) {
+            const { x, y } = this.role.position;
             // 到达下一张地图退出寻路
             if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
-              this.dm.LeftClick();
+              // this.dm.LeftClick();
+              this.bindPlugin.moveToClick(x, y + 2);
               console.log('点击停止', aimPos);
               isArrive = true;
               // 到达目标点位退出寻路
@@ -184,7 +188,14 @@ export class MoveActions {
               isArrive = Array.isArray(toPos) ? this.fromTo(this.role.position, toPos, stationR) && this.recordAimPosIndex === toPos.length - 1 : this.fromTo(this.role.position, toPos, stationR);
             }
           }
+
+          // 这里攻击操作会在寻路过程中执行，且因为共同同一个鼠标控制，攻击可能会阻塞寻路操作
+          if (actions) {
+            actions.attackNearestMonster();
+          }
+        } finally {
           if (isArrive) {
+            // 中文注释：到达后清理定时器并延时，确保角色静止
             this.role.clearActionTimer('autoFindPath');
             this.recordAimPosIndex = 0;
             setTimeout(() => {
@@ -192,13 +203,14 @@ export class MoveActions {
               // 这里刚进入地图没法读取坐标
               res(true);
             }, delay);
+          } else {
+            // 中文注释：未到达则继续 300ms 后轮询一次，并更新可清理的句柄
+            const t = setTimeout(loop, 300);
+            this.role.addActionTimer('autoFindPath', t);
           }
-          // 这里攻击操作会在寻路过程中执行，且因为共同同一个鼠标控制，攻击可能会阻塞寻路操作
-          if (actions) {
-            actions.attackNearestMonster();
-          }
-        }, 300)
-      ); // 中文注释：最小间隔 200ms，避免过于频繁\
+        }
+      };
+      setImmediate(loop); // 中文注释：立即触发一次执行
     });
   }
 

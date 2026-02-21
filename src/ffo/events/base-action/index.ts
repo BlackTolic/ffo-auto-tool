@@ -21,7 +21,12 @@ export class BaseAction {
 
   // 屏蔽所有玩家
   blockAllPlayers() {
-    this.role && new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
+    if (!this.role) {
+      return;
+    }
+    new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
+    new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
+    new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
   }
 
   // 回城
@@ -104,6 +109,7 @@ export class BaseAction {
         res(true);
       }
       if (!box) {
+        console.log('按了 alt+i');
         // 打开物品栏
         this.bindPlugin.keyPress(VK_F['alt']);
         this.bindPlugin.keyPress(VK_F['i']);
@@ -171,7 +177,7 @@ export class BaseAction {
 
   // 检查装备是否有用
   checkEquipUseful() {
-    const { equip } = this.role?.menusPos ?? {};
+    // const { equip } = this.role?.menusPos ?? {};
   }
 }
 

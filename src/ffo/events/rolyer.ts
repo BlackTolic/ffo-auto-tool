@@ -21,6 +21,7 @@ export interface TaskProp {
   action: () => void;
   interval: number;
   taskStatus?: 'doing' | 'done';
+  deadCall?: () => void;
 }
 
 // 中文注释：角色任务快照接口（用于渲染层展示简要任务信息）
@@ -82,7 +83,8 @@ export class Role {
     const name = getRoleName(bindDm, this.bindWindowSize);
     console.log(name, 'this.name');
     this.name = name;
-    this.timer = setInterval(() => {
+    // 中文注释：使用 setImmediate 触发首轮执行，随后用 setTimeout 维持固定轮询间隔（避免事件循环被持续 setImmediate 挤压）
+    const loop = () => {
       try {
         // 获取角色位置
         const pos = getRolePosition(bindDm, this.bindWindowSize); // 获取地图名
@@ -126,17 +128,7 @@ export class Role {
                 this.unregisterRole();
                 return;
               }
-              // 检查角色是否死亡
-              // const roleIsDead = isDead(bindDm, this.bindWindowSize);
-              // if (roleIsDead) {
-              //   // 全屏截图
-              //   fullScreenShot(bindDm, this.bindWindowSize);
-              //   // 发送邮件
-              //   emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色死亡', text: `角色 ${this.name} 已死亡` });
-              //   // 死亡后取消注册，终止
-              //   this.unregisterRole();
-              //   return;
-              // }
+
               Promise.all([getVerifyCodeByAliQW(optionsUrl), getVerifyCodeByTuJian(questionUrl)]).then(([Ali = '', TuJian = '']) => {
                 console.log('验证码识别结果 Ali', Ali);
                 console.log('验证码识别结果 TuJian', TuJian);
@@ -169,6 +161,32 @@ export class Role {
         this.map = addressName;
         this.position = pos;
         this.bloodStatus = bloodStatus;
+
+        // 检查是否有人抛出组队申请
+        // 开启任务队列
+        if (!this.taskList?.length) {
+          return;
+        }
+        // 这里执行循环任务根据任务中的初始坐标来触发
+        const takeTask = this.taskList.filter(item => isArriveAimNear(pos as Pos, item.loopOriginPos, 10));
+        // if (!takeTask.length) {
+        //   return;
+        // }
+        if (takeTask.length) {
+          // 指定第一个任务为最近的任务
+          this.task = takeTask[0];
+          // console.log(this.task, ' this.task');
+          if (['done'].includes(this.taskStatus)) {
+            this.taskStatus = 'doing';
+            // console.log('[角色信息] 已经成功切换循环任务:', this.task.taskName);
+            const now = Date.now();
+            if (now - this.lastTaskActionTs >= this.task.interval) {
+              console.log(`[角色信息] 已到达任务位置 ${this.task.taskName}`);
+              this.task.action();
+              this.lastTaskActionTs = now;
+            }
+          }
+        }
         // 检查角色是否死亡
         const roleIsDeadPos = this.needCheckDead && isDeadCYPos(bindDm, this.bindWindowSize);
         if (roleIsDeadPos) {
@@ -193,6 +211,8 @@ export class Role {
           };
           // 发送邮件 20S内只执行一次
           delay20S(delayFun);
+          // 执行死亡时回调
+          this.task?.deadCall?.();
           // 死亡后检查是否有定时器，如果有解除定时器
           this.clearAllActionTimer();
           this.bindPlugin.moveToClick(894, 490);
@@ -200,49 +220,14 @@ export class Role {
           this.bindPlugin.moveToClick(799, 418);
           return;
         }
-
-        // 检查是否有人抛出组队申请
-        // 开启任务队列
-        if (!this.taskList?.length) {
-          return;
-        }
-        // 这里执行循环任务根据任务中的初始坐标来触发
-        const takeTask = this.taskList.filter(item => isArriveAimNear(pos as Pos, item.loopOriginPos, 10));
-        if (!takeTask.length) {
-          return;
-        }
-        // 指定第一个任务为最近的任务
-        this.task = takeTask[0];
-        // console.log(this.task, ' this.task');
-        if (['done'].includes(this.taskStatus)) {
-          this.taskStatus = 'doing';
-          // console.log('[角色信息] 已经成功切换循环任务:', this.task.taskName);
-          const now = Date.now();
-          console.log(this.lastTaskActionTs, 'this.lastTaskActionTs');
-          console.log(this.task.interval, 'this.task.interval');
-
-          if (now - this.lastTaskActionTs >= this.task.interval) {
-            console.log(`[角色信息] 已到达任务位置 ${this.task.taskName}`);
-            this.task.action();
-            this.lastTaskActionTs = now;
-          }
-        }
-
-        // console.log('任务状态', ['', 'done'].includes(taskStatus), taskStatus);
-        // if (this.task && ['', 'done'].includes(taskStatus) && isArriveAimNear(pos as Pos, this.task.loopOriginPos, 10)) {
-        //   this.task.taskStatus = 'doing';
-        //   const now = Date.now();
-        //   if (now - this.lastTaskActionTs >= this.task.interval) {
-        //     console.log(`[角色信息] 已到达任务位置 ${this.task.taskName}`);
-        //     this.task.action();
-        //     this.lastTaskActionTs = now;
-        //   }
-        // }
-        // console.log('[角色信息] 地图名称:', `${this.map}:${this.position?.x},${this.position?.y}`);
       } catch (err) {
         console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
+      } finally {
+        // 中文注释：通过 setTimeout 维持 300ms 周期，避免紧凑的 setImmediate 导致事件循环阻塞
+        this.timer = setTimeout(loop, 150);
       }
-    }, 300); // 中文注释：最小间隔 200ms，避免过于频繁
+    };
+    setImmediate(loop); // 中文注释：立即触发一次执行
   }
 
   getName() {
@@ -257,7 +242,8 @@ export class Role {
 
   unregisterRole() {
     if (this.timer) {
-      clearInterval(this.timer);
+      // 中文注释：清理通过 setTimeout 周期调度的轮询定时器
+      clearTimeout(this.timer);
       this.timer = null;
       this.task = null;
       this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
@@ -316,14 +302,20 @@ export class Role {
   clearActionTimer(key: string) {
     const timer = this.actionTimer.get(key);
     if (timer) {
-      clearInterval(timer);
+      // 中文注释：兼容 setTimeout / setInterval 定时器的清理，确保能关闭通过 setTimeout 周期轮询的任务
+      try {
+        clearTimeout(timer as any);
+      } catch {}
+      try {
+        clearInterval(timer as any);
+      } catch {}
       this.actionTimer.delete(key);
     }
   }
 
   // 关闭所有定时器
   clearAllActionTimer() {
-    this.actionTimer.forEach(timer => clearInterval(timer));
+    this.actionTimer.forEach(timer => clearTimeout(timer));
     this.actionTimer.clear();
   }
 }
