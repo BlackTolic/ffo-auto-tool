@@ -1,4 +1,4 @@
-import { BACK_CITY_PNG_PATH } from '../../../constant/config';
+import { BACK_CITY_PNG_PATH, TEST_PATH } from '../../../constant/config';
 import { MAIN_CITY } from '../../constant/NPC_position';
 import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
@@ -55,7 +55,7 @@ export class BaseAction {
         if (fixPos) {
           // 重复回城直到到达目标点
           repeatBack(fixPos);
-          this.blockAllPlayers();
+          // this.blockAllPlayers();
           return;
         }
         if (MAIN_CITY.includes(this.role?.map ?? '')) {
@@ -100,11 +100,11 @@ export class BaseAction {
 
   // 打开物品栏切换到/消耗/收集/装备页
   openItemBox(changeTo: '消耗' | '收集' | '装备') {
+    // 识别当前打开的页面
+    this.role?.bindPlugin.captureFullScreen(`${TEST_PATH}/test3.png`);
+    const box = isItemBoxOpen(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
+    console.log('识别当前打开的页面', box);
     return new Promise((res, rej) => {
-      this.bindPlugin.delay(300);
-      // 识别当前打开的页面
-      const box = isItemBoxOpen(this.role?.bindDm, this.role?.bindWindowSize || '1600*900');
-      console.log('识别当前打开的页面', box);
       if (box === changeTo) {
         res(true);
       }
