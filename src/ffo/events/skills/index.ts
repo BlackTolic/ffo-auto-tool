@@ -11,7 +11,7 @@ interface KeyPressOptions {
   isCd?: boolean;
   song?: number;
   sort?: number;
-  type?: 'lock' | 'delay' | 'normal'; // 技能类型，lock 为锁定技能，delay 为延迟技能，normal 为普通技能
+  type?: 'lock' | 'delay' | 'normal' | 'specify'; // 技能类型，lock 为锁定技能，delay 为延迟技能，normal 为普通技能
 }
 
 export interface ScanMonsterOptions {
@@ -23,24 +23,31 @@ export interface ScanMonsterOptions {
     r: number;
   };
 }
-const skillGroup: KeyPressOptions[] = [
-  // { key: 'F1', interval: 6000, song: 500 }, // 攻击技能
-  // { key: 'F2', interval: 5000, song: 750 }, // 攻击技能
-  // { key: 'F3', interval: 10000, song: 0 }, // 攻击技能
-  // { key: 'F4', interval: 9000, song: 0 }, // 攻击技能
-  // { key: 'F9', interval: 10000, song: 0 }, // 状态技能
-
-  { key: 'F1', interval: 6000, song: 0, sort: 1 }, // 攻击技能
-  { key: 'F2', interval: 6000, song: 0, sort: 2 }, // 攻击技能
-  // { key: 'F3', interval: 2500, song: 0, sort: 4, type: 'lock' }, // 攻击技能
-  { key: 'F3', interval: 5000, song: 0, sort: 4, type: 'delay' }, // 攻击技能
-  { key: 'F4', interval: 5000, song: 0, sort: 3 }, // 攻击技能
+const JKSkillGroup: KeyPressOptions[] = [
+  { key: 'F1', interval: 5 * 1000, song: 0, sort: 1 }, // 攻击技能
+  { key: 'F2', interval: 5.5 * 1000, song: 0, sort: 2 }, // 攻击技能
+  { key: 'F3', interval: 4.5 * 1000, song: 0, sort: 4, type: 'delay' }, // 攻击技能
+  { key: 'F4', interval: 4.5 * 1000, song: 0, sort: 3 }, // 攻击技能
+  { key: 'F5', interval: 7 * 1000, song: 0, sort: 5, type: 'delay' }, // 攻击技能
 ];
 
-const buffGroup: KeyPressOptions[] = [
+const SSSkillGroup: KeyPressOptions[] = [
+  { key: 'F1', interval: 6 * 1000, sort: 2, type: 'delay' }, // 攻击技能
+  { key: 'F2', interval: 5 * 1000, sort: 3, type: 'delay' }, // 攻击技能
+  { key: 'F3', interval: 10 * 1000, sort: 4, type: 'delay' }, // 攻击技能
+  { key: 'F4', interval: 25 * 1000, sort: 1, type: 'delay' }, // 攻击技能
+  // { key: 'F9', interval: 10000, song: 0 }, // 状态技能
+];
+
+const JKBuffGroup: KeyPressOptions[] = [
   { key: 'F6', interval: 90 * 1000, song: 0 }, // 状态技能
   { key: 'F7', interval: 100 * 1000, song: 0 }, // 状态技能
-  { key: 'F8', interval: 30 * 1000, song: 0, type: 'lock' }, // 状态技能
+];
+
+const SSBuffGroup: KeyPressOptions[] = [
+  { key: 'F7', interval: 55 * 1000, song: 0, type: 'specify' }, // 状态技能
+  { key: 'F8', interval: 9 * 60 * 1000, song: 0, type: 'specify' }, // 状态技能
+  { key: 'F9', interval: 100 * 1000, song: 0, type: 'specify' }, // 状态技能
 ];
 
 const attackRange = {
@@ -64,13 +71,17 @@ export class AttackActions {
     ['F2', false],
     ['F3', false],
     ['F4', false],
+    ['F5', false],
   ]);
+  private skillGroup: KeyPressOptions[] = [];
+  private buffGroup: KeyPressOptions[] = [];
 
   constructor(role: Role, ocrMonster?: MonsterFeature) {
     this.role = role;
     this.bindDm = role.bindDm;
-    // this.ocrMonster = ocrMonster || OCR_MONSTER;
     this.ocrMonster = { ...attackRange[this.role.bindWindowSize], ...(ocrMonster || OCR_MONSTER) };
+    this.skillGroup = role.job === 'SS' ? SSSkillGroup : JKSkillGroup;
+    this.buffGroup = role.job === 'SS' ? SSBuffGroup : JKBuffGroup;
   }
 
   findMonsterPos(delX = 10, delY = 40) {
@@ -173,8 +184,9 @@ export class AttackActions {
       // 延时技能需要左键点击释放
       type === 'delay' && this.bindDm.LeftClick();
       this.cdController.set(key, true);
-      setTimeout(() => {
+      let timer = setTimeout(() => {
         this.cdController.set(key, false);
+        clearTimeout(timer);
       }, interval || 0);
     }
   }
@@ -182,7 +194,7 @@ export class AttackActions {
   // 获取空闲时间的技能
   getFreeSkill(): KeyPressOptions | null {
     // 在cdController中找到一个为false的技能,且优先级最高的
-    const filterSkill = skillGroup.filter(item => this.cdController.get(item.key) === false).sort((a, b) => a.sort! - b.sort!);
+    const filterSkill = this.skillGroup.filter(item => this.cdController.get(item.key) === false).sort((a, b) => a.sort! - b.sort!);
     // console.log(filterSkill, '空闲技能');
     const freeSkill = filterSkill[0] || null;
     if (!freeSkill) return null;
@@ -247,10 +259,16 @@ export class AttackActions {
     if (this.buffTimerMapList.get('F6')) {
       return;
     }
-    buffGroup.forEach(item => {
+    this.buffGroup.forEach(item => {
       console.log(`[buff] 已启动：key=${item.key}`);
       const isUseless = item.type === 'lock' && !this.role.selectMonster;
       const useSkill = () => {
+        if (item.type === 'specify') {
+          this.bindDm.MoveTo(803, 415);
+          this.bindDm.delay(300);
+          this.bindDm.RightClick();
+          this.bindDm.delay(300);
+        }
         this.bindDm.KeyDownChar(item.key);
         this.bindDm.delay(300);
         this.bindDm.KeyUpChar(item.key);
@@ -282,7 +300,7 @@ export class AttackActions {
 
   // 停止添加buff
   stopAddBuff() {
-    buffGroup.forEach(item => {
+    this.buffGroup.forEach(item => {
       const timer = this.buffTimerMapList.get(item.key);
       if (timer) {
         clearInterval(timer);

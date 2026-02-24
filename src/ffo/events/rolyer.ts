@@ -83,6 +83,7 @@ export class Role {
     const name = getRoleName(bindDm, this.bindWindowSize);
     console.log(name, 'this.name');
     this.name = name;
+    this.job = name.includes('花开无须折') ? 'SS' : 'JK';
     // 中文注释：使用 setImmediate 触发首轮执行，随后用 setTimeout 维持固定轮询间隔（避免事件循环被持续 setImmediate 挤压）
     const loop = () => {
       try {
