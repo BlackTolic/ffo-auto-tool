@@ -10,6 +10,8 @@ export const VERIFY_CODE_ANSWER_PATH = path.join(process.cwd(), '/public/verify-
 export const VERIFY_CODE_OPTIONS_PATH = path.join(process.cwd(), '/public/verify-code/code-options.png');
 // 死亡后截图
 export const ROLE_IS_DEAD_PATH = path.join(process.cwd(), '/public/role-is-dead.png');
+//测试
+export const TEST_PATH = path.join(process.cwd(), '/public');
 
 // 绑定的窗口
 export const BIND_WINDOW_NAME = 'FFO';

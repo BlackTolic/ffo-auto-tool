@@ -59,6 +59,8 @@ export class Role {
   private needCheckDead: boolean = true; // 是否需要检查死亡
   private needCheckTeamApply: boolean = false; // 是否需要检查组队申请
   private needCheckLeaveUp: boolean = false; // 是否需要检查升级状态
+  private deadCall: (() => void) | null = null; // 死亡回调
+
   constructor() {}
 
   // 需要先绑定之后再注册角色信息
@@ -213,7 +215,7 @@ export class Role {
           // 发送邮件 20S内只执行一次
           delay20S(delayFun);
           // 执行死亡时回调
-          this.task?.deadCall?.();
+          this.deadCall?.();
           // 死亡后检查是否有定时器，如果有解除定时器
           this.clearAllActionTimer();
           this.bindPlugin.moveToClick(894, 490);
@@ -225,7 +227,7 @@ export class Role {
         console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
       } finally {
         // 中文注释：通过 setTimeout 维持 300ms 周期，避免紧凑的 setImmediate 导致事件循环阻塞
-        this.timer = setTimeout(loop, 150);
+        this.timer = setTimeout(loop, 250);
       }
     };
     setImmediate(loop); // 中文注释：立即触发一次执行
@@ -318,5 +320,9 @@ export class Role {
   clearAllActionTimer() {
     this.actionTimer.forEach(timer => clearTimeout(timer));
     this.actionTimer.clear();
+  }
+
+  addDeadCall(deadCall: () => void) {
+    this.deadCall = deadCall;
   }
 }

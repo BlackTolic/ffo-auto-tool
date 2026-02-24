@@ -18,6 +18,8 @@ export interface AutoFindPathConfig {
   aimPos?: Pos | string; // 目标位置（可以是坐标，也可以是文本描述）
   stationR?: number; // 到达当前节点范围内半径（默认6）
   delay?: number; // 检查到达当前节点范围内时间间隔（默认2000ms）
+  refreshTime?: number; // 刷新时间
+  map?: string; // 目标地图
 }
 
 const getInitPos = (bindWindowSize: string) => {
@@ -160,7 +162,7 @@ export class MoveActions {
   }
 
   startAutoFindPath(config: AutoFindPathConfig) {
-    const { toPos, actions, aimPos, stationR = pointR, delay = 2000 } = config;
+    const { toPos, actions, aimPos, stationR = pointR, delay = 2000, refreshTime = 300, map = '' } = config;
     if (actions) {
       this.actions = actions;
     }
@@ -194,6 +196,11 @@ export class MoveActions {
             actions.attackNearestMonster();
           }
         } finally {
+          if (map && map !== this.role.map) {
+            this.role.clearActionTimer('autoFindPath');
+            this.recordAimPosIndex = 0;
+            rej(new Error(`[自动寻路] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动寻路`));
+          }
           if (isArrive) {
             // 中文注释：到达后清理定时器并延时，确保角色静止
             this.role.clearActionTimer('autoFindPath');
@@ -205,7 +212,7 @@ export class MoveActions {
             }, delay);
           } else {
             // 中文注释：未到达则继续 300ms 后轮询一次，并更新可清理的句柄
-            const t = setTimeout(loop, 300);
+            const t = setTimeout(loop, refreshTime);
             this.role.addActionTimer('autoFindPath', t);
           }
         }

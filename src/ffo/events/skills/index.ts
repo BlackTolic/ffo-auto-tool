@@ -22,6 +22,7 @@ export interface ScanMonsterOptions {
     y: number;
     r: number;
   };
+  map?: string;
 }
 const JKSkillGroup: KeyPressOptions[] = [
   { key: 'F1', interval: 5 * 1000, song: 0, sort: 1 }, // 攻击技能
@@ -312,7 +313,7 @@ export class AttackActions {
 
   // 识别周围有无怪物，并且识别5秒
   scanMonster(options: ScanMonsterOptions) {
-    const { attackType, times = 5, attackRange } = options;
+    const { attackType, times = 5, attackRange, map = '' } = options;
     return new Promise((resolve, reject) => {
       let counter = 0;
       let lastIsolateTime = 0;
@@ -348,6 +349,12 @@ export class AttackActions {
           const { x, y } = attackRange;
           const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
           new MoveActions(this.role).move({ x: roleX, y: roleY }, { x, y });
+        }
+        // 地图发生改变，中断攻击
+        if (map && map !== this.role.map) {
+          timer && clearInterval(timer);
+          timer = null;
+          reject(new Error(`[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击`));
         }
         if (!findMonsterPos && counter > times) {
           timer && clearInterval(timer);

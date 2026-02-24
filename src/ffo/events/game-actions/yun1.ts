@@ -1,5 +1,6 @@
 import { damoBindingManager } from '..';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
+import { VK_F } from '../../constant/virtual-key-code';
 import { checkEquipBroken, checkEquipCount, checkItemBoxItemCount, checkPetActive, getCurrentGold } from '../../utils/ocr-check/base';
 import { BaseAction } from '../base-action';
 import { Conversation, ItemMerchantConfig } from '../conversation';
@@ -43,25 +44,25 @@ const loopAutoAttackInWest = () => {
   return moveActions
     .startAutoFindPath({ toPos: [{ x: 143, y: 81 }], stationR, delay: 100 })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 143, y: 81, r: stationR } });
+      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 143, y: 81, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 114, y: 58 }, stationR, delay: 100 });
+      return moveActions.startAutoFindPath({ toPos: { x: 114, y: 58 }, stationR, delay: 100, map: '云泽秘径' });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 114, y: 58, r: stationR } });
+      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 114, y: 58, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 40, y: 91 }, stationR, delay: 100 });
+      return moveActions.startAutoFindPath({ toPos: { x: 40, y: 91 }, stationR, delay: 100, map: '云泽秘径' });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 40, y: 91, r: stationR } });
+      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 40, y: 91, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 91, y: 114 }, stationR, delay: 100 });
+      return moveActions.startAutoFindPath({ toPos: { x: 91, y: 114 }, stationR, delay: 100, map: '云泽秘径' });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: 4, attackRange: { x: 91, y: 114, r: stationR } });
+      return atackActions.scanMonster({ attackType: 'single', times: 4, attackRange: { x: 91, y: 114, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
       // 检查装备栏是否已经满了
@@ -78,8 +79,15 @@ const loopAutoAttackInWest = () => {
       role.updateTaskStatus('done');
       i++;
     })
-    .catch(err => {
+    .catch(async err => {
       console.log('云荒打怪失败', err);
+      // 添加buff
+      // atackActions.stopAddBuff();
+      // setTimeout(async () => {
+      //   // 移动到云荒1
+      //   await baseAction.backCity({ x: 148, y: 96 }, 'F9');
+      //   role.updateTaskStatus('done');
+      // }, 10 * 1000);
     });
 };
 
@@ -99,21 +107,19 @@ const loopCheckStatus = async () => {
   console.log(`当前开始执行第${i + 1}次任务`, role.position);
 
   const dm = rec?.ffoClient || role.bindDm;
-  let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
+  // let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
   let moveActions = new MoveActions(role);
   let baseAction = new BaseAction(role);
 
   await new Promise(res => setTimeout(res, 5 * 1000));
   // 屏蔽所有人
   baseAction.blockAllPlayers();
-
   // 检查宠物是否激活
   const isPetActive = checkPetActive(dm, role.bindWindowSize);
   if (!isPetActive) {
     await baseAction.openPetBoxAndActivePet();
   }
   // 上马
-  // atackActions.startKeyPress({ key: 'F5', interval: null });
   await baseAction.pressSecondSkillBarSkill('F10');
   // 检查物品栏是否已经打开
   await baseAction.openItemBox('消耗');
@@ -178,7 +184,7 @@ const loopCheckStatus = async () => {
   }
 
   // 前往云荒1打怪
-  await moveActions.startAutoFindPath({ toPos: { x: 263, y: 120 }, stationR: 1, delay: 2000, aimPos: '云泽秘径' });
+  await moveActions.startAutoFindPath({ toPos: { x: 263, y: 120 }, stationR: 1, delay: 2000, aimPos: '云泽秘径', refreshTime: 1000 });
   await moveActions.startAutoFindPath({ toPos: INIT_POS_YUN1, stationR, delay: 2000 });
   // 下马
   await baseAction.pressSecondSkillBarSkill('F9');
@@ -186,8 +192,8 @@ const loopCheckStatus = async () => {
   role.updateTaskStatus('done');
 };
 
-// 死亡时回调
-const deadCall = () => {
+// 中文注释：切换自动寻路（第一次开启，第二次关闭）
+export const toggleYunHuang1West = () => {
   const hwnd = damoBindingManager.selectHwnd;
   if (!hwnd || !damoBindingManager.isBound(hwnd)) {
     console.log('未选择已绑定的窗口', hwnd);
@@ -198,19 +204,33 @@ const deadCall = () => {
     console.log('未获取到角色', hwnd);
     throw new Error('未获取到角色');
   }
-  console.log('云荒打怪死亡');
-  // 关闭相关的定时设置
-  role.clearAllActionTimer();
-  // 重新更新循环状态
-  role.updateTaskStatus('done');
-};
-
-// 中文注释：切换自动寻路（第一次开启，第二次关闭）
-export const toggleYunHuang1West = () => {
+  // 死亡时回调
+  const deadCall = () => {
+    console.log('云荒打怪死亡');
+    let baseAction = new BaseAction(role);
+    let attackActions = new AttackActions(role);
+    const deadTimer = setTimeout(() => {
+      // 关闭物品栏
+      role.bindPlugin.keyPress(VK_F['alt']);
+      role.bindPlugin.keyPress(VK_F['i']);
+      role.bindPlugin.delay(1000);
+      // 移动到云荒1
+      baseAction.backCity({ x: 148, y: 96 }, 'F9');
+      // 关闭相关的定时设置
+      role.clearAllActionTimer();
+      // 结束buff
+      attackActions.addBuff();
+      // 重新更新循环状态
+      role.updateTaskStatus('done');
+      clearTimeout(deadTimer);
+    }, 10 * 1000);
+  };
   autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS_YUN1, PATH_POS, OCR_YUN_HUAN_1_MONSTER, TASK_NAME);
+  // 注册死亡回调
+  role.addDeadCall(deadCall);
   const taskList = [
     { taskName: '云荒打怪捡装备', loopOriginPos: INIT_POS_YUN1, action: loopAutoAttackInWest, interval: 2000 },
-    { taskName: '云荒打怪状态补给', loopOriginPos: INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000, deadCall },
+    { taskName: '云荒打怪状态补给', loopOriginPos: INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000 },
   ];
   return autoFarmingAction.toggle(taskList);
 };
