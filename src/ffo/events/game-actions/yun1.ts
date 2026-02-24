@@ -67,7 +67,7 @@ const loopAutoAttackInWest = () => {
       // 检查装备栏是否已经满了
       const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
       console.log(equipCount, '当前装备数量');
-      if (equipCount >= 6) {
+      if (equipCount >= 24) {
         return baseAction.backCity({ x: 148, y: 96 }, 'F9');
       }
       return false;
