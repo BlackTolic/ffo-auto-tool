@@ -8,7 +8,7 @@ import { debounce } from '../../utils/tool';
 import { DEFAULT_MENUS_POS, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { isArriveAimNear, selectRightAnwser } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
-import { getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getVerifyCodePos, isDeadCYPos, isOffline } from '../utils/ocr-check/base';
+import { checkInviteTeam, getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getVerifyCodePos, isDeadCYPos, isOffline } from '../utils/ocr-check/base';
 
 export type Pos = {
   x: number;
@@ -96,6 +96,9 @@ export class Role {
         const monsterName = getMonsterName(bindDm, this.bindWindowSize);
         // 获取血量状态
         const bloodStatus = getBloodStatus(bindDm, this.bindWindowSize);
+        // 队伍邀请
+        const inviteTeamPos = checkInviteTeam(bindDm, this.bindWindowSize);
+        // console.log(inviteTeamPos, 'inviteTeamPos');
         // console.log(bloodStatus, 'bloodStatus');
         // 是否处于回血状态
         // this.statusBloodIcon = getStatusBloodIcon(bindDm, this.bindWindowSize);

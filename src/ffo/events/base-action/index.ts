@@ -8,6 +8,13 @@ import { AttackActions } from '../skills';
 
 type Timer = NodeJS.Timeout | null;
 
+type ValidEquip = {
+  type: string;
+  level?: string;
+  attrName?: string;
+  attrValue?: string;
+}[];
+
 export class BaseAction {
   private bindPlugin: any = null;
   private role: Role | null = null;
@@ -176,9 +183,8 @@ export class BaseAction {
   // 丢弃装备
 
   // 拾取有用装备
-  pickUpUsefulEquip() {
-    const isUseful = [];
-    console.log('这个装备有用');
+  pickUpUsefulEquip(validEquip: ValidEquip, way?: 'mail' | 'saveEquip') {
+    // console.log('这个装备有用');
     // 获取所有装备坐标
     const pos = checkEquipCount(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
     console.log(pos, 'pos');
@@ -186,18 +192,47 @@ export class BaseAction {
       console.log('没有装备');
       return;
     }
-    pos.map(item => {
-      new Promise((res, rej) => {
-        // 通过阻塞进程实现
-        this.bindPlugin.moveTo(item.x + 10, item.y - 5);
-        this.bindPlugin.delay(1000);
-        // 找到未装备
-        const unEquipPos = checkUnEquipEquip(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
-        this.bindPlugin.captureFullScreen(`${TEST_PATH}/test4.png`);
-        this.bindPlugin.delay(1000);
+    pos.forEach(item => {
+      // new Promise((res, rej) => {
+      // 通过阻塞进程实现
+      this.bindPlugin.moveTo(item.x + 10, item.y - 5);
+      this.bindPlugin.delay(1000);
+      // 找到未装备
+      const unEquipPos = checkUnEquipEquip(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
+      console.log(unEquipPos, 'unEquipPos');
+      if (!unEquipPos) {
+        console.log('没有未装备的装备');
+        return;
+      }
+      const isUseful = validEquip.some(equip => {
+        // console.log(equip, 'equip');
+        // 只设置了装备类型，其他条件没有设置的装备v，只要类型对了都要
+        if (equip.type && !equip.attrName && unEquipPos.type) {
+          return equip.type.includes(unEquipPos.type);
+        }
+        // 只设置了装备类型和属性，这两个对了才要
+        if (equip.attrName && equip.type && unEquipPos.attrName && unEquipPos.type) {
+          return equip.type.includes(unEquipPos.type) && equip.attrName.includes(unEquipPos.attrName);
+        }
       });
+      if (way === 'saveEquip' && isUseful) {
+        this.bindPlugin.leftDoubleClick();
+      }
+      if (!isUseful) {
+        console.log('这个装备没用');
+        this.bindPlugin.leftDownFromToMove({ x: item.x + 10, y: item.y - 5 }, { x: 800, y: 400 });
+        this.bindPlugin.leftClick();
+        // 取消
+        this.bindPlugin.moveToClick(894, 492);
+        // 丢弃
+        // this.bindPlugin.moveToClick(713, 492);
+        return;
+      }
+      console.log('这个装备有用');
     });
+    // });
     // const { equip } = this.role?.menusPos ?? {};
+    console.log('完成装备筛选');
   }
 }
 

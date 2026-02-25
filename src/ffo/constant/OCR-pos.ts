@@ -129,7 +129,7 @@ export const DEFAULT_ITEM_BOX_TAB_SWITCH = {
 
 // 金币
 export const DEFAULT_GOLD = {
-  '1600*900': { x1: 1188, y1: 806, x2: 1313, y2: 830, color: 'e8f0e8-111111|d0a028-111111|989490-000000|986450-555555', sim: DEFAULT_SIM },
+  '1600*900': { x1: 1186, y1: 753, x2: 1316, y2: 893, color: 'e8f0e8-111111|d0a028-111111|989490-000000|986450-555555', sim: DEFAULT_SIM },
   '1280*800': { x1: 872, y1: 713, x2: 986, y2: 729, color: 'e8f0e8-111111|d0a028-111111|989490-000000|986450-555555', sim: DEFAULT_SIM },
 };
 
@@ -181,4 +181,10 @@ export const DEFAULT_DEAD_CY = {
 export const DEFAULT_UN_EQUIP = {
   '1600*900': { x1: 1187, y1: 77, x2: 1595, y2: 724, string: '未装备', color: '20e438-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 1194, y1: 600, x2: 1228, y2: 638, string: '@O', color: '20e438-111111', sim: DEFAULT_SIM },
+};
+
+// 别人的队伍邀请
+export const DEFAULT_INVITE_TEAM = {
+  '1600*900': { x1: 604, y1: 280, x2: 1001, y2: 609, string: '邀请你队伍', color: 'c0a060-111111|a08440-111111|907028-111111', sim: 1.0 },
+  '1280*800': { x1: 604, y1: 280, x2: 1001, y2: 609, string: '邀请你队伍', color: 'c0a060-111111|a08440-111111|907028-111111', sim: 1.0 },
 };

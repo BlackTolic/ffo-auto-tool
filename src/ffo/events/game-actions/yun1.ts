@@ -3,10 +3,23 @@ import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
 import { VK_F } from '../../constant/virtual-key-code';
 import { checkEquipBroken, checkEquipCount, checkItemBoxItemCount, checkPetActive, getCurrentGold } from '../../utils/ocr-check/base';
 import { BaseAction } from '../base-action';
-import { Conversation, ItemMerchantConfig } from '../conversation';
+import { Conversation, ItemMerchantConfig, StoreManagerConfig } from '../conversation';
 import { MoveActions } from '../move';
 import { AttackActions } from '../skills';
 import { AutoFarmingAction } from './auto-farming';
+
+const validEquip = [
+  { type: '戒指' },
+  { type: '项链', attrName: '力量|智慧|体质|魔抗|护甲值' },
+  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害' },
+  { type: '头盔', attrName: '生命最大值|力量|魔抗|体质|伤害|智慧' },
+  { type: '手套', attrName: '物理攻击力|魔法攻击力|力量|体质|智慧' },
+  { type: '服装', attrName: '生命最大值|体质|护甲值|力量|智慧' },
+  { type: '鞋子', attrName: '力量|智慧|体质|体质|敏捷' },
+  { type: '面饰', attrName: '力量|智慧|体质|体质|敏捷' },
+  { type: '背包', attrName: '力量|智慧|体质|体质|敏捷|最大负重' },
+  { type: '盾牌', attrName: '力量|体质|魔抗|护甲值' },
+];
 
 const TASK_NAME = '云荒打怪捡装备';
 const INIT_POS_YUN1 = { x: 91, y: 114 };
@@ -144,19 +157,24 @@ const loopCheckStatus = async () => {
   await baseAction.openItemBox('装备');
   // 检查装备栏装备是否超过15件
   const equipCount = checkEquipCount(dm, role.bindWindowSize);
-  console.log(`装备数量`, equipCount);
+  console.log(`装备数量`, equipCount.length);
   const needMoney = redCount < 50 || blueCount < 50 || returnCount < 10 || petFoodCount < 10 || isEquipBroken;
   if (equipCount.length > 15 || needMoney) {
     // 去仓库管理员取钱
     await moveActions.startAutoFindPath({ toPos: { x: 200, y: 98 }, stationR, delay: 2000 });
     // 与仓库管理员对话
-    const withdrawOk = await new Conversation(role).StoreManager(needMoney ? { task: 'withdraw', money: '5' } : undefined);
+    const config = Object.assign(
+      needMoney ? { task: 'withdraw', money: '5' } : {},
+      equipCount.length > 15 ? { saveEquipCall: () => baseAction.pickUpUsefulEquip(validEquip, 'saveEquip') } : {}
+    ) as StoreManagerConfig;
+    const withdrawOk = await new Conversation(role).StoreManager(config);
     if (!withdrawOk) {
       console.log('仓库管理员取款失败');
       return;
     }
     dm.delay(1000);
   }
+
   // 买药、修装备
   if (needMoney) {
     await moveActions.startAutoFindPath({
@@ -243,7 +261,6 @@ export const toggleYunHuang1West = () => {
     { taskName: '云荒打怪捡装备', loopOriginPos: INIT_POS_YUN1, action: loopAutoAttackInWest, interval: 2000 },
     { taskName: '云荒打怪状态补给', loopOriginPos: INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000 },
   ];
-  baseAction.pickUpUsefulEquip();
 
   return autoFarmingAction.toggle(taskList);
 };

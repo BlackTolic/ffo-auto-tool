@@ -8,9 +8,10 @@ interface Pos {
   y: number;
 }
 
-interface StoreManagerConfig {
+export interface StoreManagerConfig {
   task?: 'deposit' | 'withdraw';
   money?: string;
+  saveEquipCall?: () => void;
 }
 
 export interface ItemMerchantConfig {
@@ -347,7 +348,7 @@ export class Conversation {
   // 与仓库管理员对话
   async StoreManager(config?: StoreManagerConfig) {
     return new Promise(async (resolve, reject) => {
-      const { task = '', money = '' } = config || {};
+      const { task = '', money = '', saveEquipCall } = config || {};
       let npcPos = await this.findNPC('仓库管理员', 30, 50);
       if (!npcPos) {
         npcPos = await this.findNPC('仓库管理员', 30, 50);
@@ -361,6 +362,8 @@ export class Conversation {
       if (!isOpenDialg) {
         return;
       }
+      // 移开鼠标防止影响读取
+      this.bindPlugin.moveTo(0, 0);
       // 打开仓库
       const isPass = await this.findOptions('使用仓库');
       if (!isPass) {
@@ -379,6 +382,10 @@ export class Conversation {
           this.moveToClick({ x: 1510, y: 284 });
           this.bindPlugin.sendString(this.role.hwnd || 0, money?.toString() || '');
           this.moveToClick({ x: 1534, y: 260 });
+        }
+        // 存入装备
+        if (typeof saveEquipCall === 'function') {
+          saveEquipCall();
         }
         // 关闭仓库
         this.moveToClick({ x: 1540, y: 39 });

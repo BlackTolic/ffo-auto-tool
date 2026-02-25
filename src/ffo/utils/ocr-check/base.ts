@@ -1,4 +1,5 @@
 import { AutoT } from '../../../auto-plugin';
+import { TEST_PATH } from '../../../constant/config';
 import {
   DEFAULT_ADDRESS_NAME,
   DEFAULT_BLOOD_STATUS,
@@ -7,6 +8,7 @@ import {
   DEFAULT_EQUIP_COUNT,
   DEFAULT_EQUIP_DAMAGE,
   DEFAULT_GOLD,
+  DEFAULT_INVITE_TEAM,
   DEFAULT_ISOLATE,
   DEFAULT_ITEM_BOX_TAB,
   DEFAULT_ITEM_BOX_TAB_SWITCH,
@@ -111,6 +113,7 @@ export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
   const goldPos = DEFAULT_GOLD[bindWindowSize];
   const goldText = bindDm.ocr(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, goldPos.color, goldPos.sim);
   console.log(parseFFOCurrencyToGoldLabel(goldText), 'goldText');
+  bindDm.capturePng(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, `${TEST_PATH}/current_gold.png`);
   return parseFFOCurrencyToGoldLabel(goldText);
 };
 
@@ -168,10 +171,40 @@ export const checkEquipCount = (bindDm: AutoT, bindWindowSize: '1600*900' | '128
   return parsePositionFromTextList(list);
 };
 
+interface IUnEquipEquip {
+  type: string | null;
+  level: string | null;
+  attrName: string | null;
+  attrValue: string | null;
+}
+
 // 识别“未装备”的装备信息
-export const checkUnEquipEquip = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const checkUnEquipEquip = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): IUnEquipEquip | null => {
   const unEquipPos = DEFAULT_UN_EQUIP[bindWindowSize];
   const pos = bindDm.findStrFastE(unEquipPos.x1, unEquipPos.y1, unEquipPos.x2, unEquipPos.y2, unEquipPos.string, unEquipPos.color, unEquipPos.sim);
-  console.log(pos, 'pos');
-  return parseTextPos(pos);
+  const _pos = parseTextPos(pos);
+  if (!_pos) {
+    console.log('未识别到装备信息');
+    return null;
+  }
+  // bindDm.capturePng(_pos.x, _pos.y, _pos.x + 128, _pos.y + 153, `${TEST_PATH}/test4.png`);
+  // bindDm.capturePng(_pos.x, _pos.y + 153, _pos.x + 128, _pos.y + 306, `${TEST_PATH}/test5.png`);
+  // 等级和装备部位
+  const type = bindDm.ocr(_pos.x, _pos.y, _pos.x + 128, _pos.y + 153, 'b0bcb0-111111|e0e8e0-111111|e83c00-111111', unEquipPos.sim);
+  // bindDm.delay(200);
+  // 装备属性
+  const attr = bindDm.ocr(_pos.x, _pos.y + 153, _pos.x + 135, _pos.y + 306, '408ce8-111111|d830e8-111111|00f0c8-111111', unEquipPos.sim);
+  // console.log('装备类型和等级：', type);
+  // console.log('装备属性：', attr);
+  const res = { type: type.match(/\(([^)]+)\)/)?.[1] ?? null, level: type?.match(/需要等级(\d+)/)?.[1] ?? null, attrName: attr.split('+')?.[0] ?? null, attrValue: attr.split('+')?.[1] ?? null };
+  // console.log(res);
+  return res;
+};
+
+// 别人的队伍邀请
+export const checkInviteTeam = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const inviteTeamPos = DEFAULT_INVITE_TEAM[bindWindowSize];
+  const inviteTeamText = bindDm.findStrFastE(inviteTeamPos.x1, inviteTeamPos.y1, inviteTeamPos.x2, inviteTeamPos.y2, inviteTeamPos.string, inviteTeamPos.color, inviteTeamPos.sim);
+  console.log(inviteTeamText, 'inviteTeamText');
+  return parseTextPos(inviteTeamText);
 };
