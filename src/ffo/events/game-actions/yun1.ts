@@ -41,28 +41,30 @@ const loopAutoAttackInWest = () => {
   let baseAction = new BaseAction(role);
   // 添加buff
   atackActions.addBuff();
+  // 检查角色是群攻还是单攻击
+  const attackType = role.job === 'SS' ? 'group' : 'single';
   return moveActions
     .startAutoFindPath({ toPos: [{ x: 143, y: 81 }], stationR, delay: 100 })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 143, y: 81, r: stationR }, map: '云泽秘径' });
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 143, y: 81, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
       return moveActions.startAutoFindPath({ toPos: { x: 114, y: 58 }, stationR, delay: 100, map: '云泽秘径' });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 114, y: 58, r: stationR }, map: '云泽秘径' });
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 114, y: 58, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
       return moveActions.startAutoFindPath({ toPos: { x: 40, y: 91 }, stationR, delay: 100, map: '云泽秘径' });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: checkTime, attackRange: { x: 40, y: 91, r: stationR }, map: '云泽秘径' });
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 40, y: 91, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
       return moveActions.startAutoFindPath({ toPos: { x: 91, y: 114 }, stationR, delay: 100, map: '云泽秘径' });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType: 'single', times: 4, attackRange: { x: 91, y: 114, r: stationR }, map: '云泽秘径' });
+      return atackActions.scanMonster({ attackType, times: 4, attackRange: { x: 91, y: 114, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
       // 检查装备栏是否已经满了
