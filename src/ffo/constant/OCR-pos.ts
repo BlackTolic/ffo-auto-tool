@@ -176,3 +176,9 @@ export const DEFAULT_DEAD_CY = {
   '1600*900': { x1: 622, y1: 373, x2: 990, y2: 537, string: '原地复活', color: 'e8f0e8-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, string: '原地复活', color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
 };
+
+// 检查未装备的装备
+export const DEFAULT_UN_EQUIP = {
+  '1600*900': { x1: 1187, y1: 77, x2: 1595, y2: 724, string: '未装备', color: '20e438-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 1194, y1: 600, x2: 1228, y2: 638, string: '@O', color: '20e438-111111', sim: DEFAULT_SIM },
+};

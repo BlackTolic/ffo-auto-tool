@@ -2,7 +2,7 @@ import { BACK_CITY_PNG_PATH, TEST_PATH } from '../../../constant/config';
 import { MAIN_CITY } from '../../constant/NPC_position';
 import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
-import { isItemBoxOpen, switchItemBoxTabPos } from '../../utils/ocr-check/base';
+import { checkEquipCount, checkUnEquipEquip, isItemBoxOpen, switchItemBoxTabPos } from '../../utils/ocr-check/base';
 import { Role } from '../rolyer';
 import { AttackActions } from '../skills';
 
@@ -175,8 +175,28 @@ export class BaseAction {
 
   // 丢弃装备
 
-  // 检查装备是否有用
-  checkEquipUseful() {
+  // 拾取有用装备
+  pickUpUsefulEquip() {
+    const isUseful = [];
+    console.log('这个装备有用');
+    // 获取所有装备坐标
+    const pos = checkEquipCount(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
+    console.log(pos, 'pos');
+    if (!pos || pos.length === 0) {
+      console.log('没有装备');
+      return;
+    }
+    pos.map(item => {
+      new Promise((res, rej) => {
+        // 通过阻塞进程实现
+        this.bindPlugin.moveTo(item.x + 10, item.y - 5);
+        this.bindPlugin.delay(1000);
+        // 找到未装备
+        const unEquipPos = checkUnEquipEquip(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
+        this.bindPlugin.captureFullScreen(`${TEST_PATH}/test4.png`);
+        this.bindPlugin.delay(1000);
+      });
+    });
     // const { equip } = this.role?.menusPos ?? {};
   }
 }

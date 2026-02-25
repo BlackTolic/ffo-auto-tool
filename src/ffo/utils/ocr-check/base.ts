@@ -16,9 +16,10 @@ import {
   DEFAULT_ROLE_POSITION,
   DEFAULT_SERVER_DISCONNECT,
   DEFAULT_STATUS_ICON_POS,
+  DEFAULT_UN_EQUIP,
   DEFAULT_VERIFY_CODE,
 } from '../../constant/OCR-pos';
-import { parseFFOCurrencyToGoldLabel, parseRolePositionFromText, parseTextPos } from '../common';
+import { parseFFOCurrencyToGoldLabel, parsePositionFromTextList, parseRolePositionFromText, parseTextPos } from '../common';
 // 检查服务器是否断线
 export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const offlinePos = DEFAULT_SERVER_DISCONNECT[bindWindowSize];
@@ -163,5 +164,14 @@ export const checkItemBoxItemCount = (bindDm: AutoT, bindWindowSize: '1600*900' 
 export const checkEquipCount = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const checkEquipPos = DEFAULT_EQUIP_COUNT[bindWindowSize];
   const equipCountText = bindDm.findStrFastEx(checkEquipPos.x1, checkEquipPos.y1, checkEquipPos.x2, checkEquipPos.y2, checkEquipPos.string, checkEquipPos.color, checkEquipPos.sim);
-  return equipCountText ? equipCountText.split?.('|')?.length : 0;
+  const list = equipCountText ? equipCountText.split?.('|') : [];
+  return parsePositionFromTextList(list);
+};
+
+// 识别“未装备”的装备信息
+export const checkUnEquipEquip = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const unEquipPos = DEFAULT_UN_EQUIP[bindWindowSize];
+  const pos = bindDm.findStrFastE(unEquipPos.x1, unEquipPos.y1, unEquipPos.x2, unEquipPos.y2, unEquipPos.string, unEquipPos.color, unEquipPos.sim);
+  console.log(pos, 'pos');
+  return parseTextPos(pos);
 };

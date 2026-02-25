@@ -46,9 +46,9 @@ const JKBuffGroup: KeyPressOptions[] = [
 ];
 
 const SSBuffGroup: KeyPressOptions[] = [
+  { key: 'F6', interval: 5 * 60 * 1000, song: 0, type: 'specify' }, // 状态技能
   { key: 'F7', interval: 55 * 1000, song: 0, type: 'specify' }, // 状态技能
   { key: 'F8', interval: 9 * 60 * 1000, song: 0, type: 'specify' }, // 状态技能
-  { key: 'F9', interval: 100 * 1000, song: 0, type: 'specify' }, // 状态技能
 ];
 
 const attackRange = {
@@ -106,7 +106,6 @@ export class AttackActions {
       return;
     }
     const pos = this.findMonsterPos();
-    // console.log(pos, 'pos');
     if (!pos) return;
     const { x, y } = pos;
     this.bindDm.MoveTo(x, y);

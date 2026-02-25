@@ -10,6 +10,11 @@ export const parseRolePositionFromText = (text: string): Pos | null => {
   return x < 0 || y < 0 ? null : { x, y };
 };
 
+export const parsePositionFromTextList = (text: string[]): Pos[] => {
+  if (!text || text.length === 0) return [];
+  return text.map(x => parseTextPos(x)).filter(y => y !== null);
+};
+
 export const parseTextPos = (text: string) => {
   const s = String(text || '').trim();
   if (!s) return null;
