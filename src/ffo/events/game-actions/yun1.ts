@@ -70,7 +70,7 @@ const loopAutoAttackInWest = () => {
       // 检查装备栏是否已经满了
       const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
       console.log(equipCount, '当前装备数量');
-      if (equipCount >= 24) {
+      if (equipCount.length >= 24) {
         return baseAction.backCity({ x: 148, y: 96 }, 'F9');
       }
       return false;
@@ -146,7 +146,7 @@ const loopCheckStatus = async () => {
   const equipCount = checkEquipCount(dm, role.bindWindowSize);
   console.log(`装备数量`, equipCount);
   const needMoney = redCount < 50 || blueCount < 50 || returnCount < 10 || petFoodCount < 10 || isEquipBroken;
-  if (equipCount > 15 || needMoney) {
+  if (equipCount.length > 15 || needMoney) {
     // 去仓库管理员取钱
     await moveActions.startAutoFindPath({ toPos: { x: 200, y: 98 }, stationR, delay: 2000 });
     // 与仓库管理员对话
@@ -155,6 +155,7 @@ const loopCheckStatus = async () => {
       console.log('仓库管理员取款失败');
       return;
     }
+    dm.delay(1000);
   }
   // 买药、修装备
   if (needMoney) {
@@ -206,11 +207,11 @@ export const toggleYunHuang1West = () => {
     console.log('未获取到角色', hwnd);
     throw new Error('未获取到角色');
   }
+  let baseAction = new BaseAction(role);
+  let attackActions = new AttackActions(role);
   // 死亡时回调
   const deadCall = () => {
     console.log('云荒打怪死亡');
-    let baseAction = new BaseAction(role);
-    let attackActions = new AttackActions(role);
     const deadTimer = setTimeout(() => {
       // 关闭物品栏
       role.bindPlugin.keyPress(VK_F['alt']);
@@ -234,6 +235,8 @@ export const toggleYunHuang1West = () => {
     { taskName: '云荒打怪捡装备', loopOriginPos: INIT_POS_YUN1, action: loopAutoAttackInWest, interval: 2000 },
     { taskName: '云荒打怪状态补给', loopOriginPos: INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000 },
   ];
+  baseAction.pickUpUsefulEquip();
+
   return autoFarmingAction.toggle(taskList);
 };
 
