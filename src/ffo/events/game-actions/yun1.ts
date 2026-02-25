@@ -156,7 +156,14 @@ const loopCheckStatus = async () => {
   }
   // 买药、修装备
   if (needMoney) {
-    await moveActions.startAutoFindPath({ toPos: { x: 167, y: 78 }, stationR, delay: 2000 });
+    await moveActions.startAutoFindPath({
+      toPos: [
+        { x: 217, y: 83 },
+        { x: 167, y: 78 },
+      ],
+      stationR,
+      delay: 2000,
+    });
     // 与道具商人对话
     const buyOk = await new Conversation(role).ItemMerchant([
       ...(isEquipBroken ? [{ task: 'fix' }] : []),
@@ -167,6 +174,7 @@ const loopCheckStatus = async () => {
       console.log('道具商人购买药失败');
       return;
     }
+    dm.delay(1000);
   }
 
   // 存钱
