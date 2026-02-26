@@ -61,6 +61,7 @@ export class Role {
   private needCheckLeaveUp: boolean = false; // 是否需要检查升级状态
   private deadCall: (() => void) | null = null; // 死亡回调
   private teamApplyCall: ((closePos: Pos) => void) | null = null; // 组队申请回调
+  private globalStrategyTask: { condition: () => boolean; callback: () => void }[] | null = null; // 全局策略任务队列
 
   constructor() {}
 
@@ -101,6 +102,15 @@ export class Role {
         if (typeof this.teamApplyCall === 'function') {
           const inviteTeamPos = checkInviteTeam(bindDm, this.bindWindowSize);
           inviteTeamPos && this.teamApplyCall(inviteTeamPos);
+        }
+        // 全局任务检查
+        if (this.globalStrategyTask) {
+          for (const task of this.globalStrategyTask) {
+            if (task.condition()) {
+              task.callback();
+              break;
+            }
+          }
         }
 
         // console.log(inviteTeamPos, 'inviteTeamPos');
@@ -337,5 +347,14 @@ export class Role {
   // 中文注释：更新组队申请回调
   updateTeamApplyCall(teamApplyCall: (closePos: Pos) => void) {
     this.teamApplyCall = teamApplyCall;
+  }
+
+  // 添加全局策略任务,当某个条件达到时，立即执行回调任务
+  addGlobalStrategyTask(tasks: { condition: () => boolean; callback: () => void }[]) {
+    if (this.globalStrategyTask) {
+      console.log('全局策略任务已存在!');
+      return;
+    }
+    this.globalStrategyTask = tasks;
   }
 }

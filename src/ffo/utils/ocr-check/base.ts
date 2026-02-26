@@ -120,9 +120,7 @@ export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 // 检查物品栏是否打开
 export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): string | false => {
   const tabPos = DEFAULT_ITEM_BOX_TAB[bindWindowSize];
-  console.log(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.color, tabPos.sim, 'tabPos');
   const tabText = bindDm.ocr(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.color, tabPos.sim);
-  console.log(tabText, 'tabText');
   return tabText ? tabText : false;
 };
 

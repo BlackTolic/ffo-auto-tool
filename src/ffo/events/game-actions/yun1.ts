@@ -1,6 +1,5 @@
 import { damoBindingManager } from '..';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
-import { VK_F } from '../../constant/virtual-key-code';
 import { checkEquipBroken, checkEquipCount, checkItemBoxItemCount, checkPetActive, getCurrentGold } from '../../utils/ocr-check/base';
 import { BaseAction, ValidEquip } from '../base-action';
 import { Conversation, ItemMerchantConfig, StoreManagerConfig } from '../conversation';
@@ -106,6 +105,8 @@ const loopAutoAttackInWest = () => {
         const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
         console.log(equipCount, '当前装备数量');
         if (equipCount.length >= 24) {
+          // 关闭物品栏
+          baseAction.toggleItemBox();
           return baseAction.backCity({ x: 148, y: 96 }, 'F9');
         }
         return false;
@@ -181,7 +182,7 @@ const loopCheckStatus = async () => {
   // 检查装备栏装备是否超过15件
   const equipCount = checkEquipCount(dm, role.bindWindowSize);
   console.log(`装备数量`, equipCount.length);
-  const needMoney = redCount < 50 || blueCount < 50 || returnCount < 10 || petFoodCount < 10 || isEquipBroken;
+  const needMoney = redCount < 50 || blueCount < 50 || isEquipBroken;
   if (equipCount.length > 15 || needMoney) {
     // 去仓库管理员取钱
     await moveActions.startAutoFindPath({ toPos: { x: 200, y: 98 }, stationR, delay: 2000 });
@@ -264,9 +265,7 @@ export const toggleYunHuang1West = () => {
     const deadTimer = setTimeout(
       () => {
         // 关闭物品栏
-        role.bindPlugin.keyPress(VK_F['alt']);
-        role.bindPlugin.keyPress(VK_F['i']);
-        role.bindPlugin.delay(1000);
+        baseAction.toggleItemBox();
         // 移动到云荒1
         baseAction.backCity({ x: 148, y: 96 }, 'F9');
         // 关闭相关的定时设置
@@ -288,6 +287,33 @@ export const toggleYunHuang1West = () => {
     // 拒绝组队
     role.bindPlugin.moveToClick(closePos.x, closePos.y);
   });
+  // 添加全局策略任务,如果3分钟没有移动过，先检查周围是否有怪物，有怪物优先攻击怪物，打完怪物后回城
+  let lastMoveTime = 0;
+  let lastPos = { x: 0, y: 0 };
+  role.addGlobalStrategyTask([
+    {
+      condition: () => {
+        // 每隔3分钟获取一次角色坐标
+        if (Date.now() - lastMoveTime > 3 * 60 * 1000 && role.map === '云泽秘径') {
+          console.log('检查云荒不动原因', lastPos, role.position);
+          if (lastPos.x === role.position?.x && lastPos.y === role.position?.y) {
+            return true;
+          }
+          lastMoveTime = Date.now();
+          lastPos.x = role.position?.x ?? 0;
+          lastPos.y = role.position?.y ?? 0;
+        }
+        return false;
+      },
+      callback: () => {
+        // 回城
+        // 关闭物品栏
+        baseAction.toggleItemBox();
+        return baseAction.backCity({ x: 148, y: 96 }, 'F9');
+      },
+    },
+  ]);
+
   const taskList = [
     { taskName: '云荒打怪捡装备', loopOriginPos: INIT_POS_YUN1, action: loopAutoAttackInWest, interval: 2000 },
     { taskName: '云荒打怪状态补给', loopOriginPos: INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000 },

@@ -1,4 +1,4 @@
-import { BACK_CITY_PNG_PATH, TEST_PATH } from '../../../constant/config';
+import { BACK_CITY_PNG_PATH } from '../../../constant/config';
 import { MAIN_CITY } from '../../constant/NPC_position';
 import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
@@ -34,6 +34,14 @@ export class BaseAction {
     new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
     new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
     new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
+  }
+
+  // 关闭/打开物品栏
+  toggleItemBox() {
+    this.bindPlugin.keyPress(VK_F['alt']);
+    this.bindPlugin.keyPress(VK_F['i']);
+    this.bindPlugin.delay(500);
+    console.log('关闭或者打开物品栏');
   }
 
   // 回城
@@ -108,7 +116,6 @@ export class BaseAction {
   // 打开物品栏切换到/消耗/收集/装备页
   openItemBox(changeTo: '消耗' | '收集' | '装备') {
     // 识别当前打开的页面
-    this.role?.bindPlugin.captureFullScreen(`${TEST_PATH}/test3.png`);
     const box = isItemBoxOpen(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
     console.log('识别当前打开的页面', box);
     return new Promise((res, rej) => {
@@ -116,11 +123,7 @@ export class BaseAction {
         res(true);
       }
       if (!box) {
-        console.log('按了 alt+i');
-        // 打开物品栏
-        this.bindPlugin.keyPress(VK_F['alt']);
-        this.bindPlugin.keyPress(VK_F['i']);
-        this.bindPlugin.delay(1000);
+        this.toggleItemBox();
         // 切换tab页
         const tabPos = switchItemBoxTabPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', changeTo);
         if (tabPos) {
