@@ -305,11 +305,12 @@ export const toggleYunHuang1West = () => {
         }
         return false;
       },
-      callback: () => {
+      callback: async () => {
         // 回城
         // 关闭物品栏
         baseAction.toggleItemBox();
-        return baseAction.backCity({ x: 148, y: 96 }, 'F9');
+        await baseAction.backCity({ x: 148, y: 96 }, 'F9');
+        role.updateTaskStatus('done');
       },
     },
   ]);
