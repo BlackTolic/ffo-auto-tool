@@ -36,7 +36,7 @@ export class Role {
   public hwnd?: number = 0; // 窗口句柄
   public bindDm: any = null; // 大漠类
   public bindPlugin: any = null; // 绑定的插件类
-  private timer: NodeJS.Timeout | null = null; // 定时器
+  private timeroutId: NodeJS.Timeout | null = null; // 定时器
   private name: string = ''; // 当前控制的角色名称
   public position: Pos | null = { x: 0, y: 0 }; // 当前角色所在坐标
   public map: string = ''; // 当前所在地图名称
@@ -57,11 +57,12 @@ export class Role {
   public job: 'YS' | 'SS' | 'JK' | 'CK' | 'ZS' = 'SS'; // 角色职业JK-剑客；CK-刺客；YS-药师；SS-术士；ZS-战士
   public actionTimer = new Map<string, ReturnType<typeof setInterval>>(); // 其他行为中的定时器
   private needCheckDead: boolean = true; // 是否需要检查死亡
-  private needCheckTeamApply: boolean = false; // 是否需要检查组队申请
   private needCheckLeaveUp: boolean = false; // 是否需要检查升级状态
   private deadCall: (() => void) | null = null; // 死亡回调
   private teamApplyCall: ((closePos: Pos) => void) | null = null; // 组队申请回调
   private globalStrategyTask: { condition: () => boolean; callback: () => void }[] | null = null; // 全局策略任务队列
+  private immediateId: NodeJS.Immediate | null = null; // 立即执行任务ID
+  private loopIsRuning: boolean = true; // 循环任务是否运行中
 
   constructor() {}
 
@@ -106,6 +107,7 @@ export class Role {
         // 全局任务检查
         if (this.globalStrategyTask) {
           for (const task of this.globalStrategyTask) {
+            console.log(task.condition(), 'task.condition()');
             if (task.condition()) {
               task.callback();
               break;
@@ -245,10 +247,12 @@ export class Role {
         console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
       } finally {
         // 中文注释：通过 setTimeout 维持 300ms 周期，避免紧凑的 setImmediate 导致事件循环阻塞
-        this.timer = setTimeout(loop, 250);
+        if (this.loopIsRuning) {
+          this.timeroutId = setTimeout(loop, 250);
+        }
       }
     };
-    setImmediate(loop); // 中文注释：立即触发一次执行
+    this.immediateId = setImmediate(loop); // 中文注释：立即触发一次执行
   }
 
   getName() {
@@ -262,16 +266,18 @@ export class Role {
   }
 
   unregisterRole() {
-    if (this.timer) {
+    this.loopIsRuning = false;
+    if (this.timeroutId) {
       // 中文注释：清理通过 setTimeout 周期调度的轮询定时器
-      clearTimeout(this.timer);
-      this.timer = null;
+      clearTimeout(this.timeroutId);
+      this.timeroutId = null;
       this.task = null;
       this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
       this.isPauseCurActive = false;
-      this.clearAllActionTimer();
       console.log('[角色信息] 已解除角色轮询');
     }
+    this.clearAllActionTimer();
+    this.immediateId && clearImmediate(this.immediateId);
   }
 
   // 挂载循环任务

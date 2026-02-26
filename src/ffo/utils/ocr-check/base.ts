@@ -7,6 +7,7 @@ import {
   DEFAULT_DEAD_CY,
   DEFAULT_EQUIP_COUNT,
   DEFAULT_EQUIP_DAMAGE,
+  DEFAULT_EXP_BAR,
   DEFAULT_GOLD,
   DEFAULT_INVITE_TEAM,
   DEFAULT_ISOLATE,
@@ -204,4 +205,11 @@ export const checkInviteTeam = (bindDm: AutoT, bindWindowSize: '1600*900' | '128
   const inviteTeamPos = DEFAULT_INVITE_TEAM[bindWindowSize];
   const inviteTeamText = bindDm.findStrFastE(inviteTeamPos.x1, inviteTeamPos.y1, inviteTeamPos.x2, inviteTeamPos.y2, inviteTeamPos.string, inviteTeamPos.color, inviteTeamPos.sim);
   return parseTextPos(inviteTeamText);
+};
+
+// 检查是否快升级了
+export const checkExpBar = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const expBarPos = DEFAULT_EXP_BAR[bindWindowSize];
+  const expBarText = bindDm.findColorE(expBarPos.x1, expBarPos.y1, expBarPos.x2, expBarPos.y2, expBarPos.color, expBarPos.sim);
+  return !!parseRolePositionFromText(expBarText);
 };

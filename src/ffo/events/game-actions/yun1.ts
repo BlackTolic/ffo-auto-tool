@@ -1,6 +1,6 @@
 import { damoBindingManager } from '..';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
-import { checkEquipBroken, checkEquipCount, checkItemBoxItemCount, checkPetActive, getCurrentGold } from '../../utils/ocr-check/base';
+import { checkEquipBroken, checkEquipCount, checkExpBar, checkItemBoxItemCount, checkPetActive, getCurrentGold } from '../../utils/ocr-check/base';
 import { BaseAction, ValidEquip } from '../base-action';
 import { Conversation, ItemMerchantConfig, StoreManagerConfig } from '../conversation';
 import { MoveActions } from '../move';
@@ -296,28 +296,48 @@ export const toggleYunHuang1West = () => {
   // 添加全局策略任务,如果3分钟没有移动过，先检查周围是否有怪物，有怪物优先攻击怪物，打完怪物后回城
   let lastMoveTime = 0;
   let lastPos = { x: 0, y: 0 };
+  // 中文注释：检查是否移动过
+  const checkIsMove = (min: number) => {
+    // 每隔3分钟获取一次角色坐标
+    if (Date.now() - lastMoveTime > min * 60 * 1000 && role.map === '云泽秘径') {
+      console.log('检查云荒不动原因', lastPos, role.position);
+      if (lastPos.x === role.position?.x && lastPos.y === role.position?.y) {
+        return true;
+      }
+      lastMoveTime = Date.now();
+      lastPos.x = role.position?.x ?? 0;
+      lastPos.y = role.position?.y ?? 0;
+    }
+    return false;
+  };
+  // 回城并且重置任务
+  const goBackCity = async () => {
+    // 关闭物品栏
+    baseAction.toggleItemBox();
+    await baseAction.backCity({ x: 148, y: 96 }, 'F9');
+    role.updateTaskStatus('done');
+  };
+  // 检查经验是否已经快满了
+  const isLevelUp = () => {
+    return checkExpBar(role.bindPlugin, role.bindWindowSize);
+  };
+  // 关闭循环任务
+  const closeLoopTask = async () => {
+    baseAction.toggleItemBox();
+    await baseAction.backCity({ x: 148, y: 96 }, 'F9');
+    role.updateTaskStatus('doing');
+    role.unregisterRole();
+    console.log('经验快满了，终止打怪！！');
+  };
+
   role.addGlobalStrategyTask([
     {
-      condition: () => {
-        // 每隔3分钟获取一次角色坐标
-        if (Date.now() - lastMoveTime > 3 * 60 * 1000 && role.map === '云泽秘径') {
-          console.log('检查云荒不动原因', lastPos, role.position);
-          if (lastPos.x === role.position?.x && lastPos.y === role.position?.y) {
-            return true;
-          }
-          lastMoveTime = Date.now();
-          lastPos.x = role.position?.x ?? 0;
-          lastPos.y = role.position?.y ?? 0;
-        }
-        return false;
-      },
-      callback: async () => {
-        // 回城
-        // 关闭物品栏
-        baseAction.toggleItemBox();
-        await baseAction.backCity({ x: 148, y: 96 }, 'F9');
-        role.updateTaskStatus('done');
-      },
+      condition: () => checkIsMove(3),
+      callback: goBackCity,
+    },
+    {
+      condition: isLevelUp,
+      callback: closeLoopTask,
     },
   ]);
 
