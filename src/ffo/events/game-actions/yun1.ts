@@ -2,15 +2,16 @@ import { damoBindingManager } from '..';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
 import { VK_F } from '../../constant/virtual-key-code';
 import { checkEquipBroken, checkEquipCount, checkItemBoxItemCount, checkPetActive, getCurrentGold } from '../../utils/ocr-check/base';
-import { BaseAction } from '../base-action';
+import { BaseAction, ValidEquip } from '../base-action';
 import { Conversation, ItemMerchantConfig, StoreManagerConfig } from '../conversation';
 import { MoveActions } from '../move';
 import { AttackActions } from '../skills';
 import { AutoFarmingAction } from './auto-farming';
 
-const validEquip = [
+const validEquip: ValidEquip = [
   { type: '戒指' },
   { type: '项链', attrName: '力量|智慧|体质|魔抗|护甲值' },
+  { type: '项链', level: '102' },
   { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害' },
   { type: '头盔', attrName: '生命最大值|力量|魔抗|体质|伤害|智慧' },
   { type: '手套', attrName: '物理攻击力|魔法攻击力|力量|体质|智慧' },

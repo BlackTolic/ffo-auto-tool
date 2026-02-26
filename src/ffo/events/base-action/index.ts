@@ -8,7 +8,7 @@ import { AttackActions } from '../skills';
 
 type Timer = NodeJS.Timeout | null;
 
-type ValidEquip = {
+export type ValidEquip = {
   type: string;
   level?: string;
   attrName?: string;
@@ -213,6 +213,10 @@ export class BaseAction {
         // 只设置了装备类型和属性，这两个对了才要
         if (equip.attrName && equip.type && unEquipPos.attrName && unEquipPos.type) {
           return equip.type.includes(unEquipPos.type) && equip.attrName.includes(unEquipPos.attrName);
+        }
+        // 只设置了装备类型和等级，这两个对了才要
+        if (equip.level && equip.type && unEquipPos.level && unEquipPos.type) {
+          return equip.type.includes(unEquipPos.type) && equip.level.includes(unEquipPos.level);
         }
       });
       if (way === 'saveEquip' && isUseful) {
