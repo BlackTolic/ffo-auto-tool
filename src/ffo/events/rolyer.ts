@@ -107,7 +107,7 @@ export class Role {
         // 全局任务检查
         if (this.globalStrategyTask) {
           for (const task of this.globalStrategyTask) {
-            console.log(task.condition(), 'task.condition()');
+            // console.log(task.condition(), 'task.condition()');
             if (task.condition()) {
               task.callback();
               break;
@@ -198,7 +198,7 @@ export class Role {
         if (takeTask.length) {
           // 指定第一个任务为最近的任务
           this.task = takeTask[0];
-          // console.log(this.task, ' this.task');
+          // console.log(this.taskStatus, ' this.taskStatus');
           if (['done'].includes(this.taskStatus)) {
             this.taskStatus = 'doing';
             // console.log('[角色信息] 已经成功切换循环任务:', this.task.taskName);

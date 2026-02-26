@@ -193,3 +193,9 @@ export const DEFAULT_EXP_BAR = {
   '1600*900': { x1: 1437, y1: 892, x2: 1480, y2: 900, color: '189850-111111', sim: 1.0 },
   '1280*800': { x1: 1437, y1: 892, x2: 1480, y2: 900, color: '189850-111111', sim: 1.0 },
 };
+
+// 检查系统提示信息
+export const DEFAULT_SYSTERM_INFO = {
+  '1600*900': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
+  '1280*800': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
+};

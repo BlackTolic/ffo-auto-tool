@@ -2,7 +2,7 @@ import { BACK_CITY_PNG_PATH } from '../../../constant/config';
 import { MAIN_CITY } from '../../constant/NPC_position';
 import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
-import { checkEquipCount, checkUnEquipEquip, isItemBoxOpen, switchItemBoxTabPos } from '../../utils/ocr-check/base';
+import { checkEquipCount, checkSystemPrompt, checkUnEquipEquip, isItemBoxOpen, switchItemBoxTabPos } from '../../utils/ocr-check/base';
 import { Role } from '../rolyer';
 import { AttackActions } from '../skills';
 
@@ -45,12 +45,14 @@ export class BaseAction {
   }
 
   // 回城
-  backCity(fixPos?: { x: number; y: number }, ways?: 'F9') {
+  backCity(fixPos?: { x: number; y: number }, ways?: 'F9', checkRedName = false) {
     return new Promise((res, rej) => {
       // 设置重复回城直到随机到达目标坐标
-      const repeatBack = (fixPos: { x: number; y: number }) => {
+      const repeatBack = (fixPos: { x: number; y: number }, maxTimes: number = 20) => {
+        let i = 0;
         let timer: Timer = setInterval(() => {
           console.log('回城中', this.role?.position, fixPos);
+          // 回到了终点
           if (this.role?.position && isArriveAimNear(this.role?.position, fixPos, 20)) {
             console.log('回城成功');
             timer && clearInterval(timer);
@@ -58,6 +60,23 @@ export class BaseAction {
             res(true);
           } else {
             ways === 'F9' && this.role ? new AttackActions(this.role).startKeyPress({ key: 'F9', interval: null }) : this.bindPlugin.leftClick();
+          }
+          if (checkRedName) {
+            const systemPrompt = checkSystemPrompt(this.bindPlugin, this.role?.bindWindowSize ?? '1600*900', '红名玩家不允许使用回城卷轴');
+            if (systemPrompt) {
+              console.log('检测到红名提示，中断回城操作');
+              timer && clearInterval(timer);
+              timer = null;
+              res('redName');
+              return;
+            }
+          }
+          // 超过最大次数
+          if (i >= maxTimes) {
+            console.log('回城失败');
+            timer && clearInterval(timer);
+            timer = null;
+            rej(false);
           }
           // 这里必须要超过4S 否则无法读到地图坐标
         }, 4000);

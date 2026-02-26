@@ -19,6 +19,7 @@ import {
   DEFAULT_ROLE_POSITION,
   DEFAULT_SERVER_DISCONNECT,
   DEFAULT_STATUS_ICON_POS,
+  DEFAULT_SYSTERM_INFO,
   DEFAULT_UN_EQUIP,
   DEFAULT_VERIFY_CODE,
 } from '../../constant/OCR-pos';
@@ -212,4 +213,12 @@ export const checkExpBar = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*80
   const expBarPos = DEFAULT_EXP_BAR[bindWindowSize];
   const expBarText = bindDm.findColorE(expBarPos.x1, expBarPos.y1, expBarPos.x2, expBarPos.y2, expBarPos.color, expBarPos.sim);
   return !!parseRolePositionFromText(expBarText);
+};
+
+// 检查系统是否有提示改信息
+export const checkSystemPrompt = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
+  const blockedPos = DEFAULT_SYSTERM_INFO[bindWindowSize];
+  const blockedText = bindDm.findStrFastE(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, keyword, blockedPos.color, blockedPos.sim);
+  console.log(blockedText, 'blockedText');
+  return !!parseRolePositionFromText(blockedText);
 };

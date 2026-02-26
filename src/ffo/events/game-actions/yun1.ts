@@ -33,9 +33,25 @@ const PATH_POS = [
 ];
 const checkTime = 1;
 const stationR = 8;
+const CHECK_EQUIP_COUNT = 24;
 
 let autoFarmingAction: AutoFarmingAction | null = null;
 let i = 0;
+
+// 选择回城方式
+const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions) => {
+  // 进行红名检验
+  const res = await baseAction.backCity({ x: 148, y: 96 }, 'F9', true);
+  console.log(res, 'res');
+  if (res === 'redName') {
+    // await new Promise(() => {
+    //   setTimeout(() => {}, 1000);
+    // });
+    await moveActions.startAutoFindPath({ toPos: { x: 183, y: 160 }, stationR, delay: 100, map: '云泽秘径' });
+    return await moveActions.startAutoFindPath({ toPos: INIT_POS_ROUTE, stationR, delay: 100 });
+  }
+  return res;
+};
 
 // 循环打怪
 const loopAutoAttackInWest = () => {
@@ -57,77 +73,68 @@ const loopAutoAttackInWest = () => {
   atackActions.addBuff();
   // 检查角色是群攻还是单攻击
   const attackType = role.job === 'SS' ? 'group' : 'single';
-  return (
-    moveActions
-      // .startAutoFindPath({ toPos: [{ x: 143, y: 81 }], stationR, delay: 100 })
-      .startAutoFindPath({ toPos: [INIT_POS_YUN1], stationR, delay: 100 })
-      .then(() => {
-        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { ...INIT_POS_YUN1, r: stationR }, map: '云泽秘径' });
-      })
-      .then(() => {
-        return moveActions.startAutoFindPath({ toPos: { x: 174, y: 105 }, stationR, delay: 100, map: '云泽秘径' });
-      })
-      .then(() => {
-        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 174, y: 105, r: stationR }, map: '云泽秘径' });
-      })
-      .then(() => {
-        return moveActions.startAutoFindPath({ toPos: { x: 144, y: 81 }, stationR, delay: 100, map: '云泽秘径' });
-      })
-      .then(() => {
-        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 144, y: 81, r: stationR }, map: '云泽秘径' });
-      })
-      .then(() => {
-        return moveActions.startAutoFindPath({ toPos: { x: 120, y: 56 }, stationR, delay: 100, map: '云泽秘径' });
-      })
-      .then(() => {
-        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 120, y: 56, r: stationR }, map: '云泽秘径' });
-      })
-      .then(() => {
-        return moveActions.startAutoFindPath({ toPos: { x: 40, y: 91 }, stationR, delay: 100, map: '云泽秘径' });
-      })
-      .then(() => {
-        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 40, y: 91, r: stationR }, map: '云泽秘径' });
-      })
-      .then(() => {
-        return moveActions.startAutoFindPath({ toPos: { x: 100, y: 120 }, stationR, delay: 100, map: '云泽秘径' });
-      })
-      .then(() => {
-        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 100, y: 120, r: stationR }, map: '云泽秘径' });
-      })
-      .then(() => {
-        return moveActions.startAutoFindPath({ toPos: INIT_POS_YUN1, stationR, delay: 100, map: '云泽秘径' });
-      })
-      .then(() => {
-        return atackActions.scanMonster({ attackType, times: 4, attackRange: { ...INIT_POS_YUN1, r: stationR }, map: '云泽秘径' });
-      })
-      .then(() => {
-        // 检查装备栏是否已经满了
-        const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
-        console.log(equipCount, '当前装备数量');
-        if (equipCount.length >= 24) {
-          // 关闭物品栏
-          baseAction.toggleItemBox();
-          return baseAction.backCity({ x: 148, y: 96 }, 'F9');
-        }
-        return false;
-      })
-      .then(() => {
-        console.log('重置成功');
-        // 当前地图是云荒才开始循环
-        role.updateTaskStatus('done');
-        i++;
-      })
-      .catch(async err => {
-        console.log('云荒打怪失败', err);
-        // 添加buff
-        // atackActions.stopAddBuff();
-        // setTimeout(async () => {
-        //   // 移动到云荒1
-        //   await baseAction.backCity({ x: 148, y: 96 }, 'F9');
-        //   role.updateTaskStatus('done');
-        // }, 10 * 1000);
-      })
-  );
+  return moveActions
+    .startAutoFindPath({ toPos: [INIT_POS_YUN1], stationR, delay: 100 })
+    .then(() => {
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { ...INIT_POS_YUN1, r: stationR }, map: '云泽秘径' });
+    })
+    .then(() => {
+      return moveActions.startAutoFindPath({ toPos: { x: 174, y: 105 }, stationR, delay: 100, map: '云泽秘径' });
+    })
+    .then(() => {
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 174, y: 105, r: stationR }, map: '云泽秘径' });
+    })
+    .then(() => {
+      return moveActions.startAutoFindPath({ toPos: { x: 144, y: 81 }, stationR, delay: 100, map: '云泽秘径' });
+    })
+    .then(() => {
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 144, y: 81, r: stationR }, map: '云泽秘径' });
+    })
+    .then(() => {
+      return moveActions.startAutoFindPath({ toPos: { x: 120, y: 56 }, stationR, delay: 100, map: '云泽秘径' });
+    })
+    .then(() => {
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 120, y: 56, r: stationR }, map: '云泽秘径' });
+    })
+    .then(() => {
+      return moveActions.startAutoFindPath({ toPos: { x: 40, y: 91 }, stationR, delay: 100, map: '云泽秘径' });
+    })
+    .then(() => {
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 40, y: 91, r: stationR }, map: '云泽秘径' });
+    })
+    .then(() => {
+      return moveActions.startAutoFindPath({ toPos: { x: 100, y: 120 }, stationR, delay: 100, map: '云泽秘径' });
+    })
+    .then(() => {
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 100, y: 120, r: stationR }, map: '云泽秘径' });
+    })
+    .then(() => {
+      return moveActions.startAutoFindPath({ toPos: INIT_POS_YUN1, stationR, delay: 100, map: '云泽秘径' });
+    })
+    .then(() => {
+      return atackActions.scanMonster({ attackType, times: 4, attackRange: { ...INIT_POS_YUN1, r: stationR }, map: '云泽秘径' });
+    })
+    .then(() => {
+      // 检查装备栏是否已经满了
+      const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
+      console.log(equipCount.length, '当前装备数量');
+      if (equipCount.length >= CHECK_EQUIP_COUNT) {
+        // 关闭物品栏
+        baseAction.toggleItemBox();
+        // return baseAction.backCity({ x: 148, y: 96 }, 'F9');
+        return selectGoBackCity(baseAction, moveActions);
+      }
+      return false;
+    })
+    .then(() => {
+      // 这里避免与上面的任务临界冲突
+      role.updateTaskStatus('done');
+      i++;
+      console.log('重置成功');
+    })
+    .catch(async err => {
+      console.log('云荒打怪失败', err);
+    });
 };
 
 // 循环检查状态，前往云荒1
@@ -317,6 +324,7 @@ export const toggleYunHuang1West = () => {
     await baseAction.backCity({ x: 148, y: 96 }, 'F9');
     role.updateTaskStatus('done');
   };
+
   // 检查经验是否已经快满了
   const isLevelUp = () => {
     return checkExpBar(role.bindPlugin, role.bindWindowSize);
