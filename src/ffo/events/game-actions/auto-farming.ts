@@ -12,6 +12,14 @@ export interface AutoRouteToggleResult {
   message?: string; // 中文注释：失败或提示信息
 }
 
+export interface AutoFarmingInstance {
+  initPos: Pos; // 初始化位置
+  pathPos: Pos[]; // 寻路位置
+  taskName: string; // 任务名称
+  ocrMonster: MonsterFeature; // 怪物特征
+  attackMode?: 'single' | 'multi'; // 攻击模式
+}
+
 export class AutoFarmingAction {
   private static instanceMap = new Map<number, AutoFarmingAction>();
   public role: Role;
@@ -39,7 +47,9 @@ export class AutoFarmingAction {
     this.taskName = taskName;
   }
 
-  public static getInstance(initPos: Pos, pathPos: Pos[], ocrMonster: MonsterFeature, taskName: string): AutoFarmingAction {
+  // 单例模式：根据窗口句柄获取自动寻路动作实例
+  public static getInstance(instance: AutoFarmingInstance): AutoFarmingAction {
+    const { initPos, pathPos, ocrMonster, taskName } = instance;
     const hwnd = damoBindingManager.selectHwnd;
     if (!hwnd || !damoBindingManager.isBound(hwnd)) {
       console.log('未选择已绑定的窗口', hwnd);
@@ -58,23 +68,24 @@ export class AutoFarmingAction {
     return this.instanceMap.get(hwnd)!;
   }
 
-  public start(taskList: { taskName: string; loopOriginPos: Pos; action: () => void; interval: number }[]) {
-    // 中文注释：在(154,44)附近开启循环
-    // {
-    //   taskName: this.taskName,
-    //   loopOriginPos: this.initPos,
-    //   action:
-    //     typeof loopAction === 'function'
-    //       ? loopAction
-    //       : () => {
-    //           console.log(`非自定义${this.taskName}任务启动！`, this.role.position);
-    //           this.actions.startAutoFindPath({ toPos: this.pathPos, actions: this.active }).then(res => {
-    //             this.role.updateTaskStatus('done');
-    //             console.log(`本轮${this.taskName}任务完成！`, this.role.position);
-    //           });
-    //         },
-    //   interval: 5000,
-    // }
+  public start(taskList?: { taskName: string; loopOriginPos: Pos; action: () => void; interval: number }[]) {
+    if (!taskList || taskList.length === 0) {
+      const params = [
+        {
+          taskName: this.taskName,
+          loopOriginPos: this.initPos,
+          action: () => {
+            console.log(`非自定义${this.taskName}任务启动！`, this.role.position);
+            this.actions.startAutoFindPath({ toPos: this.pathPos, actions: this.active }).then(res => {
+              this.role.updateTaskStatus('done');
+              console.log(`本轮${this.taskName}任务完成！`, this.role.position);
+            });
+          },
+          interval: 5000,
+        },
+      ];
+      return this.role.addIntervalActive(params);
+    }
     this.role.addIntervalActive(taskList);
   }
 
@@ -86,7 +97,8 @@ export class AutoFarmingAction {
 
   // 中文注释：检查是否正在运行
   public isRunning(): boolean {
-    return !!(this.actions.timer || this.role.hasActiveTask());
+    // return !!(this.actions.timer || this.role.hasActiveTask());
+    return this.role.hasActiveTask();
   }
 
   // 中文注释：暂停自动寻路
@@ -100,7 +112,7 @@ export class AutoFarmingAction {
   }
 
   // 中文注释：切换自动寻路（第一次开启，第二次关闭）
-  public toggle(taskList: { taskName: string; loopOriginPos: Pos; action: () => void; interval: number }[]): AutoRouteToggleResult {
+  public toggle(taskList?: { taskName: string; loopOriginPos: Pos; action: () => void; interval: number }[]): AutoRouteToggleResult {
     try {
       // if (!isArriveAimNear(this.role.position, this.initPos, 10)) {
       //   return { ok: false, message: `当前位置${JSON.stringify(this.role.position)}不在${this.taskName}循环触发点，无法开启自动寻路` };

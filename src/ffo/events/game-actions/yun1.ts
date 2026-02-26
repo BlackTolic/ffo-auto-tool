@@ -6,7 +6,7 @@ import { BaseAction, ValidEquip } from '../base-action';
 import { Conversation, ItemMerchantConfig, StoreManagerConfig } from '../conversation';
 import { MoveActions } from '../move';
 import { AttackActions } from '../skills';
-import { AutoFarmingAction } from './auto-farming';
+import { AutoFarmingAction, AutoFarmingInstance } from './auto-farming';
 
 const validEquip: ValidEquip = [
   { type: '戒指' },
@@ -280,7 +280,13 @@ export const toggleYunHuang1West = () => {
       20 * 60 * 1000
     );
   };
-  autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS_YUN1, PATH_POS, OCR_YUN_HUAN_1_MONSTER, TASK_NAME);
+  const instance: AutoFarmingInstance = {
+    initPos: INIT_POS_YUN1,
+    pathPos: PATH_POS,
+    ocrMonster: OCR_YUN_HUAN_1_MONSTER,
+    taskName: TASK_NAME,
+  };
+  autoFarmingAction = AutoFarmingAction.getInstance(instance);
   // 注册死亡回调
   role.addDeadCall(deadCall);
   // 添加组队拒绝
