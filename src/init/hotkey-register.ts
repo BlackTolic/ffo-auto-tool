@@ -101,6 +101,14 @@ export function registerGlobalHotkeys() {
     return await damoBindingManager.bindWindowsForPid(pid);
   });
 
+  // registerHotkey('Alt+1', async (dm, pid) => {
+  //   if (!pid || pid <= 0) {
+  //     console.log('[快捷键] Alt+1 失败 | 无法获取 PID');
+  //     return;
+  //   }
+  //   return await damoBindingManager.bindWindowsForPid(pid);
+  // });
+
   // 中文注释：Alt+W 切换自动按键
   // registerHotkey('Alt+W', () => toggleAutoKey('F1', 90));
 
