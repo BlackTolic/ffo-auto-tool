@@ -24,7 +24,7 @@ const validEquip: ValidEquip = [
 
 const TASK_NAME = '云荒打怪捡装备';
 // const INIT_POS_YUN1 = { x: 91, y: 114 };
-const INIT_POS_YUN1 = { x: 132, y: 136 };
+const INIT_POS_YUN1 = { x: 130, y: 133 };
 const INIT_POS_ROUTE = { x: 148, y: 96 };
 // const INIT_POS = { x: 168, y: 81 };
 const PATH_POS = [
@@ -61,9 +61,9 @@ const loopAutoAttackInWest = () => {
   return (
     moveActions
       // .startAutoFindPath({ toPos: [{ x: 143, y: 81 }], stationR, delay: 100 })
-      .startAutoFindPath({ toPos: [{ x: 132, y: 136 }], stationR, delay: 100 })
+      .startAutoFindPath({ toPos: [INIT_POS_YUN1], stationR, delay: 100 })
       .then(() => {
-        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 132, y: 136, r: stationR }, map: '云泽秘径' });
+        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { ...INIT_POS_YUN1, r: stationR }, map: '云泽秘径' });
       })
       .then(() => {
         return moveActions.startAutoFindPath({ toPos: { x: 174, y: 105 }, stationR, delay: 100, map: '云泽秘径' });
