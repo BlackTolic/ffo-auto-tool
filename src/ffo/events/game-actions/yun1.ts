@@ -282,6 +282,11 @@ export const toggleYunHuang1West = () => {
   autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS_YUN1, PATH_POS, OCR_YUN_HUAN_1_MONSTER, TASK_NAME);
   // 注册死亡回调
   role.addDeadCall(deadCall);
+  // 添加组队拒绝
+  role.updateTeamApplyCall(closePos => {
+    // 拒绝组队
+    role.bindPlugin.moveToClick(closePos.x, closePos.y);
+  });
   const taskList = [
     { taskName: '云荒打怪捡装备', loopOriginPos: INIT_POS_YUN1, action: loopAutoAttackInWest, interval: 2000 },
     { taskName: '云荒打怪状态补给', loopOriginPos: INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000 },
