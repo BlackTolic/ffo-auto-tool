@@ -22,7 +22,8 @@ const validEquip = [
 ];
 
 const TASK_NAME = '云荒打怪捡装备';
-const INIT_POS_YUN1 = { x: 91, y: 114 };
+// const INIT_POS_YUN1 = { x: 91, y: 114 };
+const INIT_POS_YUN1 = { x: 132, y: 136 };
 const INIT_POS_ROUTE = { x: 148, y: 96 };
 // const INIT_POS = { x: 168, y: 81 };
 const PATH_POS = [
@@ -56,54 +57,75 @@ const loopAutoAttackInWest = () => {
   atackActions.addBuff();
   // 检查角色是群攻还是单攻击
   const attackType = role.job === 'SS' ? 'group' : 'single';
-  return moveActions
-    .startAutoFindPath({ toPos: [{ x: 143, y: 81 }], stationR, delay: 100 })
-    .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 143, y: 81, r: stationR }, map: '云泽秘径' });
-    })
-    .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 114, y: 58 }, stationR, delay: 100, map: '云泽秘径' });
-    })
-    .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 114, y: 58, r: stationR }, map: '云泽秘径' });
-    })
-    .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 40, y: 91 }, stationR, delay: 100, map: '云泽秘径' });
-    })
-    .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 40, y: 91, r: stationR }, map: '云泽秘径' });
-    })
-    .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 91, y: 114 }, stationR, delay: 100, map: '云泽秘径' });
-    })
-    .then(() => {
-      return atackActions.scanMonster({ attackType, times: 4, attackRange: { x: 91, y: 114, r: stationR }, map: '云泽秘径' });
-    })
-    .then(() => {
-      // 检查装备栏是否已经满了
-      const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
-      console.log(equipCount, '当前装备数量');
-      if (equipCount.length >= 24) {
-        return baseAction.backCity({ x: 148, y: 96 }, 'F9');
-      }
-      return false;
-    })
-    .then(() => {
-      console.log('重置成功');
-      // 当前地图是云荒才开始循环
-      role.updateTaskStatus('done');
-      i++;
-    })
-    .catch(async err => {
-      console.log('云荒打怪失败', err);
-      // 添加buff
-      // atackActions.stopAddBuff();
-      // setTimeout(async () => {
-      //   // 移动到云荒1
-      //   await baseAction.backCity({ x: 148, y: 96 }, 'F9');
-      //   role.updateTaskStatus('done');
-      // }, 10 * 1000);
-    });
+  return (
+    moveActions
+      // .startAutoFindPath({ toPos: [{ x: 143, y: 81 }], stationR, delay: 100 })
+      .startAutoFindPath({ toPos: [{ x: 132, y: 136 }], stationR, delay: 100 })
+      .then(() => {
+        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 132, y: 136, r: stationR }, map: '云泽秘径' });
+      })
+      .then(() => {
+        return moveActions.startAutoFindPath({ toPos: { x: 174, y: 105 }, stationR, delay: 100, map: '云泽秘径' });
+      })
+      .then(() => {
+        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 174, y: 105, r: stationR }, map: '云泽秘径' });
+      })
+      .then(() => {
+        return moveActions.startAutoFindPath({ toPos: { x: 144, y: 81 }, stationR, delay: 100, map: '云泽秘径' });
+      })
+      .then(() => {
+        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 144, y: 81, r: stationR }, map: '云泽秘径' });
+      })
+      .then(() => {
+        return moveActions.startAutoFindPath({ toPos: { x: 120, y: 56 }, stationR, delay: 100, map: '云泽秘径' });
+      })
+      .then(() => {
+        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 120, y: 56, r: stationR }, map: '云泽秘径' });
+      })
+      .then(() => {
+        return moveActions.startAutoFindPath({ toPos: { x: 40, y: 91 }, stationR, delay: 100, map: '云泽秘径' });
+      })
+      .then(() => {
+        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 40, y: 91, r: stationR }, map: '云泽秘径' });
+      })
+      .then(() => {
+        return moveActions.startAutoFindPath({ toPos: { x: 100, y: 120 }, stationR, delay: 100, map: '云泽秘径' });
+      })
+      .then(() => {
+        return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 100, y: 120, r: stationR }, map: '云泽秘径' });
+      })
+      .then(() => {
+        return moveActions.startAutoFindPath({ toPos: INIT_POS_YUN1, stationR, delay: 100, map: '云泽秘径' });
+      })
+      .then(() => {
+        return atackActions.scanMonster({ attackType, times: 4, attackRange: { ...INIT_POS_YUN1, r: stationR }, map: '云泽秘径' });
+      })
+      .then(() => {
+        // 检查装备栏是否已经满了
+        const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
+        console.log(equipCount, '当前装备数量');
+        if (equipCount.length >= 24) {
+          return baseAction.backCity({ x: 148, y: 96 }, 'F9');
+        }
+        return false;
+      })
+      .then(() => {
+        console.log('重置成功');
+        // 当前地图是云荒才开始循环
+        role.updateTaskStatus('done');
+        i++;
+      })
+      .catch(async err => {
+        console.log('云荒打怪失败', err);
+        // 添加buff
+        // atackActions.stopAddBuff();
+        // setTimeout(async () => {
+        //   // 移动到云荒1
+        //   await baseAction.backCity({ x: 148, y: 96 }, 'F9');
+        //   role.updateTaskStatus('done');
+        // }, 10 * 1000);
+      })
+  );
 };
 
 // 循环检查状态，前往云荒1
@@ -238,21 +260,24 @@ export const toggleYunHuang1West = () => {
   // 死亡时回调
   const deadCall = () => {
     console.log('云荒打怪死亡');
-    const deadTimer = setTimeout(() => {
-      // 关闭物品栏
-      role.bindPlugin.keyPress(VK_F['alt']);
-      role.bindPlugin.keyPress(VK_F['i']);
-      role.bindPlugin.delay(1000);
-      // 移动到云荒1
-      baseAction.backCity({ x: 148, y: 96 }, 'F9');
-      // 关闭相关的定时设置
-      role.clearAllActionTimer();
-      // 结束buff
-      attackActions.addBuff();
-      // 重新更新循环状态
-      role.updateTaskStatus('done');
-      clearTimeout(deadTimer);
-    }, 10 * 1000);
+    const deadTimer = setTimeout(
+      () => {
+        // 关闭物品栏
+        role.bindPlugin.keyPress(VK_F['alt']);
+        role.bindPlugin.keyPress(VK_F['i']);
+        role.bindPlugin.delay(1000);
+        // 移动到云荒1
+        baseAction.backCity({ x: 148, y: 96 }, 'F9');
+        // 关闭相关的定时设置
+        role.clearAllActionTimer();
+        // 结束buff
+        attackActions.addBuff();
+        // 重新更新循环状态
+        role.updateTaskStatus('done');
+        clearTimeout(deadTimer);
+      },
+      20 * 60 * 1000
+    );
   };
   autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS_YUN1, PATH_POS, OCR_YUN_HUAN_1_MONSTER, TASK_NAME);
   // 注册死亡回调

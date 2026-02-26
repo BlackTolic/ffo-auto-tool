@@ -223,9 +223,9 @@ export class BaseAction {
         this.bindPlugin.leftDownFromToMove({ x: item.x + 10, y: item.y - 5 }, { x: 800, y: 400 });
         this.bindPlugin.leftClick();
         // 取消
-        this.bindPlugin.moveToClick(894, 492);
+        // this.bindPlugin.moveToClick(894, 492);
         // 丢弃
-        // this.bindPlugin.moveToClick(713, 492);
+        this.bindPlugin.moveToClick(713, 492);
         return;
       }
       console.log('这个装备有用');

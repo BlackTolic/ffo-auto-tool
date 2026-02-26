@@ -205,6 +205,5 @@ export const checkUnEquipEquip = (bindDm: AutoT, bindWindowSize: '1600*900' | '1
 export const checkInviteTeam = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const inviteTeamPos = DEFAULT_INVITE_TEAM[bindWindowSize];
   const inviteTeamText = bindDm.findStrFastE(inviteTeamPos.x1, inviteTeamPos.y1, inviteTeamPos.x2, inviteTeamPos.y2, inviteTeamPos.string, inviteTeamPos.color, inviteTeamPos.sim);
-  console.log(inviteTeamText, 'inviteTeamText');
   return parseTextPos(inviteTeamText);
 };

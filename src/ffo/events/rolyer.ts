@@ -60,6 +60,7 @@ export class Role {
   private needCheckTeamApply: boolean = false; // 是否需要检查组队申请
   private needCheckLeaveUp: boolean = false; // 是否需要检查升级状态
   private deadCall: (() => void) | null = null; // 死亡回调
+  private teamApplyCall: ((closePos: Pos) => void) | null = null; // 组队申请回调
 
   constructor() {}
 
@@ -97,7 +98,11 @@ export class Role {
         // 获取血量状态
         const bloodStatus = getBloodStatus(bindDm, this.bindWindowSize);
         // 队伍邀请
-        const inviteTeamPos = checkInviteTeam(bindDm, this.bindWindowSize);
+        if (typeof this.teamApplyCall === 'function') {
+          const inviteTeamPos = checkInviteTeam(bindDm, this.bindWindowSize);
+          inviteTeamPos && this.teamApplyCall(inviteTeamPos);
+        }
+
         // console.log(inviteTeamPos, 'inviteTeamPos');
         // console.log(bloodStatus, 'bloodStatus');
         // 是否处于回血状态
@@ -327,5 +332,10 @@ export class Role {
 
   addDeadCall(deadCall: () => void) {
     this.deadCall = deadCall;
+  }
+
+  // 中文注释：更新组队申请回调
+  updateTeamApplyCall(teamApplyCall: (closePos: Pos) => void) {
+    this.teamApplyCall = teamApplyCall;
   }
 }
