@@ -1,5 +1,7 @@
 import { damoBindingManager } from '..';
+import { debounce } from '../../../utils/tool';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
+import { isArriveAimNear } from '../../utils/common';
 import { checkEquipBroken, checkEquipCount, checkExpBar, checkItemBoxItemCount, checkPetActive, getCurrentGold } from '../../utils/ocr-check/base';
 import { BaseAction, ValidEquip } from '../base-action';
 import { Conversation, ItemMerchantConfig, StoreManagerConfig } from '../conversation';
@@ -33,7 +35,9 @@ const PATH_POS = [
 ];
 const checkTime = 1;
 const stationR = 8;
-const CHECK_EQUIP_COUNT = 24;
+const CHECK_EQUIP_COUNT = 23;
+
+const delay5S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 5 * 1000, true);
 
 let autoFarmingAction: AutoFarmingAction | null = null;
 let i = 0;
@@ -44,11 +48,11 @@ const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions
   const res = await baseAction.backCity({ x: 148, y: 96 }, 'F9', true);
   console.log(res, 'res');
   if (res === 'redName') {
-    // await new Promise(() => {
-    //   setTimeout(() => {}, 1000);
-    // });
-    await moveActions.startAutoFindPath({ toPos: { x: 183, y: 160 }, stationR, delay: 100, map: '云泽秘径' });
-    return await moveActions.startAutoFindPath({ toPos: INIT_POS_ROUTE, stationR, delay: 100 });
+    return new Promise(async res => {
+      await moveActions.startAutoFindPath({ toPos: { x: 183, y: 160 }, stationR, delay: 100, map: '云泽秘径' });
+      await moveActions.startAutoFindPath({ toPos: { x: 203, y: 101 }, stationR, delay: 100 });
+      res('红名操作');
+    });
   }
   return res;
 };
@@ -120,13 +124,19 @@ const loopAutoAttackInWest = () => {
       console.log(equipCount.length, '当前装备数量');
       if (equipCount.length >= CHECK_EQUIP_COUNT) {
         // 关闭物品栏
-        baseAction.toggleItemBox();
-        // return baseAction.backCity({ x: 148, y: 96 }, 'F9');
+        baseAction.toggleItemBox('close');
+        // 结束buff
+        atackActions.stopAddBuff();
+        // 选择回城方式
         return selectGoBackCity(baseAction, moveActions);
       }
       return false;
     })
-    .then(() => {
+    .then(res => {
+      if (res === '红名操作') {
+        loopCheckStatus();
+        return;
+      }
       // 这里避免与上面的任务临界冲突
       role.updateTaskStatus('done');
       i++;
@@ -272,13 +282,13 @@ export const toggleYunHuang1West = () => {
     const deadTimer = setTimeout(
       () => {
         // 关闭物品栏
-        baseAction.toggleItemBox();
+        baseAction.toggleItemBox('close');
         // 移动到云荒1
         baseAction.backCity({ x: 148, y: 96 }, 'F9');
         // 关闭相关的定时设置
         role.clearAllActionTimer();
         // 结束buff
-        attackActions.addBuff();
+        attackActions.stopAddBuff();
         // 重新更新循环状态
         role.updateTaskStatus('done');
         clearTimeout(deadTimer);
@@ -304,10 +314,10 @@ export const toggleYunHuang1West = () => {
   let lastMoveTime = 0;
   let lastPos = { x: 0, y: 0 };
   // 中文注释：检查是否移动过
-  const checkIsMove = (min: number) => {
+  const checkIsMove = (min: number, map: string) => {
     // 每隔3分钟获取一次角色坐标
-    if (Date.now() - lastMoveTime > min * 60 * 1000 && role.map === '云泽秘径') {
-      console.log('检查云荒不动原因', lastPos, role.position);
+    if (Date.now() - lastMoveTime > min * 60 * 1000 && role.map === map) {
+      console.log('每隔3分钟获取一次云荒地图坐标', lastPos, role.position);
       if (lastPos.x === role.position?.x && lastPos.y === role.position?.y) {
         return true;
       }
@@ -319,9 +329,13 @@ export const toggleYunHuang1West = () => {
   };
   // 回城并且重置任务
   const goBackCity = async () => {
+    const moveActions = new MoveActions(role);
     // 关闭物品栏
-    baseAction.toggleItemBox();
-    await baseAction.backCity({ x: 148, y: 96 }, 'F9');
+    baseAction.toggleItemBox('close');
+    const res = await baseAction.backCity({ x: 148, y: 96 }, 'F9', true);
+    if (res === 'redName') {
+      await moveActions.startAutoFindPath({ toPos: { x: 203, y: 101 }, stationR, delay: 100 });
+    }
     role.updateTaskStatus('done');
   };
 
@@ -331,7 +345,7 @@ export const toggleYunHuang1West = () => {
   };
   // 关闭循环任务
   const closeLoopTask = async () => {
-    baseAction.toggleItemBox();
+    baseAction.toggleItemBox('close');
     await baseAction.backCity({ x: 148, y: 96 }, 'F9');
     role.updateTaskStatus('doing');
     role.unregisterRole();
@@ -340,12 +354,17 @@ export const toggleYunHuang1West = () => {
 
   role.addGlobalStrategyTask([
     {
-      condition: () => checkIsMove(3),
+      condition: () => checkIsMove(3, '云泽秘径'),
       callback: goBackCity,
     },
     {
       condition: isLevelUp,
       callback: closeLoopTask,
+    },
+    {
+      condition: () => checkIsMove(20, '云荒部落') && !isArriveAimNear(role.position, INIT_POS_ROUTE, stationR),
+      // 添加防抖，改成5S执行一次
+      callback: () => delay5S(goBackCity),
     },
   ]);
 

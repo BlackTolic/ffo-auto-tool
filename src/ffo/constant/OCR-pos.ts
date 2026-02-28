@@ -15,7 +15,7 @@ export const DEFAULT_ADDRESS_NAME = {
 
 // 角色坐标
 export const DEFAULT_ROLE_POSITION = {
-  '1600*900': { x1: 1487, y1: 39, x2: 1551, y2: 59, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1600*900': { x1: 1487, y1: 39, x2: 1551, y2: 59, color: 'e8f0e8-222222', sim: DEFAULT_SIM },
   '1280*800': { x1: 1167, y1: 39, x2: 1218, y2: 56, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
 };
 

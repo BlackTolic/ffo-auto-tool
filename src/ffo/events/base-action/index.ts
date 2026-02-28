@@ -37,11 +37,17 @@ export class BaseAction {
   }
 
   // 关闭/打开物品栏
-  toggleItemBox() {
-    this.bindPlugin.keyPress(VK_F['alt']);
-    this.bindPlugin.keyPress(VK_F['i']);
-    this.bindPlugin.delay(500);
-    console.log('关闭或者打开物品栏');
+  toggleItemBox(type: 'close' | 'open') {
+    // 检查物品栏是否打开
+    const box = isItemBoxOpen(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
+    if ((type === 'close' && box) || (type === 'open' && !box)) {
+      this.bindPlugin.keyPress(VK_F['alt']);
+      this.bindPlugin.keyPress(VK_F['i']);
+      this.bindPlugin.delay(500);
+      console.log(`当前需要${type}物品栏`);
+      return;
+    }
+    console.log(`当前不需要${type}物品栏`);
   }
 
   // 回城
@@ -142,7 +148,7 @@ export class BaseAction {
         res(true);
       }
       if (!box) {
-        this.toggleItemBox();
+        this.toggleItemBox('open');
         // 切换tab页
         const tabPos = switchItemBoxTabPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', changeTo);
         if (tabPos) {
@@ -209,7 +215,7 @@ export class BaseAction {
     // console.log('这个装备有用');
     // 获取所有装备坐标
     const pos = checkEquipCount(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
-    console.log(pos, 'pos');
+    // console.log(pos, 'pos');
     if (!pos || pos.length === 0) {
       console.log('没有装备');
       return;

@@ -63,10 +63,10 @@ export class Conversation {
     const scanBox = SCAN_BOX[key];
     // const dialog = DIALOG_OPTIONS_POS[key];
     return new Promise((res, rej) => {
-      let YJClickPos = this.bindPlugin.findStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, npcName, scanBox.color, scanBox.sim);
-      let trsPos = YJClickPos.split(',');
-      console.log(YJClickPos, 'YJClickPos');
-      if (!YJClickPos) {
+      let NPCPos = this.bindPlugin.findStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, npcName, scanBox.color, scanBox.sim);
+      let trsPos = NPCPos.split(',');
+      console.log(NPCPos, 'NPC位置');
+      if (!NPCPos) {
         res(false);
       } else {
         res({ x: Number(trsPos[1]) + delX, y: Number(trsPos[2]) + delY });
@@ -350,6 +350,9 @@ export class Conversation {
     return new Promise(async (resolve, reject) => {
       const { task = '', money = '', saveEquipCall } = config || {};
       let npcPos = await this.findNPC('仓库管理员', 30, 50);
+      if (!npcPos) {
+        npcPos = await this.findNPC('仓库管理员', 30, 50);
+      }
       if (!npcPos) {
         npcPos = await this.findNPC('仓库管理员', 30, 50);
       }

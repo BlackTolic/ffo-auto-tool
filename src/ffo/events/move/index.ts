@@ -97,6 +97,7 @@ export class MoveActions {
     if (!Array.isArray(toPos)) {
       toPos = [toPos];
     }
+    // console.log('坐标', fromPos, toPos);
     if (!fromPos) {
       console.log('未获取到角色位置', this.role);
       return false;
@@ -107,7 +108,6 @@ export class MoveActions {
       !this.isPause && this.move(fromPos, curAimPos);
     }
     // 已到达/或者超过中途的坐标点后，切换下一个坐标
-    // 已到达
     const isArriveStation = isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], stationR) && this.recordAimPosIndex < toPos.length - 1;
     // 已超过
     // const isOverStation = isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], 10) && this.recordAimPosIndex > 0;
@@ -115,12 +115,6 @@ export class MoveActions {
       this.recordAimPosIndex++;
       return this.fromTo(fromPos, toPos, stationR);
     }
-    const isM = this.isMove(10);
-    // console.log(isM, 'isM');
-    // if (this.isMove(6) === false) {
-    //   // 在this.role.position随机100内移动
-    //   this.randomMove();
-    // }
 
     // 到达最后的终点坐标
     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], stationR) && this.recordAimPosIndex === toPos.length - 1) {

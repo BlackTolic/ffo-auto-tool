@@ -93,12 +93,18 @@ export class Role {
     const loop = () => {
       try {
         // 获取角色位置
-        const pos = getRolePosition(bindDm, this.bindWindowSize); // 获取地图名
-        const addressName = getMapName(bindDm, this.bindWindowSize);
+        this.position = getRolePosition(bindDm, this.bindWindowSize); // 获取坐标信息
+        // 未读取到坐标，结束所有操作
+        if (!this.position) {
+          console.log('未获取到角色位置');
+          // 暂停所有点击事件
+        }
+        this.map = getMapName(bindDm, this.bindWindowSize);
         // 获取选中的怪物名
-        const monsterName = getMonsterName(bindDm, this.bindWindowSize);
+        this.selectMonster = getMonsterName(bindDm, this.bindWindowSize);
         // 获取血量状态
-        const bloodStatus = getBloodStatus(bindDm, this.bindWindowSize);
+        this.bloodStatus = getBloodStatus(bindDm, this.bindWindowSize);
+
         // 队伍邀请
         if (typeof this.teamApplyCall === 'function') {
           const inviteTeamPos = checkInviteTeam(bindDm, this.bindWindowSize);
@@ -114,13 +120,6 @@ export class Role {
             }
           }
         }
-
-        // console.log(inviteTeamPos, 'inviteTeamPos');
-        // console.log(bloodStatus, 'bloodStatus');
-        // 是否处于回血状态
-        // this.statusBloodIcon = getStatusBloodIcon(bindDm, this.bindWindowSize);
-        // 截图
-        // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
         // 获取神医坐标
         const verifyCodeTextPos = getVerifyCodePos(bindDm, this.bindWindowSize);
         if (verifyCodeTextPos) {
@@ -180,18 +179,13 @@ export class Role {
           this.openCapture = true;
         }
 
-        this.selectMonster = monsterName;
-        this.map = addressName;
-        this.position = pos;
-        this.bloodStatus = bloodStatus;
-
         // 检查是否有人抛出组队申请
         // 开启任务队列
         if (!this.taskList?.length) {
           return;
         }
         // 这里执行循环任务根据任务中的初始坐标来触发
-        const takeTask = this.taskList.filter(item => isArriveAimNear(pos as Pos, item.loopOriginPos, 10));
+        const takeTask = this.taskList.filter(item => isArriveAimNear(this.position as Pos, item.loopOriginPos, 10));
         // if (!takeTask.length) {
         //   return;
         // }

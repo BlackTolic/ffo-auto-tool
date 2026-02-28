@@ -69,9 +69,9 @@ export const getMapName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800
 };
 
 // 获取角色坐标位置
-export const getRolePosition = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const getRolePosition = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', selfColor = '') => {
   const rolePos = DEFAULT_ROLE_POSITION[bindWindowSize];
-  const rolePosText = bindDm.ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, rolePos.color, rolePos.sim);
+  const rolePosText = bindDm.ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, selfColor || rolePos.color, rolePos.sim);
   return parseRolePositionFromText(rolePosText);
 };
 
