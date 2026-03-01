@@ -1,6 +1,7 @@
 import { damoBindingManager } from '..';
 import logger from '../../../utils/logger';
 import { OCR_MING_YU_BOSS, OCR_PAN_GUI_MONSTER } from '../../constant/monster-feature';
+import { AttackActions } from '../attack-action';
 import { BaseAction } from '../base-action';
 import { Conversation } from '../conversation';
 import {
@@ -11,8 +12,7 @@ import {
   fromMingYuNPCToAntHill,
   fromSunsetDuneToSunsetDuneWest,
   fromSunsetDuneWestToSphinx,
-} from '../move/lou-lan';
-import { AttackActions } from '../skills';
+} from '../move-action/lou-lan';
 import { AutoFarmingAction } from './auto-farming';
 
 const TASK_NAME = '跑名誉';

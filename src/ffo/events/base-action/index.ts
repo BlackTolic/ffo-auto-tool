@@ -4,8 +4,8 @@ import { MAIN_CITY } from '../../constant/NPC_position';
 import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
 import { checkEquipCount, checkSystemPrompt, checkUnEquipEquip, isItemBoxOpen, switchItemBoxTabPos } from '../../utils/ocr-check/base';
+import { AttackActions } from '../attack-action';
 import { Role } from '../rolyer';
-import { AttackActions } from '../skills';
 
 type Timer = NodeJS.Timeout | null;
 

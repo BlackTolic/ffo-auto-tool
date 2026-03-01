@@ -2,8 +2,8 @@ import { globalShortcut } from 'electron';
 import { ensureDamo } from '../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
+import { AttackActions } from '../ffo/events/attack-action';
 import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
-import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { logger } from '../utils/logger';
 

@@ -54,8 +54,8 @@ const formatLog = (args: any[]): [object | undefined, string] => {
     if (rest.length === 0) return [undefined, msg];
     // 如果有更多参数，将它们放入 'context' 对象中
     // pino-pretty 将会显示这个对象
-    // return [{ context: rest.length === 1 ? rest[0] : rest }, msg];
-    return [rest.length === 1 ? rest[0] : rest, msg];
+    return [{ context: rest.length === 1 ? rest[0] : rest }, msg];
+    // return [rest.length === 1 ? rest[0] : rest, msg];
   }
 
   // 情况 2: 第一个参数是 Error 对象 (特殊处理错误堆栈)
@@ -92,25 +92,51 @@ const formatLog = (args: any[]): [object | undefined, string] => {
   return [{ value: args[0], rest: args.slice(1) }, 'Log Value'];
 };
 
+// 辅助函数：安全地将对象转换为字符串 (处理 Error 和循环引用)
+const safeStringify = (obj: any): string => {
+  try {
+    const cache = new Set();
+    return JSON.stringify(obj, (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (cache.has(value)) {
+          return '[Circular]';
+        }
+        cache.add(value);
+      }
+      if (value instanceof Error) {
+        return {
+          // name 已通过 ...value 展开，无需重复指定
+          // message: value.message,
+          stack: value.stack,
+          ...value,
+        };
+      }
+      return value;
+    });
+  } catch (err) {
+    return String(obj);
+  }
+};
+
 export const logger = {
   info: (...args: any[]) => {
     const [obj, msg] = formatLog(args);
-    if (obj) pinoLogger.info(obj, msg);
+    if (obj) pinoLogger.info(safeStringify(obj), msg);
     else pinoLogger.info(msg);
   },
   warn: (...args: any[]) => {
     const [obj, msg] = formatLog(args);
-    if (obj) pinoLogger.warn(obj, msg);
+    if (obj) pinoLogger.warn(safeStringify(obj), msg);
     else pinoLogger.warn(msg);
   },
   error: (...args: any[]) => {
     const [obj, msg] = formatLog(args);
-    if (obj) pinoLogger.error(obj, msg);
+    if (obj) pinoLogger.error(safeStringify(obj), msg);
     else pinoLogger.error(msg);
   },
   debug: (...args: any[]) => {
     const [obj, msg] = formatLog(args);
-    if (obj) pinoLogger.debug(obj, msg);
+    if (obj) pinoLogger.debug(safeStringify(obj), msg);
     else pinoLogger.debug(msg);
   },
   // 如果需要，暴露原始 pino 实例

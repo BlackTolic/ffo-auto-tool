@@ -3,9 +3,9 @@
 import { damoBindingManager } from '..';
 import { OCR_JIN_HU_BEI_AN_MONSTER } from '../../constant/monster-feature';
 import { isArriveAimNear } from '../../utils/common';
-import { MoveActions } from '../move';
+import { AttackActions } from '../attack-action';
+import { MoveActions } from '../move-action';
 import { Role } from '../rolyer';
-import { AttackActions } from '../skills';
 
 const LOOP_INIT_POS = { x: 68, y: 86 };
 

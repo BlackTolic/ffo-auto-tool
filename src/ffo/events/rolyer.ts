@@ -87,7 +87,7 @@ export class Role {
     this.bindDm = rec?.ffoClient.dm;
     this.bindPlugin = bindDm;
     const name = getRoleName(bindDm, this.bindWindowSize);
-    logger.info(name, 'this.name');
+    logger.info('当前绑定角色', name);
     this.name = name;
     this.job = name.includes('花开无须折') ? 'SS' : 'JK';
     // 中文注释：使用 setImmediate 触发首轮执行，随后用 setTimeout 维持固定轮询间隔（避免事件循环被持续 setImmediate 挤压）
@@ -97,7 +97,7 @@ export class Role {
         this.position = getRolePosition(bindDm, this.bindWindowSize); // 获取坐标信息
         // 未读取到坐标，结束所有操作
         if (!this.position) {
-          logger.warn('未获取到角色位置');
+          logger.warn('[角色信息] 未获取到角色位置');
           // 暂停所有点击事件
         }
         this.map = getMapName(bindDm, this.bindWindowSize);
@@ -353,7 +353,7 @@ export class Role {
   // 添加全局策略任务,当某个条件达到时，立即执行回调任务
   addGlobalStrategyTask(tasks: { condition: () => boolean; callback: () => void }[]) {
     if (this.globalStrategyTask) {
-      logger.info('全局策略任务已存在!');
+      logger.info('[角色信息] 全局策略任务已存在!');
       return;
     }
     this.globalStrategyTask = tasks;

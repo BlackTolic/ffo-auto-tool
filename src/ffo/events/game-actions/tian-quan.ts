@@ -6,11 +6,11 @@ import { logger } from '../../../utils/logger';
 import { OCR_MONSTER } from '../../constant/monster-feature';
 import { TianDu } from '../../constant/NPC_position';
 import { isArriveAimNear } from '../../utils/common';
+import { AttackActions } from '../attack-action';
 import { BaseAction } from '../base-action';
 import { Conversation } from '../conversation';
-import { MoveActions } from '../move';
+import { MoveActions } from '../move-action';
 import { Role } from '../rolyer';
-import { AttackActions } from '../skills';
 
 const pos = [
   // 天泉

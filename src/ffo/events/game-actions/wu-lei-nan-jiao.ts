@@ -4,9 +4,9 @@ import { damoBindingManager } from '..';
 import { logger } from '../../../utils/logger';
 import { OCR_NAN_JIAO_MONSTER } from '../../constant/monster-feature';
 import { isArriveAimNear } from '../../utils/common';
-import { MoveActions } from '../move';
+import { AttackActions } from '../attack-action';
+import { MoveActions } from '../move-action';
 import { Role } from '../rolyer';
-import { AttackActions } from '../skills';
 
 const LOOP_INIT_POS = { x: 227, y: 53 };
 

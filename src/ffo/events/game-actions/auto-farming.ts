@@ -1,9 +1,9 @@
 import { damoBindingManager } from '..';
 import logger from '../../../utils/logger';
 import { MonsterFeature } from '../../constant/monster-feature';
-import { MoveActions, Pos } from '../move';
+import { AttackActions } from '../attack-action';
+import { MoveActions, Pos } from '../move-action';
 import { Role } from '../rolyer';
-import { AttackActions } from '../skills';
 
 // 中文注释：自动寻路切换返回结果
 export interface AutoRouteToggleResult {

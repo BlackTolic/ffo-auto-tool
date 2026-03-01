@@ -4,10 +4,10 @@ import { debounce } from '../../../utils/tool';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
 import { isArriveAimNear } from '../../utils/common';
 import { checkEquipBroken, checkEquipCount, checkExpBar, checkItemBoxItemCount, checkPetActive, getCurrentGold } from '../../utils/ocr-check/base';
+import { AttackActions } from '../attack-action';
 import { BaseAction, ValidEquip } from '../base-action';
 import { Conversation, ItemMerchantConfig, StoreManagerConfig } from '../conversation';
-import { MoveActions } from '../move';
-import { AttackActions } from '../skills';
+import { MoveActions } from '../move-action';
 import { AutoFarmingAction, AutoFarmingInstance } from './auto-farming';
 
 const validEquip: ValidEquip = [
@@ -38,6 +38,7 @@ const PATH_POS = [
 const checkTime = 2;
 const stationR = 8;
 const CHECK_EQUIP_COUNT = 23;
+const DEAD_CALL_TIME = 1 * 1000;
 
 const delay5S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 5 * 1000, true);
 
@@ -94,7 +95,7 @@ const loopAutoAttackInWest = () => {
       return moveActions.startAutoFindPath({ toPos: { x: 144, y: 81 }, stationR, delay: 100, map: '云泽秘径' });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 144, y: 81, r: stationR }, map: '云泽秘径' });
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 144, y: 81, r: 4 }, map: '云泽秘径' });
     })
     .then(() => {
       return moveActions.startAutoFindPath({ toPos: { x: 120, y: 56 }, stationR, delay: 100, map: '云泽秘径' });
@@ -123,7 +124,7 @@ const loopAutoAttackInWest = () => {
     .then(() => {
       // 检查装备栏是否已经满了
       const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
-      logger.info(equipCount.length, '当前装备数量');
+      logger.info(`[云荒打怪] 检查当前装备数量: ${equipCount.length}`);
       if (equipCount.length >= CHECK_EQUIP_COUNT) {
         // 关闭物品栏
         baseAction.toggleItemBox('close');
@@ -142,7 +143,7 @@ const loopAutoAttackInWest = () => {
       // 这里避免与上面的任务临界冲突
       role.updateTaskStatus('done');
       i++;
-      logger.info('重置成功');
+      logger.info(`[云荒打怪] 已完成第${i}次任务,下一轮重置开始`);
     })
     .catch(async err => {
       logger.error('云荒打怪失败', err);
@@ -185,14 +186,10 @@ const loopCheckStatus = async () => {
   const redCount = checkItemBoxItemCount(dm, role.bindWindowSize, 1, '蓝药');
   const blueCount = checkItemBoxItemCount(dm, role.bindWindowSize, 2, '人参');
   const returnCount = checkItemBoxItemCount(dm, role.bindWindowSize, 3, '回城卷轴');
-  const petFoodCount = checkItemBoxItemCount(dm, role.bindWindowSize, 4, '宠物食物');
+  // const petFoodCount = checkItemBoxItemCount(dm, role.bindWindowSize, 4, '宠物食物');
   // 检查装备是否已经损坏
   const isEquipBroken = checkEquipBroken(dm, role.bindWindowSize);
-  logger.info(`蓝药数量`, redCount);
-  logger.info(`人参数量`, blueCount);
-  logger.info(`回城卷轴数量`, returnCount);
-  logger.info(`宠物食物数量`, petFoodCount);
-  logger.info(`装备是否已损坏`, isEquipBroken);
+  logger.info(`[云荒检查] 装备情况:${isEquipBroken ? '已损坏' : '未损坏'};蓝药数量${redCount};人参数量${blueCount};回城卷轴数量${returnCount};`);
   // 鼠标归位，防止影响下一次识别
   dm.moveTo(role.position?.x || 0, role.position?.y || 0);
   dm.delay(300);
@@ -243,7 +240,7 @@ const loopCheckStatus = async () => {
 
   // 存钱
   const gold = getCurrentGold(role.bindDm, role.bindWindowSize);
-  logger.info(`当前金币数量`, gold);
+  logger.info(`[云荒检查] 当前金币数量`, gold);
   if (Number(gold) > 0) {
     // 去仓库管理员取钱
     await moveActions.startAutoFindPath({ toPos: STORE_NPC, stationR, delay: 2000 });
@@ -278,26 +275,22 @@ export const toggleYunHuang1West = () => {
   }
   let baseAction = new BaseAction(role);
   let attackActions = new AttackActions(role);
-  let moveActions = new MoveActions(role);
   // 死亡时回调
   const deadCall = () => {
-    logger.info('云荒打怪死亡开始进行死亡回调');
-    const deadTimer = setTimeout(
-      async () => {
-        // 关闭物品栏
-        baseAction.toggleItemBox('close');
-        // 关闭相关的定时设置
-        role.clearAllActionTimer();
-        // 结束buff
-        attackActions.stopAddBuff();
-        // 移动到云荒1
-        goBackCityAndResetTask();
-        // 重新更新循环状态
-        role.updateTaskStatus('done');
-        clearTimeout(deadTimer);
-      },
-      20 * 60 * 1000
-    );
+    logger.info(`[云荒检查] 云荒打怪死亡开始进行死亡回调 ${DEAD_CALL_TIME / 1000} 秒后执行`);
+    const deadTimer = setTimeout(async () => {
+      // 关闭物品栏
+      baseAction.toggleItemBox('close');
+      // 关闭相关的定时设置
+      role.clearAllActionTimer();
+      // 结束buff
+      attackActions.stopAddBuff();
+      // 移动到云荒1
+      goBackCityAndResetTask();
+      // 重新更新循环状态
+      role.updateTaskStatus('done');
+      clearTimeout(deadTimer);
+    }, DEAD_CALL_TIME);
   };
   const instance: AutoFarmingInstance = {
     initPos: INIT_POS_YUN1,
@@ -320,7 +313,7 @@ export const toggleYunHuang1West = () => {
   const checkIsMove = (min: number, map: string) => {
     // 每隔3分钟获取一次角色坐标
     if (Date.now() - lastMoveTime > min * 60 * 1000 && role.map === map) {
-      logger.info('每隔3分钟获取一次云荒地图坐标', lastPos, role.position);
+      logger.info(`[云荒检查] 每隔${min}分钟获取一次云荒地图坐标, 上一次坐标: (${lastPos.x},${lastPos.y}), 当前坐标: (${role.position?.x},${role.position?.y})`);
       if (lastPos.x === role.position?.x && lastPos.y === role.position?.y) {
         return true;
       }
@@ -332,13 +325,13 @@ export const toggleYunHuang1West = () => {
   };
   // 回城并且重置任务
   const goBackCityAndResetTask = async () => {
-    logger.info('执行回城并且重置任务 - goBackCityAndResetTask');
+    logger.info('[云荒检查] 执行回城并且重置任务 - goBackCityAndResetTask');
     const moveActions = new MoveActions(role);
     // 关闭物品栏
     baseAction.toggleItemBox('close');
     const res = await baseAction.backCity({ x: 148, y: 96 }, 'F9', true);
     if (res === 'redName') {
-      logger.info('前往仓库管理员处');
+      logger.info('[云荒检查] 前往仓库管理员处');
       await moveActions.startAutoFindPath({ toPos: { x: 203, y: 101 }, stationR, delay: 100 });
       loopCheckStatus();
       return;
@@ -356,7 +349,7 @@ export const toggleYunHuang1West = () => {
     await baseAction.backCity({ x: 148, y: 96 }, 'F9');
     role.updateTaskStatus('doing');
     role.unregisterRole();
-    logger.info('经验快满了，终止打怪！！');
+    logger.info('[云荒检查] 经验快满了，终止打怪！！');
   };
 
   role.addGlobalStrategyTask([
