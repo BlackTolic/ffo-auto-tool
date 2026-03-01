@@ -272,7 +272,7 @@ export class AttackActions {
         this.bindDm.KeyDownChar(item.key);
         this.bindDm.delay(300);
         this.bindDm.KeyUpChar(item.key);
-        this.bindDm.delay(300);
+        this.bindDm.delay(500);
       };
       if (isUseless) {
         console.log(`当前技能${item.key}为锁定技能，未选择目标，不执行`);
@@ -314,12 +314,14 @@ export class AttackActions {
   scanMonster(options: ScanMonsterOptions) {
     const { attackType, times = 5, attackRange, map = '' } = options;
     return new Promise((resolve, reject) => {
+      console.log(`[自动攻击] 已启动：attackType=${attackType} | 间隔=${times}S | 范围=${attackRange?.r || '无'}`);
       let counter = 0;
       let lastIsolateTime = 0;
       let timer: NodeJS.Timeout | null = setInterval(() => {
         // 对怪物进行攻击
         const isRange = attackRange && isArriveAimNear(this.role.position, { x: attackRange.x, y: attackRange.y }, attackRange.r);
         if (!isRange && attackRange) {
+          console.log(`[自动攻击] 未在范围内，需要移动到目标点：`, attackRange);
           const { x, y } = attackRange;
           const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
           new MoveActions(this.role).move({ x: roleX, y: roleY }, { x, y });
@@ -356,6 +358,7 @@ export class AttackActions {
           reject(new Error(`[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击`));
         }
         if (!findMonsterPos && counter > times) {
+          console.log(`[自动攻击] 已连续${times}S无目标，结束自动攻击`);
           timer && clearInterval(timer);
           timer = null;
           resolve(true);

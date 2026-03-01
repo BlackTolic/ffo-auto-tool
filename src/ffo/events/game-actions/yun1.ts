@@ -27,13 +27,14 @@ const TASK_NAME = '云荒打怪捡装备';
 // const INIT_POS_YUN1 = { x: 91, y: 114 };
 const INIT_POS_YUN1 = { x: 130, y: 133 };
 const INIT_POS_ROUTE = { x: 148, y: 96 };
+const STORE_NPC = { x: 203, y: 101 };
 // const INIT_POS = { x: 168, y: 81 };
 const PATH_POS = [
   { x: 146, y: 79 },
   { x: 119, y: 58 },
   { x: 40, y: 91 },
 ];
-const checkTime = 1;
+const checkTime = 2;
 const stationR = 8;
 const CHECK_EQUIP_COUNT = 23;
 
@@ -50,7 +51,7 @@ const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions
   if (res === 'redName') {
     return new Promise(async res => {
       await moveActions.startAutoFindPath({ toPos: { x: 183, y: 160 }, stationR, delay: 100, map: '云泽秘径' });
-      await moveActions.startAutoFindPath({ toPos: { x: 203, y: 101 }, stationR, delay: 100 });
+      await moveActions.startAutoFindPath({ toPos: STORE_NPC, stationR, delay: 100 });
       res('红名操作');
     });
   }
@@ -200,13 +201,13 @@ const loopCheckStatus = async () => {
   const equipCount = checkEquipCount(dm, role.bindWindowSize);
   console.log(`装备数量`, equipCount.length);
   const needMoney = redCount < 50 || blueCount < 50 || isEquipBroken;
-  if (equipCount.length > 15 || needMoney) {
+  if (equipCount.length > 14 || needMoney) {
     // 去仓库管理员取钱
     await moveActions.startAutoFindPath({ toPos: { x: 200, y: 98 }, stationR, delay: 2000 });
     // 与仓库管理员对话
     const config = Object.assign(
       needMoney ? { task: 'withdraw', money: '5' } : {},
-      equipCount.length > 15 ? { saveEquipCall: () => baseAction.pickUpUsefulEquip(validEquip, 'saveEquip') } : {}
+      equipCount.length > 14 ? { saveEquipCall: () => baseAction.pickUpUsefulEquip(validEquip, 'saveEquip') } : {}
     ) as StoreManagerConfig;
     const withdrawOk = await new Conversation(role).StoreManager(config);
     if (!withdrawOk) {
@@ -244,7 +245,7 @@ const loopCheckStatus = async () => {
   console.log(`当前金币数量`, gold);
   if (Number(gold) > 0) {
     // 去仓库管理员取钱
-    await moveActions.startAutoFindPath({ toPos: { x: 200, y: 98 }, stationR, delay: 2000 });
+    await moveActions.startAutoFindPath({ toPos: STORE_NPC, stationR, delay: 2000 });
     // 与仓库管理员对话
     const depositOk = await new Conversation(role).StoreManager({ task: 'deposit', money: '999' });
     if (!depositOk) {
@@ -276,19 +277,20 @@ export const toggleYunHuang1West = () => {
   }
   let baseAction = new BaseAction(role);
   let attackActions = new AttackActions(role);
+  let moveActions = new MoveActions(role);
   // 死亡时回调
   const deadCall = () => {
-    console.log('云荒打怪死亡');
+    console.log('云荒打怪死亡开始进行死亡回调');
     const deadTimer = setTimeout(
-      () => {
+      async () => {
         // 关闭物品栏
         baseAction.toggleItemBox('close');
-        // 移动到云荒1
-        baseAction.backCity({ x: 148, y: 96 }, 'F9');
         // 关闭相关的定时设置
         role.clearAllActionTimer();
         // 结束buff
         attackActions.stopAddBuff();
+        // 移动到云荒1
+        goBackCityAndResetTask();
         // 重新更新循环状态
         role.updateTaskStatus('done');
         clearTimeout(deadTimer);
@@ -328,13 +330,17 @@ export const toggleYunHuang1West = () => {
     return false;
   };
   // 回城并且重置任务
-  const goBackCity = async () => {
+  const goBackCityAndResetTask = async () => {
+    console.log('执行回城并且重置任务 - goBackCityAndResetTask');
     const moveActions = new MoveActions(role);
     // 关闭物品栏
     baseAction.toggleItemBox('close');
     const res = await baseAction.backCity({ x: 148, y: 96 }, 'F9', true);
     if (res === 'redName') {
+      console.log('前往仓库管理员处');
       await moveActions.startAutoFindPath({ toPos: { x: 203, y: 101 }, stationR, delay: 100 });
+      loopCheckStatus();
+      return;
     }
     role.updateTaskStatus('done');
   };
@@ -355,7 +361,7 @@ export const toggleYunHuang1West = () => {
   role.addGlobalStrategyTask([
     {
       condition: () => checkIsMove(3, '云泽秘径'),
-      callback: goBackCity,
+      callback: goBackCityAndResetTask,
     },
     {
       condition: isLevelUp,
@@ -364,7 +370,7 @@ export const toggleYunHuang1West = () => {
     {
       condition: () => checkIsMove(20, '云荒部落') && !isArriveAimNear(role.position, INIT_POS_ROUTE, stationR),
       // 添加防抖，改成5S执行一次
-      callback: () => delay5S(goBackCity),
+      callback: () => delay5S(goBackCityAndResetTask),
     },
   ]);
 
