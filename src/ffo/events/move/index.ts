@@ -1,3 +1,4 @@
+import { logger } from '../../../utils/logger';
 import * as math from '../../../utils/math';
 import { ORIGIN_POSITION } from '../../constant/OCR-pos';
 import { isArriveAimNear } from '../../utils/common';
@@ -24,7 +25,7 @@ export interface AutoFindPathConfig {
 
 const getInitPos = (bindWindowSize: string) => {
   const initPos = (ORIGIN_POSITION as any)[bindWindowSize];
-  // console.log(initPos, '角色的绝对位置');
+  // logger.debug(initPos, '角色的绝对位置');
   return { x: initPos.x, y: initPos.y, r: initPos.r };
 };
 
@@ -46,11 +47,11 @@ function getCirclePoint(angle: number, bindWindowSize: string) {
   const radius = pos.r;
   // 角度转弧度（JavaScript Math.sin/cos需弧度）
   const rad = Number(((angle * Math.PI) / 180).toFixed(2));
-  // console.log(rad, '弧度');
+  // logger.debug(rad, '弧度');
   // todo
   const x = math.add(initX, math.mul(radius, Number(Math.cos(rad).toFixed(2))));
   const y = math.add(initY, math.mul(radius, Number(Math.sin(rad).toFixed(2))));
-  // console.log(Math.cos(rad), Math.sin(rad), '圆上cos sin');
+  // logger.debug(Math.cos(rad), Math.sin(rad), '圆上cos sin');
   // 四舍五入为整数（适配鼠标坐标）
   return { x, y };
 }
@@ -80,7 +81,7 @@ export class MoveActions {
     // 中文注释：按下左键以触发移动（修正大小写）
     this.dm.delay(200);
     this.dm.LeftDown();
-    // console.log(fromPos, '移动到', curAimPos, '角度', angle, { x, y });
+    // logger.debug(fromPos, '移动到', curAimPos, '角度', angle, { x, y });
   }
 
   randomMove() {
@@ -90,15 +91,16 @@ export class MoveActions {
     // 中文注释：按下左键以触发移动（修正大小写）
     this.dm.delay(400);
     this.dm.LeftDown();
-    console.log('开始进行随机移动');
+    logger.info('开始进行随机移动');
   }
 
   fromTo(fromPos: Pos | null, toPos: Pos[] | Pos, stationR: number): boolean {
     if (!Array.isArray(toPos)) {
       toPos = [toPos];
     }
+    // logger.debug('坐标', fromPos, toPos);
     if (!fromPos) {
-      console.log('未获取到角色位置', this.role);
+      logger.warn('未获取到角色位置', this.role);
       return false;
     }
     // 判断是否达到最后一个目的坐标，没有到达就继续移动
@@ -107,7 +109,6 @@ export class MoveActions {
       !this.isPause && this.move(fromPos, curAimPos);
     }
     // 已到达/或者超过中途的坐标点后，切换下一个坐标
-    // 已到达
     const isArriveStation = isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], stationR) && this.recordAimPosIndex < toPos.length - 1;
     // 已超过
     // const isOverStation = isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], 10) && this.recordAimPosIndex > 0;
@@ -115,17 +116,11 @@ export class MoveActions {
       this.recordAimPosIndex++;
       return this.fromTo(fromPos, toPos, stationR);
     }
-    const isM = this.isMove(10);
-    // console.log(isM, 'isM');
-    // if (this.isMove(6) === false) {
-    //   // 在this.role.position随机100内移动
-    //   this.randomMove();
-    // }
 
     // 到达最后的终点坐标
     if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], stationR) && this.recordAimPosIndex === toPos.length - 1) {
       this.dm.LeftClick();
-      console.log('目标已到达指定位置');
+      logger.info('目标已到达指定位置');
       return true;
     }
     return false;
@@ -136,9 +131,9 @@ export class MoveActions {
     this.recordPos = { x: this.role?.position?.x || 0, y: this.role?.position?.y || 0 };
     // 如果超过6S没有移动，就进行随机移动
     const now = Date.now();
-    // console.log('记录坐标', now, this.lastMoveTime, this.recordPos);
+    // logger.debug('记录坐标', now, this.lastMoveTime, this.recordPos);
     if (now - this.lastMoveTime >= time * 1000 && this.role.position) {
-      // console.log('6S后的坐标', this.role.position);
+      // logger.debug('6S后的坐标', this.role.position);
       const { x, y } = this.role.position ?? {};
       const isM = !(x === this.recordPos.x && y === this.recordPos.y);
       setTimeout(() => {
@@ -169,7 +164,7 @@ export class MoveActions {
     return new Promise((res, rej) => {
       this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
       let isArrive: boolean | undefined;
-      console.log('执行startAutoFindPath，注册定时器');
+      logger.info('执行startAutoFindPath，注册定时器');
       // 中文注释：使用 setImmediate 首次触发，再用 setTimeout(300ms) 做周期轮询，避免事件循环拥塞
       const loop = () => {
         try {
@@ -179,7 +174,7 @@ export class MoveActions {
             if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
               // this.dm.LeftClick();
               this.bindPlugin.moveToClick(x, y + 2);
-              console.log('点击停止', aimPos);
+              logger.info('点击停止', aimPos);
               isArrive = true;
               // 到达目标点位退出寻路
             } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, stationR)) {
@@ -206,7 +201,7 @@ export class MoveActions {
             this.role.clearActionTimer('autoFindPath');
             this.recordAimPosIndex = 0;
             setTimeout(() => {
-              console.log(`[角色信息] 已关闭自动寻路，并解除定时器,同时延时${delay}毫秒，确保已经静止`);
+              logger.info(`[角色信息] 已关闭自动寻路，并解除定时器,同时延时${delay}毫秒，确保已经静止`);
               // 这里刚进入地图没法读取坐标
               res(true);
             }, delay);
@@ -229,7 +224,7 @@ export class MoveActions {
         this.dm.LeftUp();
       }
     } catch {}
-    console.log('[角色信息] 已关闭自动寻路');
+    logger.info('[角色信息] 已关闭自动寻路');
   }
 
   // 暂停移动

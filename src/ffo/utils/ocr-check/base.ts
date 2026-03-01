@@ -1,5 +1,6 @@
 import { AutoT } from '../../../auto-plugin';
 import { TEST_PATH } from '../../../constant/config';
+import { logger } from '../../../utils/logger';
 import {
   DEFAULT_ADDRESS_NAME,
   DEFAULT_BLOOD_STATUS,
@@ -7,6 +8,7 @@ import {
   DEFAULT_DEAD_CY,
   DEFAULT_EQUIP_COUNT,
   DEFAULT_EQUIP_DAMAGE,
+  DEFAULT_EXP_BAR,
   DEFAULT_GOLD,
   DEFAULT_INVITE_TEAM,
   DEFAULT_ISOLATE,
@@ -18,6 +20,7 @@ import {
   DEFAULT_ROLE_POSITION,
   DEFAULT_SERVER_DISCONNECT,
   DEFAULT_STATUS_ICON_POS,
+  DEFAULT_SYSTERM_INFO,
   DEFAULT_UN_EQUIP,
   DEFAULT_VERIFY_CODE,
 } from '../../constant/OCR-pos';
@@ -33,7 +36,7 @@ export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 export const isDeadPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): boolean => {
   const deadPos = DEFAULT_DEAD[bindWindowSize];
   const deadIcon = bindDm.ocr(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.color, deadPos.sim);
-  console.log(deadIcon, 'deadIcon');
+  logger.info(deadIcon, 'deadIcon');
   return deadIcon.includes('死亡');
 };
 
@@ -41,7 +44,7 @@ export const isDeadPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 export const isDeadCYPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const deadPos = DEFAULT_DEAD_CY[bindWindowSize];
   const deadIcon = bindDm.findStrFastE(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.string, deadPos.color, deadPos.sim);
-  // console.log(deadIcon, '彩玉复活后坐标');
+  // logger.info(deadIcon, '彩玉复活后坐标');
   return parseTextPos(deadIcon);
 };
 
@@ -67,9 +70,9 @@ export const getMapName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800
 };
 
 // 获取角色坐标位置
-export const getRolePosition = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const getRolePosition = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', selfColor = '') => {
   const rolePos = DEFAULT_ROLE_POSITION[bindWindowSize];
-  const rolePosText = bindDm.ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, rolePos.color, rolePos.sim);
+  const rolePosText = bindDm.ocr(rolePos.x1, rolePos.y1, rolePos.x2, rolePos.y2, selfColor || rolePos.color, rolePos.sim);
   return parseRolePositionFromText(rolePosText);
 };
 
@@ -112,7 +115,7 @@ export const isBlocked = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const goldPos = DEFAULT_GOLD[bindWindowSize];
   const goldText = bindDm.ocr(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, goldPos.color, goldPos.sim);
-  console.log(parseFFOCurrencyToGoldLabel(goldText), 'goldText');
+  logger.info(parseFFOCurrencyToGoldLabel(goldText), 'goldText');
   bindDm.capturePng(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, `${TEST_PATH}/current_gold.png`);
   return parseFFOCurrencyToGoldLabel(goldText);
 };
@@ -120,9 +123,7 @@ export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 // 检查物品栏是否打开
 export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): string | false => {
   const tabPos = DEFAULT_ITEM_BOX_TAB[bindWindowSize];
-  console.log(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.color, tabPos.sim, 'tabPos');
   const tabText = bindDm.ocr(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.color, tabPos.sim);
-  console.log(tabText, 'tabText');
   return tabText ? tabText : false;
 };
 
@@ -130,16 +131,16 @@ export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*
 export const switchItemBoxTabPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', tabText: string) => {
   const tabPos = DEFAULT_ITEM_BOX_TAB_SWITCH[bindWindowSize];
   const pos = bindDm.findStrFastE(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabText, tabPos.color, tabPos.sim);
-  console.log(pos, '切换物品栏tab页', tabText);
+  logger.info(pos, '切换物品栏tab页', tabText);
   return parseTextPos(pos);
 };
 
 // 检查装备是否已经损坏
 export const checkEquipBroken = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const equipBrokenPos = DEFAULT_EQUIP_DAMAGE[bindWindowSize];
-  // console.log(equipBrokenPos, bindDm, 'equipBrokenPos');
+  // logger.debug(equipBrokenPos, bindDm, 'equipBrokenPos');
   const equipBrokenText = bindDm.findColorE(equipBrokenPos.x1, equipBrokenPos.y1, equipBrokenPos.x2, equipBrokenPos.y2, equipBrokenPos.color, equipBrokenPos.sim);
-  // console.log(equipBrokenText, 'equipBrokenText');
+  // logger.debug(equipBrokenText, 'equipBrokenText');
   return parseRolePositionFromText(equipBrokenText);
 };
 
@@ -184,7 +185,7 @@ export const checkUnEquipEquip = (bindDm: AutoT, bindWindowSize: '1600*900' | '1
   const pos = bindDm.findStrFastE(unEquipPos.x1, unEquipPos.y1, unEquipPos.x2, unEquipPos.y2, unEquipPos.string, unEquipPos.color, unEquipPos.sim);
   const _pos = parseTextPos(pos);
   if (!_pos) {
-    console.log('未识别到装备信息');
+    logger.warn('未识别到装备信息');
     return null;
   }
   // bindDm.capturePng(_pos.x, _pos.y, _pos.x + 128, _pos.y + 153, `${TEST_PATH}/test4.png`);
@@ -194,10 +195,10 @@ export const checkUnEquipEquip = (bindDm: AutoT, bindWindowSize: '1600*900' | '1
   // bindDm.delay(200);
   // 装备属性
   const attr = bindDm.ocr(_pos.x, _pos.y + 153, _pos.x + 135, _pos.y + 306, '408ce8-111111|d830e8-111111|00f0c8-111111', unEquipPos.sim);
-  // console.log('装备类型和等级：', type);
-  // console.log('装备属性：', attr);
+  // logger.info('装备类型和等级：', type);
+  // logger.info('装备属性：', attr);
   const res = { type: type.match(/\(([^)]+)\)/)?.[1] ?? null, level: type?.match(/需要等级(\d+)/)?.[1] ?? null, attrName: attr.split('+')?.[0] ?? null, attrValue: attr.split('+')?.[1] ?? null };
-  // console.log(res);
+  // logger.info(res);
   return res;
 };
 
@@ -206,4 +207,19 @@ export const checkInviteTeam = (bindDm: AutoT, bindWindowSize: '1600*900' | '128
   const inviteTeamPos = DEFAULT_INVITE_TEAM[bindWindowSize];
   const inviteTeamText = bindDm.findStrFastE(inviteTeamPos.x1, inviteTeamPos.y1, inviteTeamPos.x2, inviteTeamPos.y2, inviteTeamPos.string, inviteTeamPos.color, inviteTeamPos.sim);
   return parseTextPos(inviteTeamText);
+};
+
+// 检查是否快升级了
+export const checkExpBar = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const expBarPos = DEFAULT_EXP_BAR[bindWindowSize];
+  const expBarText = bindDm.findColorE(expBarPos.x1, expBarPos.y1, expBarPos.x2, expBarPos.y2, expBarPos.color, expBarPos.sim);
+  return !!parseRolePositionFromText(expBarText);
+};
+
+// 检查系统是否有提示改信息
+export const checkSystemPrompt = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
+  const blockedPos = DEFAULT_SYSTERM_INFO[bindWindowSize];
+  const blockedText = bindDm.findStrFastE(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, keyword, blockedPos.color, blockedPos.sim);
+  logger.info(blockedText, 'blockedText');
+  return !!parseRolePositionFromText(blockedText);
 };

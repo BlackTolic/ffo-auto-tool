@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { logger } from '../../../utils/logger';
 import Card from '../../components/card/Card'; // 中文注释：引入通用卡片组件用于展示角色状态
 import styles from './index.module.less'; // 中文注释：引入当前视图的 Less 样式文件（CSS Modules）
 
@@ -47,7 +48,7 @@ export default function BasicConfigView() {
     setMessage('');
     try {
       const list = await window.eventManager.listBindableWindows();
-      console.log('可绑定窗口列表:', list);
+      logger.info('可绑定窗口列表:', list);
       // 中文注释：仅保留标题或类名包含“QQ幻想”的窗口（中文匹配不区分大小写）
       const targetField = 'QQ幻想';
       const filtered = list.filter(w => {
@@ -55,7 +56,7 @@ export default function BasicConfigView() {
         const cls = String(w.className || '');
         return title.includes(targetField) || cls.includes(targetField);
       });
-      console.log('过滤后的可绑定窗口:', list);
+      logger.info('过滤后的可绑定窗口:', list);
       const opts = filtered.map(w => ({ value: w.hwnd, label: formatLabel(w) }));
       setOptions(opts);
       // 优先选择第一个候选项
@@ -87,11 +88,11 @@ export default function BasicConfigView() {
     }
     try {
       const list = await window.eventManager.listBoundWindows();
-      console.log('已绑定窗口列表:', list);
+      logger.info('已绑定窗口列表:', list);
       setBoundList(list || []);
     } catch (err) {
       // 中文注释：非致命错误，仅打印日志以便调试
-      console.warn('加载已绑定窗口列表失败', err);
+      logger.warn('加载已绑定窗口列表失败', err);
     }
   };
 

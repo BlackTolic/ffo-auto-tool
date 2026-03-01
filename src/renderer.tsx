@@ -1,6 +1,7 @@
 // 中文注释：React 入口，挂载根组件到页面
 import { createRoot } from 'react-dom/client';
 import App from './app/App';
+import { logger } from './utils/logger';
 
 // import './index.css'; // 中文注释：已迁移为各组件单独引入 Less，不再全局引入 CSS
 
@@ -113,10 +114,10 @@ const setupBindActions = () => {
 // 中文注释：确认渲染入口执行与插件版本
 window.eventManager
   .ver()
-  .then(v => console.log('[Damo] Ver:', v))
-  .catch(e => console.warn('[Damo] 不可用:', e?.message || e));
+  .then(v => logger.info('[Damo] Ver:', v))
+  .catch(e => logger.warn('[Damo] 不可用:', e?.message || e));
 
-console.log('👋 This message is being logged by "renderer.tsx" (merged from renderer.ts)');
+logger.info('👋 This message is being logged by "renderer.tsx" (merged from renderer.ts)');
 
 // 中文注释：禁用右键默认菜单，避免出现浏览器上下文菜单
 window.addEventListener('contextmenu', event => {
@@ -137,7 +138,7 @@ window.addEventListener('DOMContentLoaded', () => {
 //     // @ts-expect-error 运行时存在 offDictInfoUpdated/类型未在 EventManagerAPI 中声明
 //     window.eventManager.offDictInfoUpdated();
 //   } catch (e) {
-//     console.warn('[渲染清理] 取消字库更新订阅失败:', String((e as any)?.message || e));
+//     logger.warn('[渲染清理] 取消字库更新订阅失败:', String((e as any)?.message || e));
 //   }
 // });
 
@@ -178,5 +179,5 @@ if (container) {
   const root = createRoot(container);
   root.render(<App />); // 中文注释：挂载 React 应用到页面
 } else {
-  console.warn('未找到 #root 容器，React UI 未挂载。');
+  logger.warn('未找到 #root 容器，React UI 未挂载。');
 }

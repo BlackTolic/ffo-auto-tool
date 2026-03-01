@@ -7,6 +7,7 @@ import { promptIfNotAdmin } from './init/admin-check'; // 中文注释：引入�
 import { registerBoundEventHandlers } from './init/event-register';
 import { registerGlobalHotkeys } from './init/hotkey-register';
 import { registerIpcHandlers } from './init/ipc-handle-register'; // 中文注释：集中管理 IPC 注册的模块
+import logger from './utils/logger';
 
 // 中文注释：运行时 COM 注册尝试结果接口（用于日志与排查）
 interface DmRegRuntimeAttempt {
@@ -101,21 +102,21 @@ function setupAppLifecycle() {
     });
 
     createWindow();
-    console.log('[应用生命周期] 窗口创建完成');
+    logger.info('[应用生命周期] 窗口创建完成');
     // 中文注释：IPC 注册已集中到 ipc-handle.ts，这里仅委托调用，避免重复注册与代码分散
     registerIpcHandlers({ ensureDamo, damoBindingManager });
-    console.log('[应用生命周期] IPC 处理程序注册完成');
+    logger.info('[应用生命周期] IPC 处理程序注册完成');
     registerBoundEventHandlers();
-    console.log('[应用生命周期] 绑定事件处理程序注册完成');
+    logger.info('[应用生命周期] 绑定事件处理程序注册完成');
     // 中文注释：将全局快捷键注册集中到 hotkey-register.ts
     registerGlobalHotkeys();
-    console.log('[应用生命周期] 全局快捷键注册完成');
+    logger.info('[应用生命周期] 全局快捷键注册完成');
     // 设置默认窗口大小为 1600*900 1280*800
     // (global as any).windowSize = '1600*900';
   });
 
   app.on('window-all-closed', () => {
-    console.log('[应用生命周期] 所有窗口关闭');
+    logger.info('[应用生命周期] 所有窗口关闭');
     if (process.platform !== 'darwin') {
       app.quit();
     }
@@ -124,18 +125,18 @@ function setupAppLifecycle() {
   // 中文注释：在应用退出前（before-quit）执行清理，解绑窗口、移除 IPC 与事件
   app.on('before-quit', () => {
     try {
-      console.log('[退出清理] 应用退出前执行清理');
+      logger.info('[退出清理] 应用退出前执行清理');
       // 中文注释：解绑所有已绑定的大漠窗口（防止残留绑定）
       damoBindingManager.unbindAll();
     } catch (e) {
-      console.warn('[退出清理] 解绑所有窗口失败:', String((e as any)?.message || e));
+      logger.warn('[退出清理] 解绑所有窗口失败:', String((e as any)?.message || e));
     }
 
     try {
       // 中文注释：移除所有事件总线监听器，防止内存泄漏
       ffoEvents.removeAllListeners();
     } catch (e) {
-      console.warn('[退出清理] 移除事件监听失败:', String((e as any)?.message || e));
+      logger.warn('[退出清理] 移除事件监听失败:', String((e as any)?.message || e));
     }
 
     try {
@@ -160,14 +161,14 @@ function setupAppLifecycle() {
       ];
       channels.forEach(ch => ipcMain.removeHandler(ch));
     } catch (e) {
-      console.warn('[退出清理] 移除 IPC 失败:', String((e as any)?.message || e));
+      logger.warn('[退出清理] 移除 IPC 失败:', String((e as any)?.message || e));
     }
 
     try {
       // 中文注释：移除所有全局快捷键
       globalShortcut.unregisterAll();
     } catch (e) {
-      console.warn('[退出清理] 取消快捷键失败:', String((e as any)?.message || e));
+      logger.warn('[退出清理] 取消快捷键失败:', String((e as any)?.message || e));
     }
   });
 }
@@ -284,7 +285,7 @@ function handleSquirrelEvents(): SquirrelEventResult {
 // 中文注释：启动入口（优先处理 Squirrel 安装事件；如果已处理则退出，否则继续正常启动）
 const squirrel = handleSquirrelEvents();
 if (squirrel.handled) {
-  console.log(`[安装事件] ${squirrel.message}`);
+  logger.info(`[安装事件] ${squirrel.message}`);
   app.quit();
 } else {
   // 中文注释：手动注册大漠插件（仅一次；非安装阶段，普通运行时）

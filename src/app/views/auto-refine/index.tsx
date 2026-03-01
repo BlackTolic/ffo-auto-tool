@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../../../utils/logger';
 import Card from '../../components/card/Card';
 // 中文注释：引入全局通用样式（按钮、排版、弹框等），以 CSS Modules 方式使用
 import globalStyles from '../../../styles/global.module.less';
@@ -71,7 +72,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ open, data, onChange, onCance
 // 中文注释：点击“新建”按钮的处理函数
 const handleCreate = (opts?: CreateActionOptions) => {
   // 中文注释：此处暂为占位逻辑，后续可替换为打开弹窗/跳转配置页面
-  console.log('新建操作触发', opts);
+  logger.info('新建操作触发', opts);
 };
 
 const AutoRefineView: React.FC<AutoRefineProps> = () => {
@@ -96,7 +97,7 @@ const AutoRefineView: React.FC<AutoRefineProps> = () => {
           alert(ret.message);
         }
       }
-      console.log('启动任务', opts, ret);
+      logger.info('启动任务', opts, ret);
     } catch (e) {
       setRunning(false);
       alert(String((e as any)?.message || e));
@@ -113,7 +114,7 @@ const AutoRefineView: React.FC<AutoRefineProps> = () => {
       } else if (ret?.message) {
         alert(ret.message);
       }
-      console.log('停止(暂停)任务', opts, ret);
+      logger.info('停止(暂停)任务', opts, ret);
     } catch (e) {
       alert(String((e as any)?.message || e));
     }
@@ -123,7 +124,7 @@ const AutoRefineView: React.FC<AutoRefineProps> = () => {
   const openConfig = () => setConfigOpen(true);
   const closeConfig = () => setConfigOpen(false);
   const saveConfig = (data: ConfigData) => {
-    console.log('保存配置', data);
+    logger.info('保存配置', data);
     setConfigData(data);
     setConfigOpen(false);
   };

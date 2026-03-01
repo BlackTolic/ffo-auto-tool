@@ -15,7 +15,7 @@ export const DEFAULT_ADDRESS_NAME = {
 
 // 角色坐标
 export const DEFAULT_ROLE_POSITION = {
-  '1600*900': { x1: 1487, y1: 39, x2: 1551, y2: 59, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1600*900': { x1: 1487, y1: 39, x2: 1551, y2: 59, color: 'e8f0e8-222222', sim: DEFAULT_SIM },
   '1280*800': { x1: 1167, y1: 39, x2: 1218, y2: 56, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
 };
 
@@ -165,8 +165,6 @@ export const DEFAULT_EQUIP_COUNT = {
 
 // 检查是否已经死亡
 export const DEFAULT_DEAD = {
-  // '1600*900': { x1: 691, y1: 388, x2: 910, y2: 435, color: '4098e0-111111|e8e4e0-111111|7098e0-111111|a8c4e0-111111|6098c0-000000|708cb8-000000|90a8e0-000000', sim: 1.0 },
-  // '1600*900': { x1: 691, y1: 388, x2: 910, y2: 435, color: '4088c8-111111|706cc8-111111|306cd0-111111|508cc8-111111|305c98-000000', sim: 1.0 },
   '1600*900': { x1: 707, y1: 377, x2: 891, y2: 541, color: 'a8a8b0-111111', sim: 1.0 },
   '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
 };
@@ -187,4 +185,17 @@ export const DEFAULT_UN_EQUIP = {
 export const DEFAULT_INVITE_TEAM = {
   '1600*900': { x1: 604, y1: 280, x2: 1001, y2: 609, string: '@X', color: 'b89838-111111', sim: 1.0 },
   '1280*800': { x1: 604, y1: 280, x2: 1001, y2: 609, string: '@X', color: 'c0a060-111111|a08440-111111|907028-111111', sim: 1.0 },
+};
+
+// 检查经验栏是不是快升级了
+export const DEFAULT_EXP_BAR = {
+  // 检测当前位置是绿色，如果是绿色，说明经验快满了
+  '1600*900': { x1: 1437, y1: 892, x2: 1480, y2: 900, color: '189850-111111', sim: 1.0 },
+  '1280*800': { x1: 1437, y1: 892, x2: 1480, y2: 900, color: '189850-111111', sim: 1.0 },
+};
+
+// 检查系统提示信息
+export const DEFAULT_SYSTERM_INFO = {
+  '1600*900': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
+  '1280*800': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
 };

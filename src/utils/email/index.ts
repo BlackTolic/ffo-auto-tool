@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import logger from '../logger';
 
 // 邮件选项
 export interface MailOptions {
@@ -39,14 +40,14 @@ class EmailStrategy {
       };
       smtpTransport.sendMail(mailOptions, function (error, response) {
         if (error) {
-          console.error('发送邮件失败：', error);
+          logger.error('发送邮件失败：', error);
         } else {
-          console.log('邮件发送成功');
+          logger.info('邮件发送成功');
         }
         smtpTransport.close(); // 发送完成关闭连接池
       });
     } catch (error) {
-      console.error('发送邮件失败：', error);
+      logger.error('发送邮件失败：', error);
     }
   }
 }

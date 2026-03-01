@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from '../utils/logger';
 // const fs = require('fs');
 const apiUrl = 'http://api.ttshitu.com/predict';
 
@@ -50,15 +51,15 @@ export const getVerifyCodeByTuJian = async (url: string) => {
     let d = res.data;
     if (d.success) {
       let { id, result } = d.data;
-      console.log('图鉴识别：', result);
+      logger.info('图鉴识别：', result);
       // 返回字符串转成大写
       return result.toUpperCase();
     } else {
-      console.log(d.message);
+      logger.warn(d.message);
       return '';
     }
   } catch (err) {
-    console.log(err);
+    logger.error(err);
     return '';
   }
 };

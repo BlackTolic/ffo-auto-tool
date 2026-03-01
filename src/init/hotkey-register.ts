@@ -5,6 +5,7 @@ import { damoBindingManager } from '../ffo/events';
 import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
 import { AttackActions } from '../ffo/events/skills';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
+import { logger } from '../utils/logger';
 
 // 中文注释：记录每个窗口当前是否开启了自动按键
 const autoKeyOnByHwnd = new Map<number, boolean>();
@@ -21,17 +22,17 @@ const registerHotkey = (keyName: string, callback: (dm?: any, pid?: number) => a
       const hwnd = dm.getForegroundWindow();
       damoBindingManager.selectHwnd = hwnd;
       if (!hwnd || hwnd <= 0) {
-        console.log('[快捷键] 未检测到前台窗口');
+        logger.warn('[快捷键] 未检测到前台窗口');
         return;
       }
       // 中文注释：获取窗口所属进程 ID
       const pid = (dm as any).dm?.GetWindowProcessId?.(hwnd);
       const ret = callback(dm, pid);
-      if (ret) console.log(`[快捷键] ${keyName} 触发`, ret);
+      if (ret) logger.info(`[快捷键] ${keyName} 触发`, ret);
     });
-    if (!ok) console.warn(`[快捷键] ${keyName} 注册失败`, ok);
+    if (!ok) logger.warn(`[快捷键] ${keyName} 注册失败`, ok);
   } catch (e) {
-    console.warn(`[快捷键] ${keyName} 注册异常：`, (e as any)?.message || e);
+    logger.warn(`[快捷键] ${keyName} 注册异常：`, (e as any)?.message || e);
   }
 };
 
@@ -73,7 +74,7 @@ export const toggleAutoKey = (
       stopKeyPress(hwnd);
     } catch (e) {
       // 中文注释：停止失败不影响状态切换的结果，但记录日志
-      console.warn('[自动按键] 停止失败：', (e as any)?.message || e);
+      logger.warn('[自动按键] 停止失败：', (e as any)?.message || e);
     }
     autoKeyOnByHwnd.set(hwnd, false);
     return { ok: true, running: false, hwnd };
@@ -95,7 +96,7 @@ export function registerGlobalHotkeys() {
   // Alt+Q绑定句柄
   registerHotkey('Alt+Q', async (dm, pid) => {
     if (!pid || pid <= 0) {
-      console.log('[快捷键] Alt+Q 失败 | 无法获取 PID');
+      logger.info('[快捷键] Alt+Q 失败 | 无法获取 PID');
       return;
     }
     return await damoBindingManager.bindWindowsForPid(pid);
@@ -103,7 +104,7 @@ export function registerGlobalHotkeys() {
 
   // registerHotkey('Alt+1', async (dm, pid) => {
   //   if (!pid || pid <= 0) {
-  //     console.log('[快捷键] Alt+1 失败 | 无法获取 PID');
+  //     logger.info('[快捷键] Alt+1 失败 | 无法获取 PID');
   //     return;
   //   }
   //   return await damoBindingManager.bindWindowsForPid(pid);
@@ -151,7 +152,7 @@ export const toggleAutoAttack = () => {
     // 中文注释：若已有定时器在运行，则本次切换为“关闭”
     if (actions.timer) {
       actions.stopAutoSkill();
-      console.log('[快捷键] Alt+R 停止自动打怪');
+      logger.info('[快捷键] Alt+R 停止自动打怪');
       return { ok: true, hwnd, running: false };
     }
 

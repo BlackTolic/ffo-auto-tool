@@ -1,6 +1,7 @@
 // 刷天泉
 
 import { damoBindingManager } from '..';
+import { logger } from '../../../utils/logger';
 import { OCR_NAN_JIAO_MONSTER } from '../../constant/monster-feature';
 import { isArriveAimNear } from '../../utils/common';
 import { MoveActions } from '../move';
@@ -50,7 +51,7 @@ export class WuLeiNanJiaoAction {
   public static getInstance(): WuLeiNanJiaoAction | null {
     const hwnd = damoBindingManager.selectHwnd;
     if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-      console.log('未选择已绑定的窗口', hwnd);
+      logger.info('未选择已绑定的窗口', hwnd);
       return null;
     }
     const role = damoBindingManager.getRole(hwnd);
@@ -70,10 +71,10 @@ export class WuLeiNanJiaoAction {
       taskName: '无泪南郊练级',
       loopOriginPos: LOOP_INIT_POS,
       action: () => {
-        console.log('无泪南郊练级任务启动！', this.role.position);
+        logger.info('无泪南郊练级任务启动！', this.role.position);
         this.actions.startAutoFindPath(pos, this.active).then(res => {
           this.role.updateTaskStatus('done');
-          console.log('无泪南郊练级任务完成！', this.role.position);
+          logger.info('无泪南郊练级任务完成！', this.role.position);
         });
       },
       interval: 5000,

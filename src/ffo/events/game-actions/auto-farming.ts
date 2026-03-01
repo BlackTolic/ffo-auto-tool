@@ -1,4 +1,5 @@
 import { damoBindingManager } from '..';
+import logger from '../../../utils/logger';
 import { MonsterFeature } from '../../constant/monster-feature';
 import { MoveActions, Pos } from '../move';
 import { Role } from '../rolyer';
@@ -32,7 +33,7 @@ export class AutoFarmingAction {
   constructor(initPos: Pos, pathPos: Pos[], ocrMonster: MonsterFeature, taskName: string) {
     const hwnd = damoBindingManager.selectHwnd;
     if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-      console.log('未选择已绑定的窗口', hwnd);
+      logger.warn('未选择已绑定的窗口', hwnd);
       throw new Error('未选择已绑定的窗口');
     }
     const role = damoBindingManager.getRole(hwnd);
@@ -52,7 +53,7 @@ export class AutoFarmingAction {
     const { initPos, pathPos, ocrMonster, taskName } = instance;
     const hwnd = damoBindingManager.selectHwnd;
     if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-      console.log('未选择已绑定的窗口', hwnd);
+      logger.warn('未选择已绑定的窗口', hwnd);
       throw new Error('未选择已绑定的窗口');
     }
     const role = damoBindingManager.getRole(hwnd);
@@ -75,10 +76,10 @@ export class AutoFarmingAction {
           taskName: this.taskName,
           loopOriginPos: this.initPos,
           action: () => {
-            console.log(`非自定义${this.taskName}任务启动！`, this.role.position);
+            logger.info(`非自定义${this.taskName}任务启动！`, this.role.position);
             this.actions.startAutoFindPath({ toPos: this.pathPos, actions: this.active }).then(res => {
               this.role.updateTaskStatus('done');
-              console.log(`本轮${this.taskName}任务完成！`, this.role.position);
+              logger.info(`本轮${this.taskName}任务完成！`, this.role.position);
             });
           },
           interval: 5000,
@@ -117,7 +118,7 @@ export class AutoFarmingAction {
       // if (!isArriveAimNear(this.role.position, this.initPos, 10)) {
       //   return { ok: false, message: `当前位置${JSON.stringify(this.role.position)}不在${this.taskName}循环触发点，无法开启自动寻路` };
       // }
-      console.log(`当前位置${JSON.stringify(this.role.position)}在${this.taskName}循环触发点，可开启自动寻路`);
+      logger.info(`当前位置${JSON.stringify(this.role.position)}在${this.taskName}循环触发点，可开启自动寻路`);
       if (this.isRunning()) {
         this.stop();
         return { ok: true, running: false };

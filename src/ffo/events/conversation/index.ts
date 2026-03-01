@@ -1,3 +1,4 @@
+import { logger } from '../../../utils/logger';
 import { parseTextPos } from '../../utils/common';
 import { Role } from '../rolyer';
 
@@ -63,10 +64,10 @@ export class Conversation {
     const scanBox = SCAN_BOX[key];
     // const dialog = DIALOG_OPTIONS_POS[key];
     return new Promise((res, rej) => {
-      let YJClickPos = this.bindPlugin.findStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, npcName, scanBox.color, scanBox.sim);
-      let trsPos = YJClickPos.split(',');
-      console.log(YJClickPos, 'YJClickPos');
-      if (!YJClickPos) {
+      let NPCPos = this.bindPlugin.findStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, npcName, scanBox.color, scanBox.sim);
+      let trsPos = NPCPos.split(',');
+      logger.info(NPCPos, 'NPC位置');
+      if (!NPCPos) {
         res(false);
       } else {
         res({ x: Number(trsPos[1]) + delX, y: Number(trsPos[2]) + delY });
@@ -85,7 +86,7 @@ export class Conversation {
       // 点击之后可能还有一段距离走到面前
       this.bindPlugin.delay(3000);
       const dialogPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '@X', dialog.color, dialog.sim);
-      console.log(dialogPos, '是否打开了对话框');
+      logger.info(dialogPos, '是否打开了对话框');
       res(!!dialogPos);
     });
   }
@@ -104,14 +105,14 @@ export class Conversation {
     const dialog = DIALOG_OPTIONS_POS[key];
     return new Promise((res, rej) => {
       const optionsPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, option, dialog.color, dialog.sim);
-      console.log(optionsPos, '选项位置');
+      logger.info(optionsPos, '选项位置');
       if (!optionsPos) {
-        console.log('没有找到选项');
+        logger.warn('没有找到选项');
         res(false);
         return;
       }
       const optionsPosText = parseTextPos(optionsPos);
-      console.log(optionsPosText, '选项位置');
+      logger.info(optionsPosText, '选项位置');
       this.moveToClick({ x: Number(optionsPosText?.x || 0) + delX, y: Number(optionsPosText?.y || 0) + delY });
       res(true);
     });
@@ -123,14 +124,14 @@ export class Conversation {
     const dialog = DIALOG_OPTIONS_POS[key];
     return new Promise((res, rej) => {
       const optionsPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, option, dialog.color, dialog.sim);
-      console.log(optionsPos, '选项位置');
+      logger.info(optionsPos, '选项位置');
       if (!optionsPos) {
-        console.log('没有找到选项');
+        logger.warn('没有找到选项');
         res(false);
         return;
       }
       const optionsPosText = parseTextPos(optionsPos);
-      console.log(optionsPosText, '选项位置');
+      logger.info(optionsPosText, '选项位置');
       res({ x: Number(optionsPosText?.x || 0), y: Number(optionsPosText?.y || 0) });
     });
   }
@@ -140,12 +141,12 @@ export class Conversation {
     const dialog = CLOSE_FLG[key];
     return new Promise((res, rej) => {
       const dialogPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '@X', dialog.color, dialog.sim);
-      console.log(dialogPos, '关闭标记');
+      logger.info(dialogPos, '关闭标记');
       const optionsPosText = parseTextPos(dialogPos);
-      console.log(optionsPosText, 'optionsPosText');
+      logger.info(optionsPosText, 'optionsPosText');
       this.moveToClick({ x: Number(optionsPosText?.x || 0), y: Number(optionsPosText?.y || 0) });
       if (!dialogPos) {
-        console.log('关闭标记');
+        logger.info('关闭标记');
         res(false);
       }
       res(true);
@@ -161,7 +162,7 @@ export class Conversation {
     items.forEach(item => {
       const dialogPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, item.item, dialog.color, dialog.sim);
       const optionsPosText = parseTextPos(dialogPos);
-      console.log(optionsPosText, 'optionsPosText');
+      logger.info(optionsPosText, 'optionsPosText');
       const x1 = Number(optionsPosText?.x || 0);
       const y1 = Number(optionsPosText?.y || 0);
       this.moveToClick({ x: x1 + 50, y: y1 });
@@ -173,13 +174,10 @@ export class Conversation {
       inputPosText && this.moveToClick({ x: Number(inputPosText.x), y: Number(inputPosText.y) });
     });
 
-    // return new Promise((res, rej) => {
-    //   if (!inputPos) {
-    //     console.log('关闭标记');
-    //     res(false);
-    //   }
-    //   res(true);
-    // });
+    //   if (isClose) {
+    //     logger.debug('关闭标记');
+    //     this.role.bindPlugin.delay(100);
+    //     this.role.bindPlugin.leftClick();
   }
 
   // 杨戬
@@ -195,7 +193,7 @@ export class Conversation {
         new Promise((res, rej) => {
           let YJClickPos = this.bindPlugin.findStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, '杨戬', scanBox.color, scanBox.sim);
           let trsPos = YJClickPos.split(',');
-          console.log(YJClickPos, '识别到"杨戬"的点击位置');
+          logger.info(YJClickPos, '识别到"杨戬"的点击位置');
           //  杨戬Y轴下移100
           YJClickPos && this.bindPlugin.moveTo(Number(trsPos[1]), Number(trsPos[2]) + 80);
           this.bindPlugin.delay(1000);
@@ -214,10 +212,10 @@ export class Conversation {
         new Promise((res, rej) => {
           const dialogPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, ENTER, dialog.color, dialog.sim);
           const dialogPosText = parseTextPos(dialogPos);
-          console.log(dialogPosText, '对话框位置');
+          logger.info(dialogPosText, '对话框位置');
           this.bindPlugin.delay(1000);
           if (!dialogPosText) {
-            console.log('没有找到对话框');
+            logger.info('没有找到对话框');
             res(false);
             return;
           }
@@ -230,14 +228,14 @@ export class Conversation {
         if (!isFindYj) {
           isFindYj = await findYJ();
         }
-        console.log(isFindYj, '是否找到杨戬');
+        logger.info(isFindYj, '是否找到杨戬');
         const isOpenDialog = await openDialog();
-        console.log(isOpenDialog, '是否打开对话框');
+        logger.info(isOpenDialog, '是否打开对话框');
         isOpenDialog &&
           setTimeout(() => {
-            console.log(this.role.map, 'map');
+            logger.info(this.role.map, 'map');
             if (this.role.map === '天空之泉') {
-              console.log('进入天空之泉');
+              logger.info('进入天空之泉');
               resolve(true);
             }
           }, 3000);
@@ -256,11 +254,11 @@ export class Conversation {
         npcPos = await this.findNPC('荣光使者', 10, 50);
       }
       if (!npcPos) {
-        console.log('没有找到荣光使者');
+        logger.info('没有找到荣光使者');
         return;
       }
       const isOpenDialg = await this.openConversation(npcPos);
-      console.log(isOpenDialg, '是否打开了对话框');
+      logger.info(isOpenDialg, '是否打开了对话框');
       if (!isOpenDialg) {
         return;
       }
@@ -270,13 +268,13 @@ export class Conversation {
       await findNpcAndOpenDialog();
       // 检查当前是需要提交任务还是需要领取任务
       const isSubmitTask = await this.findOptions('击败了怨灵');
-      console.log(isSubmitTask, '是否需要提交任务');
+      logger.info(isSubmitTask, '是否需要提交任务');
       if (isSubmitTask) {
         // 选择选项提交任务
         this.moveToClick(isSubmitTask);
         // 关闭对话框
         const isClose = await this.closeDialog();
-        console.log(isClose, '是否已经关闭');
+        logger.info(isClose, '是否已经关闭');
         if (!isClose) {
           return;
         }
@@ -286,11 +284,11 @@ export class Conversation {
 
       // 选择选项领取任务
       const isReceive = await this.findOptions('名誉任务');
-      console.log(isReceive, '是否具有领取名誉任务的选项');
+      logger.info(isReceive, '是否具有领取名誉任务的选项');
       if (!isReceive) {
         // 关闭弹框
         await this.closeDialog();
-        console.log('角色已经接受了名誉任务');
+        logger.info('角色已经接受了名誉任务');
         resolve(true);
       } else {
         this.moveToClick(isReceive);
@@ -313,31 +311,31 @@ export class Conversation {
         npcPos = await this.findNPC('斯芬尼克', 10, 50);
       }
       if (!npcPos) {
-        console.log('没有找到斯芬尼克');
+        logger.info('没有找到斯芬尼克');
         return;
       }
       const isOpenDialg = await this.openConversation(npcPos);
-      console.log(isOpenDialg, '是否打开了对话框');
+      logger.info(isOpenDialg, '是否打开了对话框');
       if (!isOpenDialg) {
         return;
       }
       // 进入副本
       const isPass = await this.findOptions('需要组队');
-      console.log(isPass, '是否具有进入神殿的选项');
+      logger.info(isPass, '是否具有进入神殿的选项');
       if (!isPass) {
         // 关闭弹框
         await this.closeDialog();
-        console.log('没有领取任务无法进入');
+        logger.info('没有领取任务无法进入');
         resolve(false);
       } else {
         this.moveToClick(isPass);
         setTimeout(() => {
-          console.log(this.role.map, 'map');
+          logger.info(this.role.map, 'map');
           if (this.role.map === '失落神殿') {
-            console.log('进入失落神殿');
+            logger.info('进入失落神殿');
             resolve(true);
           } else {
-            console.log('没有进入失落神殿');
+            logger.info('没有进入失落神殿');
             resolve(false);
           }
         }, 3000);
@@ -354,11 +352,14 @@ export class Conversation {
         npcPos = await this.findNPC('仓库管理员', 30, 50);
       }
       if (!npcPos) {
-        console.log('没有找到仓库管理员');
+        npcPos = await this.findNPC('仓库管理员', 30, 50);
+      }
+      if (!npcPos) {
+        logger.info('没有找到仓库管理员');
         return;
       }
       const isOpenDialg = await this.openConversation(npcPos);
-      console.log(isOpenDialg, '是否打开了对话框');
+      logger.info(isOpenDialg, '是否打开了对话框');
       if (!isOpenDialg) {
         return;
       }
@@ -367,7 +368,7 @@ export class Conversation {
       // 打开仓库
       const isPass = await this.findOptions('使用仓库');
       if (!isPass) {
-        console.log('没有找到使用仓库的选项');
+        logger.info('没有找到使用仓库的选项');
         return;
       }
       this.moveToClick(isPass);
@@ -404,27 +405,27 @@ export class Conversation {
         npcPos = await this.findNPC('道具商人', 30, 50);
       }
       if (!npcPos) {
-        console.log('没有找到道具商人');
+        logger.info('没有找到道具商人');
         return;
       }
       const isOpenDialg = await this.openConversation(npcPos);
-      console.log(isOpenDialg, '是否打开了对话框');
+      logger.info(isOpenDialg, '是否打开了对话框');
       if (!isOpenDialg) {
         return;
       }
       // 购买道具
       const isPass = await this.findOptions('购买道具');
       if (!isPass) {
-        console.log('没有找到购买道具的选项');
+        logger.info('没有找到购买道具的选项');
         return;
       }
       this.moveToClick(isPass);
       //  购买道具
       const buyItems = config.filter(item => item.task === 'buy');
-      console.log(buyItems, '购买道具');
+      logger.info(buyItems, '购买道具');
       // 修理装备
       const fix = config.filter(item => item.task === 'fix');
-      console.log(fix, '修理装备');
+      logger.info(fix, '修理装备');
       if (buyItems?.length) {
         this.dragScrollToBuy(buyItems);
         // 确认购买交易

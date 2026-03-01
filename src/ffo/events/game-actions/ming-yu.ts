@@ -1,4 +1,5 @@
 import { damoBindingManager } from '..';
+import logger from '../../../utils/logger';
 import { OCR_MING_YU_BOSS, OCR_PAN_GUI_MONSTER } from '../../constant/monster-feature';
 import { BaseAction } from '../base-action';
 import { Conversation } from '../conversation';
@@ -46,12 +47,12 @@ const loopAction = () => {
   const test = true;
   const hwnd = damoBindingManager.selectHwnd;
   if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-    console.log('未选择已绑定的窗口', hwnd);
+    logger.warn('未选择已绑定的窗口', hwnd);
     throw new Error('未选择已绑定的窗口');
   }
   const role = damoBindingManager.getRole(hwnd);
   if (!role) {
-    console.log('未获取到角色', hwnd);
+    logger.warn('未获取到角色', hwnd);
     throw new Error('未获取到角色');
   }
   // if (test) {
@@ -72,56 +73,56 @@ const loopAction = () => {
       if (!res) {
         throw new Error('未到达名誉NPC');
       }
-      console.log('完成从城郊到名誉NPC', res);
+      logger.info('完成从城郊到名誉NPC', res);
       return res && new Conversation(role).RongGuang();
     })
     .then(res => {
       if (!res) {
         throw new Error('未完成领取名誉任务');
       }
-      console.log('完成领取名誉任务', res);
+      logger.info('完成领取名誉任务', res);
       return res && fromMingYuNPCToAntHill(role);
     })
     .then(res => {
       if (!res) {
         throw new Error('未完成从名誉NPC到蚂蚁沙地北');
       }
-      console.log('完成从名誉NPC到蚂蚁沙地北', res);
+      logger.info('完成从名誉NPC到蚂蚁沙地北', res);
       return res && fromAntHillToSunsetDune(role);
     })
     .then(res => {
       if (!res) {
         throw new Error('未完成从蚂蚁沙地北到落日沙丘');
       }
-      console.log('完成从蚂蚁沙地北到落日沙丘 ', res);
+      logger.info('完成从蚂蚁沙地北到落日沙丘 ', res);
       return res && fromSunsetDuneToSunsetDuneWest(role);
     })
     .then(res => {
       if (!res) {
         throw new Error('未完成从落日沙丘到落日沙丘西');
       }
-      console.log('完成从落日沙丘到落日沙丘西', res);
+      logger.info('完成从落日沙丘到落日沙丘西', res);
       return res && fromSunsetDuneWestToSphinx(role);
     })
     .then(res => {
       if (!res) {
         throw new Error('未完成从落日沙丘西到斯芬尼克');
       }
-      console.log('完成从落日沙丘西到斯芬尼克', res);
+      logger.info('完成从落日沙丘西到斯芬尼克', res);
       return res && new Conversation(role).Sphinx();
     })
     .then(res => {
       if (!res) {
         throw new Error('未完成与斯芬尼克对话');
       }
-      console.log('完成与斯芬尼克对话', res);
+      logger.info('完成与斯芬尼克对话', res);
       return res && fromLostTempleToMingYuBoss(role);
     })
     .then(res => {
       if (!res) {
         throw new Error('未完成从失落神殿一层前往名誉BOSS');
       }
-      console.log('从失落神殿一层前往名誉BOSS', res);
+      logger.info('从失落神殿一层前往名誉BOSS', res);
       // 下马
       atackActions.startKeyPress({ key: 'F5', interval: null });
       role.bindDm.delay(1000);
@@ -136,19 +137,19 @@ const loopAction = () => {
       // }
     })
     .then(res => {
-      console.log('当前已经没有怪物了', role.position);
+      logger.info('当前已经没有怪物了', role.position);
       role.bindDm.delay(1000);
       return new BaseAction(role).backCity({ x: 278, y: 79 }, 'F9');
     })
     .then(res => {
-      console.log('成功回城', res);
+      logger.info('成功回城', res);
       // 上马
       atackActions.startKeyPress({ key: 'F5', interval: null });
       role.bindDm.delay(2000);
       role.updateTaskStatus('done');
     })
     .catch(err => {
-      console.log('完成名誉任务失败', err);
+      logger.error('完成名誉任务失败', err);
     });
 };
 

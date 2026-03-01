@@ -5,6 +5,7 @@
  * - 提供 startKeyPress(rec, intervalMs?, keyName?) / stopKeyPress(hwnd)
  */
 
+import { logger } from '../../utils/logger';
 import type { DamoClientRecord } from '../events';
 // 中文注释：Windows 虚拟键码映射（F1-F10），便于统一复用
 export const VK_F: Record<'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10', number> = {
@@ -37,7 +38,7 @@ export function startKeyPress(keyName: keyof typeof VK_F = 'F1', intervalMs: num
   // 中文注释：防重入（已在运行则忽略）
   const existing = states.get(hwnd);
   if (existing?.running) {
-    console.warn(`[自动按键] 窗口 ${hwnd} 已在运行，忽略重复启动。`);
+    logger.warn(`[自动按键] 窗口 ${hwnd} 已在运行，忽略重复启动。`);
     return;
   }
 
@@ -59,15 +60,15 @@ export function startKeyPress(keyName: keyof typeof VK_F = 'F1', intervalMs: num
         dm.KeyPress(String(VK_F[keyName]));
       } catch (err) {
         // 中文注释：按键失败后立即退出定时器并清理状态
-        console.warn('[自动按键x] 按键失败，自动停止：', String((err as any)?.message || err));
+        logger.warn('[自动按键x] 按键失败，自动停止：', String((err as any)?.message || err));
         stopKeyPress(hwnd);
       }
     }, periodMs);
-    console.log(`[自动按键x] 已启动：hwnd=${hwnd} | key=${keyName} | 间隔=${periodMs}ms | 频率约=${(1000 / periodMs).toFixed(2)} 次/秒`);
+    logger.info(`[自动按键x] 已启动：hwnd=${hwnd} | key=${keyName} | 间隔=${periodMs}ms | 频率约=${(1000 / periodMs).toFixed(2)} 次/秒`);
   } else {
     // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
     dm.KeyPress(String(VK_F[keyName]));
-    console.log(`[自动按键x] 已启动：hwnd=${hwnd} | key=${keyName} | 无间隔（单次按键）`);
+    logger.info(`[自动按键x] 已启动：hwnd=${hwnd} | key=${keyName} | 无间隔（单次按键）`);
   }
 }
 
@@ -80,5 +81,5 @@ export function stopKeyPress(hwnd: number): void {
     clearInterval(st.intervalId);
   }
   states.delete(hwnd);
-  console.log(`[自动按键] 已停止：hwnd=${hwnd}`);
+  logger.info(`[自动按键] 已停止：hwnd=${hwnd}`);
 }

@@ -5,12 +5,12 @@
  */
 export enum TsRet {
   Failed,
-  Success
+  Success,
 }
 
 export enum TsSwitch {
   Off,
-  On
+  On,
 }
 
 export enum GetWindowFlag {
@@ -21,7 +21,7 @@ export enum GetWindowFlag {
   Next,
   Previous,
   Own,
-  top
+  top,
 }
 
 export enum WindowStateFlag {
@@ -32,12 +32,12 @@ export enum WindowStateFlag {
   Maximize,
   Top,
   Response,
-  Available
+  Available,
 }
 
 export enum SpecialWindowFlag {
   Desktop,
-  Taskbar
+  Taskbar,
 }
 
 export enum EnumWindowFilter {
@@ -45,7 +45,7 @@ export enum EnumWindowFilter {
   ClassName = 2,
   FirstChild = 4,
   Top = 8,
-  visible = 16
+  visible = 16,
 }
 
 export enum BindWindowMode {
@@ -53,41 +53,41 @@ export enum BindWindowMode {
   Normal1 = 1,
   Super = 101,
   Drive = 201,
-  DriveCanHideProcess = 203
+  DriveCanHideProcess = 203,
 }
 
 export enum LockMode {
   Close,
   Open,
   MouseOnly,
-  KeypadOnly
+  KeypadOnly,
 }
 
 export enum TsMode {
   Normal,
-  Advanced
+  Advanced,
 }
 
 export enum MemoryBitNum {
   Bit32,
   Bit16,
-  Bit8
+  Bit8,
 }
 
 export enum MemoryIntByte {
   Byte4,
   Byte2,
-  Byte1
+  Byte1,
 }
 
 export enum MemoryCharType {
   Ascii,
-  Unicode
+  Unicode,
 }
 
 export enum MemoryState {
   Writable,
-  NotWritable
+  NotWritable,
 }
 export interface Coordinate {
   x: number;

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '../../../utils/logger';
 import Card from '../../components/card/Card';
 import styles from './index.module.less';
 
@@ -53,7 +54,7 @@ const FieldView: React.FC<FieldProps> = () => {
       if (isElectron) {
         if (!running) {
           const ret = await (window as any).ffoActions.toggleWuLeiNanJiao();
-          console.log('[无泪南郊] 切换结果', ret);
+          logger.info('[无泪南郊] 切换结果', ret);
           if (typeof ret?.running === 'boolean') {
             setRunning(ret.running);
           } else {
@@ -61,11 +62,11 @@ const FieldView: React.FC<FieldProps> = () => {
           }
         } else {
           const ret = await (window as any).ffoActions.pauseCurActive();
-          console.log('[无泪南郊] 暂停结果', ret);
+          logger.info('[无泪南郊] 暂停结果', ret);
           if (ret?.ok) {
             setRunning(false);
           } else {
-            console.warn('[无泪南郊] 暂停失败：', ret?.message);
+            logger.warn('[无泪南郊] 暂停失败：', ret?.message);
           }
         }
       } else {
@@ -73,7 +74,7 @@ const FieldView: React.FC<FieldProps> = () => {
         setRunning(prev => !prev);
       }
     } catch (e) {
-      console.warn('[无泪南郊] 启动/暂停失败：', (e as any)?.message || e);
+      logger.warn('[无泪南郊] 启动/暂停失败：', (e as any)?.message || e);
       // 中文注释：异常时不改变当前状态，保持可点击
     }
   };
@@ -83,17 +84,17 @@ const FieldView: React.FC<FieldProps> = () => {
     try {
       if (isElectron) {
         const ret = await (window as any).ffoActions.stopCurActive();
-        console.log('[无泪南郊] 停止结果', ret);
+        logger.info('[无泪南郊] 停止结果', ret);
         if (ret?.ok) {
           setRunning(false);
         } else {
-          console.warn('[无泪南郊] 停止失败：', ret?.message);
+          logger.warn('[无泪南郊] 停止失败：', ret?.message);
         }
       } else {
         setRunning(false);
       }
     } catch (e) {
-      console.warn('[无泪南郊] 停止失败：', (e as any)?.message || e);
+      logger.warn('[无泪南郊] 停止失败：', (e as any)?.message || e);
     }
   };
 

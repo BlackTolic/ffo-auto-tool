@@ -1,5 +1,6 @@
 // 获取当前角色的坐标位置（OCR 识别坐标文本并解析为数值）
 // 中文注释：该模块提供一次性获取与每秒轮询两种调用方式，基于已绑定窗口对应的大漠实例。
+import { logger } from '../../../utils/logger';
 import { DEFAULT_ADDRESS_NAME, DEFAULT_ROLE_POSITION } from '../../constant/OCR-pos';
 import type { DamoClientRecord } from '../../events';
 import { parseRolePositionFromText } from '../common';
@@ -29,7 +30,7 @@ export function getCurrentRolePosition(
     const raw: string = String(dm.Ocr(region.x1, region.y1, region.x2, region.y2, color, sim) || '').trim();
     return parseRolePositionFromText(raw);
   } catch (err) {
-    console.warn('[OCR坐标识别] 获取失败:', String((err as any)?.message || err));
+    logger.warn('[OCR坐标识别] 获取失败:', String((err as any)?.message || err));
     return null;
   }
 }
@@ -58,13 +59,13 @@ export function startRolePositionPolling(params: StartRolePositionProps): Return
     () => {
       try {
         const raw: string = String(dm.Ocr(region.x1, region.y1, region.x2, region.y2, color, sim) || '').trim();
-        console.log('[OCR坐标]  原始文本:', raw);
+        logger.info('[OCR坐标]  原始文本:', raw);
         const pos = parseRolePositionFromText(raw);
         const addressName = dm.Ocr(map.x1, map.y1, map.x2, map.y2, DEFAULT_COLOR, DEFAULT_SIM);
-        console.log('[OCR坐标]  地图名称:', addressName);
+        logger.info('[OCR坐标]  地图名称:', addressName);
         onUpdate(pos);
       } catch (err) {
-        console.warn('[OCR坐标] 轮询失败:', String((err as any)?.message || err));
+        logger.warn('[OCR坐标] 轮询失败:', String((err as any)?.message || err));
         onUpdate(null);
       }
     },

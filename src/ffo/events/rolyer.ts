@@ -4,6 +4,7 @@ import { getVerifyCodeByTuJian } from '../../AI/tu-jian';
 import { AutoT, ensureDamo } from '../../auto-plugin/index';
 import { ROLE_IS_DEAD_PATH, VERIFY_CODE_OPTIONS_PATH, VERIFY_CODE_QUESTION_PATH } from '../../constant/config';
 import { emailStrategy } from '../../utils/email';
+import { logger } from '../../utils/logger';
 import { debounce } from '../../utils/tool';
 import { DEFAULT_MENUS_POS, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '../constant/OCR-pos';
 import { isArriveAimNear, selectRightAnwser } from '../utils/common';
@@ -36,7 +37,7 @@ export class Role {
   public hwnd?: number = 0; // 窗口句柄
   public bindDm: any = null; // 大漠类
   public bindPlugin: any = null; // 绑定的插件类
-  private timer: NodeJS.Timeout | null = null; // 定时器
+  private timeroutId: NodeJS.Timeout | null = null; // 定时器
   private name: string = ''; // 当前控制的角色名称
   public position: Pos | null = { x: 0, y: 0 }; // 当前角色所在坐标
   public map: string = ''; // 当前所在地图名称
@@ -57,10 +58,12 @@ export class Role {
   public job: 'YS' | 'SS' | 'JK' | 'CK' | 'ZS' = 'SS'; // 角色职业JK-剑客；CK-刺客；YS-药师；SS-术士；ZS-战士
   public actionTimer = new Map<string, ReturnType<typeof setInterval>>(); // 其他行为中的定时器
   private needCheckDead: boolean = true; // 是否需要检查死亡
-  private needCheckTeamApply: boolean = false; // 是否需要检查组队申请
   private needCheckLeaveUp: boolean = false; // 是否需要检查升级状态
   private deadCall: (() => void) | null = null; // 死亡回调
   private teamApplyCall: ((closePos: Pos) => void) | null = null; // 组队申请回调
+  private globalStrategyTask: { condition: () => boolean; callback: () => void }[] | null = null; // 全局策略任务队列
+  private immediateId: NodeJS.Immediate | null = null; // 立即执行任务ID
+  private loopIsRuning: boolean = true; // 循环任务是否运行中
 
   constructor() {}
 
@@ -77,38 +80,47 @@ export class Role {
       throw new Error('[角色信息] 未提供有效的绑定记录或 dm 实例');
     }
     if (!damoBindingManager.isBound(hwnd)) {
-      console.log('[角色信息] 当前前台窗口未绑定');
+      logger.warn('[角色信息] 当前前台窗口未绑定');
       return;
     }
     const bindDm = rec?.ffoClient as AutoT;
     this.bindDm = rec?.ffoClient.dm;
     this.bindPlugin = bindDm;
     const name = getRoleName(bindDm, this.bindWindowSize);
-    console.log(name, 'this.name');
+    logger.info(name, 'this.name');
     this.name = name;
     this.job = name.includes('花开无须折') ? 'SS' : 'JK';
     // 中文注释：使用 setImmediate 触发首轮执行，随后用 setTimeout 维持固定轮询间隔（避免事件循环被持续 setImmediate 挤压）
     const loop = () => {
       try {
         // 获取角色位置
-        const pos = getRolePosition(bindDm, this.bindWindowSize); // 获取地图名
-        const addressName = getMapName(bindDm, this.bindWindowSize);
+        this.position = getRolePosition(bindDm, this.bindWindowSize); // 获取坐标信息
+        // 未读取到坐标，结束所有操作
+        if (!this.position) {
+          logger.warn('未获取到角色位置');
+          // 暂停所有点击事件
+        }
+        this.map = getMapName(bindDm, this.bindWindowSize);
         // 获取选中的怪物名
-        const monsterName = getMonsterName(bindDm, this.bindWindowSize);
+        this.selectMonster = getMonsterName(bindDm, this.bindWindowSize);
         // 获取血量状态
-        const bloodStatus = getBloodStatus(bindDm, this.bindWindowSize);
+        this.bloodStatus = getBloodStatus(bindDm, this.bindWindowSize);
+
         // 队伍邀请
         if (typeof this.teamApplyCall === 'function') {
           const inviteTeamPos = checkInviteTeam(bindDm, this.bindWindowSize);
           inviteTeamPos && this.teamApplyCall(inviteTeamPos);
         }
-
-        // console.log(inviteTeamPos, 'inviteTeamPos');
-        // console.log(bloodStatus, 'bloodStatus');
-        // 是否处于回血状态
-        // this.statusBloodIcon = getStatusBloodIcon(bindDm, this.bindWindowSize);
-        // 截图
-        // bindDm.CapturePng(verifyCodePos.x1, verifyCodePos.y1, verifyCodePos.x2, verifyCodePos.y2, `${VERIFY_CODE_PATH}/${hwnd}测试.png`);
+        // 全局任务检查
+        if (this.globalStrategyTask) {
+          for (const task of this.globalStrategyTask) {
+            // logger.debug(task.condition(), 'task.condition()');
+            if (task.condition()) {
+              task.callback();
+              break;
+            }
+          }
+        }
         // 获取神医坐标
         const verifyCodeTextPos = getVerifyCodePos(bindDm, this.bindWindowSize);
         if (verifyCodeTextPos) {
@@ -132,7 +144,7 @@ export class Role {
               // 检查是否已经离线
               const isOff = isOffline(this.bindDm, this.bindWindowSize);
               if (isOff) {
-                console.log('[角色信息] 角色已掉线');
+                logger.warn('[角色信息] 角色已掉线');
                 // 发送邮件
                 emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色离线', text: `角色 ${this.name} 已掉线` });
                 // 断线后取消注册，终止
@@ -141,8 +153,8 @@ export class Role {
               }
 
               Promise.all([getVerifyCodeByAliQW(optionsUrl), getVerifyCodeByTuJian(questionUrl)]).then(([Ali = '', TuJian = '']) => {
-                console.log('验证码识别结果 Ali', Ali);
-                console.log('验证码识别结果 TuJian', TuJian);
+                logger.info('验证码识别结果 Ali', Ali);
+                logger.info('验证码识别结果 TuJian', TuJian);
                 const I = { x: verifyCodeTextPos.x + safeCheckPos.I.x, y: verifyCodeTextPos.y + safeCheckPos.I.y };
                 const II = { x: verifyCodeTextPos.x + safeCheckPos.II.x, y: verifyCodeTextPos.y + safeCheckPos.II.y };
                 const III = { x: verifyCodeTextPos.x + safeCheckPos.III.x, y: verifyCodeTextPos.y + safeCheckPos.III.y };
@@ -159,8 +171,8 @@ export class Role {
                 answerPos = map[result as keyof typeof map];
                 bindDm.moveTo(answerPos.x, answerPos.y);
                 bindDm.leftClick();
-                console.log('当前时间:', new Date().toLocaleString());
-                console.log('关闭截图啦', this.openCapture);
+                logger.info('当前时间:', new Date().toLocaleString());
+                logger.info('关闭截图啦', this.openCapture);
               });
             }
           }
@@ -168,31 +180,26 @@ export class Role {
           this.openCapture = true;
         }
 
-        this.selectMonster = monsterName;
-        this.map = addressName;
-        this.position = pos;
-        this.bloodStatus = bloodStatus;
-
         // 检查是否有人抛出组队申请
         // 开启任务队列
         if (!this.taskList?.length) {
           return;
         }
         // 这里执行循环任务根据任务中的初始坐标来触发
-        const takeTask = this.taskList.filter(item => isArriveAimNear(pos as Pos, item.loopOriginPos, 10));
+        const takeTask = this.taskList.filter(item => isArriveAimNear(this.position as Pos, item.loopOriginPos, 10));
         // if (!takeTask.length) {
         //   return;
         // }
         if (takeTask.length) {
           // 指定第一个任务为最近的任务
           this.task = takeTask[0];
-          // console.log(this.task, ' this.task');
+          // logger.debug(this.taskStatus, ' this.taskStatus');
           if (['done'].includes(this.taskStatus)) {
             this.taskStatus = 'doing';
-            // console.log('[角色信息] 已经成功切换循环任务:', this.task.taskName);
+            // logger.debug('[角色信息] 已经成功切换循环任务:', this.task.taskName);
             const now = Date.now();
             if (now - this.lastTaskActionTs >= this.task.interval) {
-              console.log(`[角色信息] 已到达任务位置 ${this.task.taskName}`);
+              logger.info(`[角色信息] 已到达任务位置 ${this.task.taskName}`);
               this.task.action();
               this.lastTaskActionTs = now;
             }
@@ -232,13 +239,15 @@ export class Role {
           return;
         }
       } catch (err) {
-        console.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
+        logger.warn('[角色信息] 轮询失败:', String((err as any)?.message || err));
       } finally {
         // 中文注释：通过 setTimeout 维持 300ms 周期，避免紧凑的 setImmediate 导致事件循环阻塞
-        this.timer = setTimeout(loop, 250);
+        if (this.loopIsRuning) {
+          this.timeroutId = setTimeout(loop, 250);
+        }
       }
     };
-    setImmediate(loop); // 中文注释：立即触发一次执行
+    this.immediateId = setImmediate(loop); // 中文注释：立即触发一次执行
   }
 
   getName() {
@@ -252,16 +261,18 @@ export class Role {
   }
 
   unregisterRole() {
-    if (this.timer) {
+    this.loopIsRuning = false;
+    if (this.timeroutId) {
       // 中文注释：清理通过 setTimeout 周期调度的轮询定时器
-      clearTimeout(this.timer);
-      this.timer = null;
+      clearTimeout(this.timeroutId);
+      this.timeroutId = null;
       this.task = null;
       this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
       this.isPauseCurActive = false;
-      this.clearAllActionTimer();
-      console.log('[角色信息] 已解除角色轮询');
+      logger.info('[角色信息] 已解除角色轮询');
     }
+    this.clearAllActionTimer();
+    this.immediateId && clearImmediate(this.immediateId);
   }
 
   // 挂载循环任务
@@ -294,7 +305,7 @@ export class Role {
 
   updateTaskStatus(status: 'done' | 'doing') {
     if (!this.task) {
-      console.log('任务不存在!');
+      logger.info('任务不存在!');
       return;
     }
     this.taskStatus = status;
@@ -337,5 +348,14 @@ export class Role {
   // 中文注释：更新组队申请回调
   updateTeamApplyCall(teamApplyCall: (closePos: Pos) => void) {
     this.teamApplyCall = teamApplyCall;
+  }
+
+  // 添加全局策略任务,当某个条件达到时，立即执行回调任务
+  addGlobalStrategyTask(tasks: { condition: () => boolean; callback: () => void }[]) {
+    if (this.globalStrategyTask) {
+      logger.info('全局策略任务已存在!');
+      return;
+    }
+    this.globalStrategyTask = tasks;
   }
 }
