@@ -234,10 +234,14 @@ export class Damo {
     return this.dm.MoveTo(x, y);
   }
 
-  moveToClick(x: number, y: number): void {
+  moveToClick(x: number, y: number, mouse: 'left' | 'right' = 'left'): void {
     this.dm.moveTo(x, y);
     this.dm.delay(300);
-    this.dm.leftClick();
+    if (mouse === 'right') {
+      this.dm.rightClick();
+    } else {
+      this.dm.leftClick();
+    }
   }
 
   leftDown(): number {
