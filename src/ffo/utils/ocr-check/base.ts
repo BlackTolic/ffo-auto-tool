@@ -16,6 +16,7 @@ import {
   DEFAULT_ITEM_BOX_TAB,
   DEFAULT_ITEM_BOX_TAB_SWITCH,
   DEFAULT_MONSTER_NAME,
+  DEFAULT_MOUNTED,
   DEFAULT_PET_ACTIVE,
   DEFAULT_ROLE_NAME,
   DEFAULT_ROLE_POSITION,
@@ -86,7 +87,8 @@ export const getMonsterName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 export const getBloodStatus = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const bloodStatusPos = DEFAULT_BLOOD_STATUS[bindWindowSize];
   const bloodStatusText = bindDm.findColorE(bloodStatusPos.x1, bloodStatusPos.y1, bloodStatusPos.x2, bloodStatusPos.y2, bloodStatusPos.color, bloodStatusPos.sim);
-  return parseRolePositionFromText(bloodStatusText) ? 'danger' : 'safe';
+  // logger.info('血量状态: %s', bloodStatusText);
+  return parseRolePositionFromText(bloodStatusText) ? 'safe' : 'danger';
 };
 
 // 是否处于回血状态
@@ -153,6 +155,15 @@ export const checkPetActive = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
   const petActivePos = DEFAULT_PET_ACTIVE[bindWindowSize];
   const petActiveText = bindDm.ocr(petActivePos.x1, petActivePos.y1, petActivePos.x2, petActivePos.y2, petActivePos.color, petActivePos.sim);
   return petActiveText !== '暂时没有宠物';
+};
+
+// 检查宠物是否是坐骑状态
+export const checkMounted = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  bindDm.moveToClick(65, 85);
+  const mountedPos = DEFAULT_MOUNTED[bindWindowSize];
+  const mountedText = bindDm.ocr(mountedPos.x1, mountedPos.y1, mountedPos.x2, mountedPos.y2, mountedPos.color, mountedPos.sim);
+  bindDm.moveToClick(65, 85);
+  return mountedText;
 };
 
 // 检查物品栏物品数量

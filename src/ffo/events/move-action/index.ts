@@ -23,10 +23,10 @@ export interface AutoFindPathConfig {
   map?: string; // 目标地图
 }
 
-const getInitPos = (bindWindowSize: string) => {
+const getInitPos = (bindWindowSize: string, offsetR?: number) => {
   const initPos = (ORIGIN_POSITION as any)[bindWindowSize];
   // logger.debug(initPos, '角色的绝对位置');
-  return { x: initPos.x, y: initPos.y, r: initPos.r };
+  return { x: initPos.x, y: initPos.y, r: offsetR || initPos.r };
 };
 
 // 计算两点之间的角度（角度制）
@@ -39,9 +39,9 @@ export const getAngle = (x1: number, y1: number, x2: number, y2: number) => {
   return Number(((rad * 180) / Math.PI).toFixed(2));
 };
 
-function getCirclePoint(angle: number, bindWindowSize: string) {
+function getCirclePoint(angle: number, bindWindowSize: string, offsetR?: number) {
   // 角度转弧度（JavaScript Math.sin/cos需弧度）
-  const pos = getInitPos(bindWindowSize);
+  const pos = getInitPos(bindWindowSize, offsetR);
   const initX = pos.x;
   const initY = pos.y;
   const radius = pos.r;
@@ -51,6 +51,11 @@ function getCirclePoint(angle: number, bindWindowSize: string) {
   const y = math.add(initY, math.mul(radius, Number(Math.sin(rad).toFixed(2))));
   // 四舍五入为整数（适配鼠标坐标）
   return { x, y };
+}
+
+interface MoveConfig {
+  offsetR?: number; // 到达当前节点范围内半径（默认6）
+  mirrorJitter?: boolean; // 移动时的镜像抖动（默认false）
 }
 
 export class MoveActions {
@@ -64,11 +69,14 @@ export class MoveActions {
   private lastMoveTime = 0; // 上次移动时间戳
   private recordPos: Pos | null = null; // 记录上次移动的位置
   private isRunLoop = true; // 是否运行循环
+  private offsetR?: number; // 偏移半径
+  private mirrorJitter = false; // 移动时的镜像抖动
 
-  constructor(role: Role) {
+  constructor(role: Role, config?: MoveConfig) {
     this.dm = role.bindDm;
     this.bindPlugin = role.bindPlugin;
     this.role = role;
+    this.offsetR = config?.offsetR || pointR;
   }
 
   async move(fromPos: Pos, curAimPos: Pos) {
@@ -78,14 +86,14 @@ export class MoveActions {
       return;
     }
     const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
-    const { x, y } = getCirclePoint(angle, this.role.bindWindowSize);
+    const { x, y } = getCirclePoint(angle, this.role.bindWindowSize, this.offsetR);
     this.bindPlugin.moveToLeftDown(x, y);
     logger.info(`[自动寻路] 从 (${fromPos.x},${fromPos.y}) 移动到 (${curAimPos.x},${curAimPos.y}) `);
   }
 
   randomMove() {
     const angle = Math.random() * 360;
-    const { x, y } = getCirclePoint(angle, this.role.bindWindowSize);
+    const { x, y } = getCirclePoint(angle, this.role.bindWindowSize, this.offsetR);
     this.dm.MoveTo(x, y);
     // 中文注释：按下左键以触发移动（修正大小写）
     this.dm.delay(400);

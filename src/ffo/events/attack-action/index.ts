@@ -354,11 +354,12 @@ export class AttackActions {
         }
         // 地图发生改变，中断攻击
         if (map && map !== this.role.map) {
-          const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
           timer && clearInterval(timer);
           timer = null;
           this.bindDm;
-          this.bindPlugin.moveToClick(roleX + 30, roleY);
+          // this.bindPlugin.moveToClick(roleX + 30, roleY);
+          // 点击脚下的死坐标
+          this.bindPlugin.moveToClick(800, 525);
           reject('[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击');
         }
         if (!findMonsterPos && counter > times) {

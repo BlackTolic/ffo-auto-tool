@@ -19,7 +19,7 @@ export const DEFAULT_ROLE_POSITION = {
   '1280*800': { x1: 1167, y1: 39, x2: 1218, y2: 56, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
 };
 
-// 原点坐标
+// 在实现move过程中，鼠标的偏移原点坐标
 export const ORIGIN_POSITION = {
   '1600*900': { x: 800, y: 450, r: 350, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
   '1280*800': { x: 633, y: 399, r: 350, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
@@ -34,8 +34,8 @@ export const DEFAULT_MONSTER_NAME = {
 // 血量状态（获取指定区域颜色均值）
 export const DEFAULT_BLOOD_STATUS = {
   // 检测当前位置是黄色和绿色，如果没有黄色和绿色，说明血条空了
-  '1600*900': { x1: 116, y1: 12, x2: 139, y2: 39, color: 'e89828-111111|e89828-111111', sim: DEFAULT_SIM },
-  '1280*800': { x1: 116, y1: 12, x2: 139, y2: 39, color: 'e89828-111111|e89828-111111', sim: DEFAULT_SIM },
+  '1600*900': { x1: 124, y1: 26, x2: 168, y2: 36, color: '20ac00-111111|e89828-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 116, y1: 12, x2: 139, y2: 39, color: '20ac00-111111|e89828-111111', sim: DEFAULT_SIM },
 };
 
 // 神医验证码
@@ -136,6 +136,12 @@ export const DEFAULT_GOLD = {
 // 检查宠物是否激活
 export const DEFAULT_PET_ACTIVE = {
   '1600*900': { x1: 82, y1: 67, x2: 169, y2: 105, color: DEFAULT_COLOR_YELLOW, sim: DEFAULT_SIM },
+  '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+};
+
+// 检查是否是坐骑状态
+export const DEFAULT_MOUNTED = {
+  '1600*900': { x1: 767, y1: 302, x2: 812, y2: 342, color: 'e8f0e8-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
 };
 

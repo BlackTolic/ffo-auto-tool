@@ -29,7 +29,7 @@ const CLOSE_FLG = {
 
 // 扫描屏幕中的位置范围以便查找杨戬 = dm.Ocr(450,109,1390,722,"1a1b1d-111111",1.0)
 const SCAN_BOX = {
-  '1600*900': { x1: 450, y1: 109, x2: 1390, y2: 722, color: '00f000-111111', sim: 1.0 },
+  '1600*900': { x1: 144, y1: 2, x2: 1474, y2: 845, color: '00f000-111111', sim: 1.0 },
   '1280*800': { x1: 78, y1: 100, x2: 1208, y2: 713, color: '00f000-111111', sim: 1.0 },
 };
 // 对话框选项位置
@@ -343,18 +343,21 @@ export class Conversation {
     });
   }
 
-  // 与仓库管理员对话
-  async StoreManager(config?: StoreManagerConfig) {
+  // 与云荒仓库管理员对话
+  async YunHuangStoreManager(config?: StoreManagerConfig) {
     return new Promise(async (resolve, reject) => {
       const { task = '', money = '', saveEquipCall } = config || {};
       let npcPos = await this.findNPC('仓库管理员', 30, 50);
       if (!npcPos) {
+        await new Promise(res => setTimeout(res, 3000));
         npcPos = await this.findNPC('仓库管理员', 30, 50);
       }
       if (!npcPos) {
+        await new Promise(res => setTimeout(res, 3000));
         npcPos = await this.findNPC('仓库管理员', 30, 50);
       }
       if (!npcPos) {
+        await new Promise(res => setTimeout(res, 3000));
         logger.info('没有找到仓库管理员');
         return;
       }
