@@ -16,7 +16,7 @@ import cp from 'child_process';
 // 校验结果类型
 export type EnvCheckItem = {
   name: string; // 校验项名称
-  ok: boolean;  // 是否通过
+  ok: boolean; // 是否通过
   message: string; // 详细信息（中文）
 };
 
@@ -60,9 +60,7 @@ function getPythonVersion(pythonExe?: string): { ok: boolean; version?: string; 
     return {
       ok,
       version,
-      message: ok
-        ? `Python 版本满足要求: ${version}`
-        : `Python 版本过低: ${version}，请安装 Python >= 3.10（建议 3.12）`
+      message: ok ? `Python 版本满足要求: ${version}` : `Python 版本过低: ${version}，请安装 Python >= 3.10（建议 3.12）`,
     };
   } catch (err: any) {
     return { ok: false, message: `获取 Python 版本失败: ${String(err?.message || err)}` };
@@ -79,7 +77,7 @@ function checkVSBuildTools(msvsVersion?: string): { ok: boolean; message: string
   const candidates = [
     'C:/Program Files/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe',
     'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe',
-    'C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe'
+    'C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe',
   ];
   const found = candidates.some(p => fs.existsSync(p));
 
@@ -119,7 +117,7 @@ function detectDllArch(dllPath: string): { ok: boolean; arch?: 'x86' | 'x64'; me
 function checkElectronRuntime(expectedVersion = '13.6.9', expectedArch: NodeJS.Architecture = 'ia32') {
   const actualVersion = process.versions.electron;
   const actualArch = process.arch;
-  const versionOk = actualVersion === expectedVersion || (actualVersion?.startsWith('13.'));
+  const versionOk = actualVersion === expectedVersion || actualVersion?.startsWith('13.');
   const archOk = actualArch === expectedArch;
   const ok = versionOk && archOk;
   const message = `Electron 版本: ${actualVersion}，架构: ${actualArch}，要求版本: ${expectedVersion}（或 13.x），要求架构: ${expectedArch}`;
@@ -131,7 +129,7 @@ function checkWinaxLoad(): { ok: boolean; message: string } {
   try {
     // 仅尝试 require，不进行 COM 实例化（实例化留给业务逻辑）
     // 如果 native 模块位数与进程不匹配，require 通常会失败
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+
     const winax = require('winax');
     if (!winax) {
       return { ok: false, message: 'winax 模块不可用（require 返回空）' };
@@ -189,15 +187,15 @@ export function validateEnvironment(): EnvCheckResult {
     // 简单起见，我们尝试在当前目录及常见的打包路径寻找
     let dllPath = path.resolve(cwd, 'src', 'lib', 'dm.dll'); // 中文注释：开发模式路径
     if (!fs.existsSync(dllPath) && process.resourcesPath) {
-        // 中文注释：常见打包路径（asar:false）
-        const candidate1 = path.resolve(process.resourcesPath, 'app', 'src', 'lib', 'dm.dll');
-        // 中文注释：兜底路径，某些打包器可能直接将资源放在 resources\src\lib
-        const candidate2 = path.resolve(process.resourcesPath, 'src', 'lib', 'dm.dll');
-        dllPath = fs.existsSync(candidate1) ? candidate1 : candidate2;
+      // 中文注释：常见打包路径（asar:false）
+      const candidate1 = path.resolve(process.resourcesPath, 'app', 'src', 'lib', 'dm.dll');
+      // 中文注释：兜底路径，某些打包器可能直接将资源放在 resources\src\lib
+      const candidate2 = path.resolve(process.resourcesPath, 'src', 'lib', 'dm.dll');
+      dllPath = fs.existsSync(candidate1) ? candidate1 : candidate2;
     }
-    
+
     const r = detectDllArch(dllPath); // 中文注释：检测 dm.dll 位数
-    const archMatch = r.arch ? ((r.arch === 'x86' && process.arch === 'ia32') || (r.arch === 'x64' && process.arch === 'x64')) : false;
+    const archMatch = r.arch ? (r.arch === 'x86' && process.arch === 'ia32') || (r.arch === 'x64' && process.arch === 'x64') : false;
     const ok = r.ok && archMatch;
     const message = r.message + (r.ok ? (archMatch ? '（与进程位数匹配）' : '（与进程位数不匹配）') : '');
     items.push({ name: 'dm.dll 位数匹配', ok, message });

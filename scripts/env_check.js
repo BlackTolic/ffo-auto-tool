@@ -68,7 +68,7 @@ printItem('Python 版本', pyOk, pyMsg);
 const msbuildCandidates = [
   'C:/Program Files/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe',
   'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/MSBuild.exe',
-  'C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe'
+  'C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe',
 ];
 let msbuildFound = msbuildCandidates.some(p => fs.existsSync(p));
 let vsOk = msvsVersion === '2022' && msbuildFound;

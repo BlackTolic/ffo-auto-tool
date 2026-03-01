@@ -2,6 +2,7 @@
 
 import { damoBindingManager } from '..';
 import { ensureDamo } from '../../../auto-plugin/index';
+import { logger } from '../../../utils/logger';
 import { OCR_MONSTER } from '../../constant/monster-feature';
 import { TianDu } from '../../constant/NPC_position';
 import { isArriveAimNear } from '../../utils/common';
@@ -68,16 +69,16 @@ export class TianQuanAction {
 
   public start() {
     const loopAction = () => {
-      console.log('开始跑步', this.role.position);
+      logger.info('开始跑步', this.role.position);
       new MoveActions(this.role).startAutoFindPath(TianDu.杨戬).then(() => {
         if (isArriveAimNear(this.role.position, TianDu.杨戬)) {
-          console.log('到达位置杨戬位置', this.role.position);
+          logger.info('到达位置杨戬位置', this.role.position);
           new Conversation(this.role).YangJian().then(res => {
-            console.log('完成与杨戬的对话');
+            logger.info('完成与杨戬的对话');
             this.actions.startAutoFindPath(pos, this.active).then(res => {
               setTimeout(() => {
                 this.active.scanMonster().then(res => {
-                  console.log('当前已经没有怪物了', this.role.position);
+                  logger.info('当前已经没有怪物了', this.role.position);
                   setTimeout(() => {
                     new BaseAction(this.role).backCity({ x: 291, y: 124 });
                   }, 1000);

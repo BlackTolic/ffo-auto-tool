@@ -49,7 +49,7 @@ export class JinHuBeiAnAction {
   public static getInstance(): JinHuBeiAnAction | null {
     const hwnd = damoBindingManager.selectHwnd;
     if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-      console.log('未选择已绑定的窗口', hwnd);
+      logger.info('未选择已绑定的窗口', hwnd);
       return null;
     }
     const role = damoBindingManager.getRole(hwnd);
@@ -69,10 +69,10 @@ export class JinHuBeiAnAction {
       taskName: '镜湖北岸练级',
       loopOriginPos: LOOP_INIT_POS,
       action: () => {
-        console.log('镜湖北岸练级任务启动！', this.role.position);
+        logger.info('镜湖北岸练级任务启动！', this.role.position);
         this.actions.startAutoFindPath(pos, this.active).then(res => {
           this.role.updateTaskStatus('done');
-          console.log('镜湖北岸练级任务完成！', this.role.position);
+          logger.info('镜湖北岸练级任务完成！', this.role.position);
         });
       },
       interval: 5000,

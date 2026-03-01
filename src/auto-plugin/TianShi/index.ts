@@ -6,6 +6,7 @@
 import { execSync } from 'child_process';
 import { resolve } from 'path';
 import * as winax from 'winax';
+import { logger } from '../../utils/logger';
 import {
   Area,
   BindWindowMode,
@@ -42,26 +43,26 @@ export default class TSPlug {
   private static init(COM: string): TSInstance {
     try {
       const x = new winax.Object(COM);
-      // console.log('创建 COM 对象成功', COM);
+      // logger.info('创建 COM 对象成功', COM);
       try {
         // 尝试调用 Ver() 来验证插件是否真正可用 (通常插件都有这个方法)
         if (typeof x.Ver === 'function') {
-          console.log(`插件 ${COM} 版本: ${x.Ver()}`);
+          logger.info(`插件 ${COM} 版本: ${x.Ver()}`);
         }
       } catch (e) {
-        console.warn(`插件 ${COM} 版本获取失败`, e);
+        logger.warn(`插件 ${COM} 版本获取失败`, e);
       }
       return x;
     } catch {
       try {
         const dllPath = resolve(__dirname, './lib/TSPlug.dll');
-        console.log(`尝试注册 TSPlug.dll: ${dllPath}`);
+        logger.info(`尝试注册 TSPlug.dll: ${dllPath}`);
         execSync(`regsvr32 /s "${dllPath}"`);
         const x = new winax.Object(COM);
-        console.log(`注册后创建 COM 对象成功: ${COM}`);
+        logger.info(`注册后创建 COM 对象成功: ${COM}`);
         return x;
       } catch (e) {
-        console.error('注册 TSPlug.dll 失败或创建 COM 对象失败', e);
+        logger.error('注册 TSPlug.dll 失败或创建 COM 对象失败', e);
         throw e;
       }
     }

@@ -84,7 +84,7 @@ function findNearestTextPos(
       .split('|')
       .map((p: string) => p.trim())
       .filter(Boolean)
-      .map((p) => {
+      .map(p => {
         const [xs, ys] = p.split(',');
         const x = parseInt(xs);
         const y = parseInt(ys);
@@ -113,7 +113,7 @@ function findNearestTextPos(
       return { x: Number(xr.value) || 0, y: Number(yr.value) || 0 };
     }
   } catch (err) {
-    console.warn('[自动打怪] 查找文本坐标失败:', String((err as any)?.message || err));
+    logger.warn('[自动打怪] 查找文本坐标失败:', String((err as any)?.message || err));
   }
   return null;
 }
@@ -124,10 +124,10 @@ function pickMonsterToken(text: string): string | null {
   // 中文注释：按非字母数字中文分隔，筛选长度>=2的中文片段
   const tokens = text
     .split(/[^\u4e00-\u9fa5A-Za-z0-9]+/)
-    .map((t) => t.trim())
-    .filter((t) => t.length >= 2);
+    .map(t => t.trim())
+    .filter(t => t.length >= 2);
   // 中文注释：优先中文片段
-  const zh = tokens.find((t) => /[\u4e00-\u9fa5]{2,}/.test(t));
+  const zh = tokens.find(t => /[\u4e00-\u9fa5]{2,}/.test(t));
   if (zh) return zh;
   return tokens[0] || null;
 }
@@ -142,7 +142,7 @@ function acquireTarget(dm: any, opts: Required<AutoCombatOptions>): { text: stri
     if (!pos) return null;
     return { text: token, x: pos.x, y: pos.y };
   } catch (err) {
-    console.warn('[自动打怪] OCR 扫描失败:', String((err as any)?.message || err));
+    logger.warn('[自动打怪] OCR 扫描失败:', String((err as any)?.message || err));
     return null;
   }
 }
@@ -153,7 +153,7 @@ function clickTarget(dm: any, x: number, y: number) {
     dm.MoveTo(x, y);
     dm.LeftClick();
   } catch (err) {
-    console.warn('[自动打怪] 点击选中失败:', String((err as any)?.message || err));
+    logger.warn('[自动打怪] 点击选中失败:', String((err as any)?.message || err));
   }
 }
 // 中文注释：点击到指定坐标以进行移动（根据配置选择左右键）
@@ -163,7 +163,7 @@ function clickToMove(dm: any, x: number, y: number, button: 'left' | 'right') {
     if (button === 'left') dm.LeftClick();
     else dm.RightClick();
   } catch (err) {
-    console.warn('[自动打怪] 鼠标点击移动失败:', String((err as any)?.message || err));
+    logger.warn('[自动打怪] 鼠标点击移动失败:', String((err as any)?.message || err));
   }
 }
 // 中文注释：基于参考点与目标，计算拉扯移动点（鼠标点击移动）
@@ -215,7 +215,7 @@ function tryCastSkills(dm: any, state: CombatState) {
         dm.KeyPress(key);
         state.lastSkillUse[key] = now;
       } catch (err) {
-        console.warn(`[自动打怪] 释放技能 ${key} 失败:`, String((err as any)?.message || err));
+        logger.warn(`[自动打怪] 释放技能 ${key} 失败:`, String((err as any)?.message || err));
       }
     }
   }
@@ -235,7 +235,7 @@ function doKite(dm: any, state: CombatState, opts: Required<AutoCombatOptions>) 
     clickToMove(dm, movePt.x, movePt.y, opts.moveClickButton);
     state.kiteToggle = !state.kiteToggle;
   } catch (err) {
-    console.warn('[自动打怪] 拉扯操作失败:', String((err as any)?.message || err));
+    logger.warn('[自动打怪] 拉扯操作失败:', String((err as any)?.message || err));
   }
 }
 
@@ -250,7 +250,7 @@ export function startAutoCombat(rec: DamoClientRecord, options?: AutoCombatOptio
   const opts: Required<AutoCombatOptions> = { ...base, ...(options || {}) } as Required<AutoCombatOptions>;
   // 中文注释：防重入
   if (states.get(hwnd)?.running) {
-    console.warn(`[自动打怪] 窗口 ${hwnd} 已在运行，忽略重复启动。`);
+    logger.warn(`[自动打怪] 窗口 ${hwnd} 已在运行，忽略重复启动。`);
     return;
   }
 
@@ -298,7 +298,7 @@ export function startAutoCombat(rec: DamoClientRecord, options?: AutoCombatOptio
     }
   }, opts.scanIntervalMs);
 
-  console.log(`[自动打怪] 已启动：hwnd=${hwnd}`);
+  logger.info(`[自动打怪] 已启动：hwnd=${hwnd}`);
 }
 
 // 中文注释：停止自动战斗（清理定时器与状态）
@@ -310,5 +310,5 @@ export function stopAutoCombat(hwnd: number) {
     clearInterval(st.intervalId);
   }
   states.delete(hwnd);
-  console.log(`[自动打怪] 已停止：hwnd=${hwnd}`);
+  logger.info(`[自动打怪] 已停止：hwnd=${hwnd}`);
 }

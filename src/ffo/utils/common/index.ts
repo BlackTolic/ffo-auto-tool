@@ -1,3 +1,5 @@
+import logger from '../../../utils/logger';
+
 // 中文注释：从文本中解析坐标，兼容常见格式，例如：
 export const parseRolePositionFromText = (text: string): Pos | null => {
   const s = String(text || '').trim();
@@ -42,10 +44,10 @@ export const isArriveAimNear = (initPos: Pos | null, aimPos: Pos, r: number = 2)
 
 export const selectRightAnwser = (options: string | null, question: string | null) => {
   if (!options || !question) return null;
-  console.log(options, 'options, ');
+  logger.info(options, 'options, ');
   const map = { '0': 'I', '1': 'II', '2': 'III' };
   const arr = options.split(',').map((x, idx) => ({ opt: x, sim: 0, target: map[idx.toString() as keyof typeof map] }));
-  console.log(arr, 'arr');
+  logger.info(arr, 'arr');
   arr.forEach((x, idx) => {
     const [aim1, aim2, aim3] = question.split('');
     const [opt1, opt2, opt3] = x.opt.split('');

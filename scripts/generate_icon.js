@@ -123,7 +123,7 @@ async function buildBmpIco(pngItems) {
   const icoPath = path.join(outDir, 'app.ico');
 
   // 中文注释：to-ico 接受 PNG 缓冲数组，生成 BMP 编码 ICO，兼容 rcedit
-  const icoBuf = await toIco(pngItems.map((i) => i.buf));
+  const icoBuf = await toIco(pngItems.map(i => i.buf));
   fs.writeFileSync(icoPath, icoBuf);
   console.log('[icon] 已生成 BMP 编码 ICO：', icoPath);
 

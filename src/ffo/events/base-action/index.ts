@@ -1,4 +1,5 @@
 import { BACK_CITY_PNG_PATH } from '../../../constant/config';
+import { logger } from '../../../utils/logger';
 import { MAIN_CITY } from '../../constant/NPC_position';
 import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
@@ -44,10 +45,10 @@ export class BaseAction {
       this.bindPlugin.keyPress(VK_F['alt']);
       this.bindPlugin.keyPress(VK_F['i']);
       this.bindPlugin.delay(500);
-      console.log(`当前需要${type}物品栏`);
+      logger.info(`当前需要${type}物品栏`);
       return;
     }
-    console.log(`当前不需要${type}物品栏`);
+    logger.info(`当前不需要${type}物品栏`);
   }
 
   // 回城
@@ -57,10 +58,10 @@ export class BaseAction {
       const repeatBack = (fixPos: { x: number; y: number }, maxTimes: number = 20) => {
         let i = 0;
         let timer: Timer = setInterval(() => {
-          console.log('回城中', this.role?.position, fixPos);
+          logger.info('回城中', this.role?.position, fixPos);
           // 回到了终点
           if (this.role?.position && isArriveAimNear(this.role?.position, fixPos, 20)) {
-            console.log('回城成功');
+            logger.info('回城成功');
             timer && clearInterval(timer);
             timer = null;
             res(true);
@@ -70,7 +71,7 @@ export class BaseAction {
           if (checkRedName) {
             const systemPrompt = checkSystemPrompt(this.bindPlugin, this.role?.bindWindowSize ?? '1600*900', '红名玩家不允许使用回城卷轴');
             if (systemPrompt) {
-              console.log('检测到红名提示，中断回城操作');
+              logger.warn('检测到红名提示，中断回城操作');
               timer && clearInterval(timer);
               timer = null;
               res('redName');
@@ -79,7 +80,7 @@ export class BaseAction {
           }
           // 超过最大次数
           if (i >= maxTimes) {
-            console.log('回城失败');
+            logger.error('回城失败');
             timer && clearInterval(timer);
             timer = null;
             rej(false);
@@ -99,23 +100,17 @@ export class BaseAction {
           return;
         }
         if (MAIN_CITY.includes(this.role?.map ?? '')) {
-          console.log('回城成功');
+          logger.info('回城成功');
           res(true);
         } else {
-          console.log('回城失败');
+          logger.info('回城失败');
           res(false);
         }
-        //   if (MAIN_CITY.includes(this.role?.map ?? '')) {
-        //     console.log('回城成功');
-        //   }
-        // } else {
-        //   console.log('回城失败');
-        // }
       } else {
         this.bindPlugin.moveTo(items?.x, items?.y);
         this.bindPlugin.leftClick();
         this.bindPlugin.delay(500);
-        console.log('回城卷轴路径', BACK_CITY_PNG_PATH);
+        logger.info('回城卷轴路径', BACK_CITY_PNG_PATH);
         const imgPos = this.bindPlugin.findColorE(1190, 595, 1590, 826, 'b87848-111111|304c68-000000', 1.0, 0);
         const imgPos2 = parseRolePositionFromText(imgPos);
         if (imgPos2) {
@@ -129,10 +124,10 @@ export class BaseAction {
             return;
           }
           if (MAIN_CITY.includes(this.role?.map ?? '')) {
-            console.log('回城成功');
+            logger.info('回城成功');
           }
         } else {
-          console.log('回城失败');
+          logger.info('回城失败');
         }
       }
     });
@@ -142,7 +137,7 @@ export class BaseAction {
   openItemBox(changeTo: '消耗' | '收集' | '装备') {
     // 识别当前打开的页面
     const box = isItemBoxOpen(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
-    console.log('识别当前打开的页面', box);
+    logger.info('识别当前打开的页面', box);
     return new Promise((res, rej) => {
       if (box === changeTo) {
         res(true);
@@ -212,12 +207,12 @@ export class BaseAction {
 
   // 拾取有用装备
   pickUpUsefulEquip(validEquip: ValidEquip, way?: 'mail' | 'saveEquip') {
-    // console.log('这个装备有用');
+    logger.debug('这个装备有用');
     // 获取所有装备坐标
     const pos = checkEquipCount(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
-    // console.log(pos, 'pos');
+    logger.debug(pos, 'pos');
     if (!pos || pos.length === 0) {
-      console.log('没有装备');
+      logger.info('没有装备');
       return;
     }
     pos.forEach(item => {
@@ -227,13 +222,13 @@ export class BaseAction {
       this.bindPlugin.delay(1000);
       // 找到未装备
       const unEquipPos = checkUnEquipEquip(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
-      console.log(unEquipPos, 'unEquipPos');
+      // logger.debug(unEquipPos, 'unEquipPos');
       if (!unEquipPos) {
-        console.log('没有未装备的装备');
+        logger.info('没有未装备的装备');
         return;
       }
       const isUseful = validEquip.some(equip => {
-        // console.log(equip, 'equip');
+        logger.debug(equip, 'equip');
         // 只设置了装备类型，其他条件没有设置的装备v，只要类型对了都要
         if (equip.type && !equip.attrName && unEquipPos.type) {
           return equip.type.includes(unEquipPos.type);
@@ -251,7 +246,7 @@ export class BaseAction {
         this.bindPlugin.leftDoubleClick();
       }
       if (!isUseful) {
-        console.log('这个装备没用');
+        logger.info('这个装备没用');
         this.bindPlugin.leftDownFromToMove({ x: item.x + 10, y: item.y - 5 }, { x: 800, y: 400 });
         this.bindPlugin.leftClick();
         // 取消
@@ -260,11 +255,11 @@ export class BaseAction {
         this.bindPlugin.moveToClick(713, 492);
         return;
       }
-      console.log('这个装备有用');
+      logger.info('这个装备有用');
     });
     // });
     // const { equip } = this.role?.menusPos ?? {};
-    console.log('完成装备筛选');
+    logger.info('完成装备筛选');
   }
 }
 

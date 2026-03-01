@@ -10,7 +10,7 @@ declare module 'winax' {
 
 declare namespace Winax {
   interface Object {
-    new(COM: string): any;
+    new (COM: string): any;
   }
 
   class Variant {

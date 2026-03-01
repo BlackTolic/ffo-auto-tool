@@ -1,4 +1,5 @@
 import React from 'react';
+import { logger } from '../../../utils/logger';
 import styles from './ContentHeader.module.less'; // 中文注释：引入顶部统计区组件样式（CSS Modules）
 
 // 中文注释：顶部统计区组件属性接口（预留可扩展）
@@ -21,7 +22,7 @@ const ContentHeader: React.FC<ContentHeaderProps> = () => {
       }
       await window.windowControl.minimize();
     } catch (e: any) {
-      console.warn('最小化失败:', e?.message || e);
+      logger.warn('最小化失败:', e?.message || e);
     }
   };
 
@@ -35,7 +36,7 @@ const ContentHeader: React.FC<ContentHeaderProps> = () => {
       }
       await window.windowControl.close();
     } catch (e: any) {
-      console.warn('关闭窗口失败:', e?.message || e);
+      logger.warn('关闭窗口失败:', e?.message || e);
     }
   };
 

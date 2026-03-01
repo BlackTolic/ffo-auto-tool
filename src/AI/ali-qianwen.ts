@@ -1,5 +1,6 @@
 // src/AI/request.ts
 import axios from 'axios';
+import { logger } from '../utils/logger';
 const KEY = 'sk-a383696181d247b38af3088bd628bde6';
 const URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 const MODEL = 'qwen3-vl-plus';
@@ -34,10 +35,10 @@ export const getVerifyCodeByAliQW = async (url: string) => {
       }
     );
     const res = response.data.choices[0].message.content;
-    // console.log(res, 'rs');
+    // logger.debug(res, 'rs');
     return res;
   } catch (err) {
-    console.warn('千问识别验证码失败:', String((err as any)?.message || err));
+    logger.warn('千问识别验证码失败:', String((err as any)?.message || err));
     return '';
   }
 };

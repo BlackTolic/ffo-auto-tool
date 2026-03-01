@@ -4,6 +4,7 @@ const winax = require('winax');
 import cp from 'child_process';
 import fs from 'fs'; // 中文注释：用于从文件系统读取字典内容
 import path from 'path'; // 中文注释：用于处理字典文件路径
+import { logger } from '../../utils/logger';
 
 // 注册码
 const registerCode = 'mh84909b3bf80d45c618136887775ccc90d27d7';
@@ -72,7 +73,7 @@ export class Damo {
 
   // 绑定窗口
   bindWindow(hwnd: number, display: string, mouse: string, keypad: string, api: string, mode: number): number {
-    console.log('hwnd==', hwnd, 'display==', display, 'mouse==', mouse, 'keypad==', keypad, 'api==', api, 'mode==', mode);
+    logger.info('hwnd==', hwnd, 'display==', display, 'mouse==', mouse, 'keypad==', keypad, 'api==', api, 'mode==', mode);
     // return this.dm.BindWindow(hwnd, display, mouse, keypad, mode);
     return this.dm.BindWindowEx(hwnd, display, mouse, keypad, api, mode);
   }
@@ -307,20 +308,20 @@ export class Damo {
     const elevated = isElevated();
     if (!elevated) {
       // 中文注释：非管理员直接返回 -2，避免影响免费功能
-      console.warn('大漠收费注册未执行：当前进程非管理员(-2)。请以管理员运行或关闭UAC后重试。');
+      logger.warn('大漠收费注册未执行：当前进程非管理员(-2)。请以管理员运行或关闭UAC后重试。');
       return -2;
     }
     // 中文注释：示例限时控制（保留原逻辑）
     const now = new Date();
     const deadline = new Date('2026-02-15T00:00:00');
     // if (now >= deadline) {
-    //   console.warn('当前时间已超过2026年2月15号，已过期');
+    //   logger.warn('当前时间已超过2026年2月15号，已过期');
     //   return -1;
     // }
     const regCode = this.dm.Reg(registerCode, attachCode);
-    console.log('大漠插件注册返回值: ', regCode, this.describeRegResult(regCode));
-    console.log('大漠插件版本：', this.dm.Ver());
-    console.log('大漠插件路径：', this.dm.GetBasePath());
+    logger.info('大漠插件注册返回值: ', regCode, this.describeRegResult(regCode));
+    logger.info('大漠插件版本：', this.dm.Ver());
+    logger.info('大漠插件路径：', this.dm.GetBasePath());
     return regCode;
   }
 

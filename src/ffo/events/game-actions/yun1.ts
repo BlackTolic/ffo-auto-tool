@@ -1,4 +1,5 @@
 import { damoBindingManager } from '..';
+import logger from '../../../utils/logger';
 import { debounce } from '../../../utils/tool';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
 import { isArriveAimNear } from '../../utils/common';
@@ -13,7 +14,7 @@ const validEquip: ValidEquip = [
   { type: '戒指' },
   { type: '项链', attrName: '力量|智慧|体质|魔抗|护甲值' },
   { type: '项链', level: '102' },
-  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害' },
+  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害|力量|体质' },
   { type: '头盔', attrName: '生命最大值|力量|魔抗|体质|伤害|智慧' },
   { type: '手套', attrName: '物理攻击力|魔法攻击力|力量|体质|智慧' },
   { type: '服装', attrName: '生命最大值|体质|护甲值|力量|智慧' },
@@ -47,7 +48,7 @@ let i = 0;
 const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions) => {
   // 进行红名检验
   const res = await baseAction.backCity({ x: 148, y: 96 }, 'F9', true);
-  console.log(res, 'res');
+  logger.info(res, 'res');
   if (res === 'redName') {
     return new Promise(async res => {
       await moveActions.startAutoFindPath({ toPos: { x: 183, y: 160 }, stationR, delay: 100, map: '云泽秘径' });
@@ -62,15 +63,15 @@ const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions
 const loopAutoAttackInWest = () => {
   const hwnd = damoBindingManager.selectHwnd;
   if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-    console.log('未选择已绑定的窗口', hwnd);
+    logger.error('未选择已绑定的窗口', hwnd);
     throw new Error('未选择已绑定的窗口');
   }
   const role = damoBindingManager.getRole(hwnd);
   if (!role) {
-    console.log('未获取到角色', hwnd);
+    logger.error('未获取到角色', hwnd);
     throw new Error('未获取到角色');
   }
-  console.log(`当前开始执行第${i + 1}次任务`, role.position);
+  logger.info(`当前开始执行第${i + 1}次任务`, role.position);
   let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
   let moveActions = new MoveActions(role);
   let baseAction = new BaseAction(role);
@@ -122,7 +123,7 @@ const loopAutoAttackInWest = () => {
     .then(() => {
       // 检查装备栏是否已经满了
       const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
-      console.log(equipCount.length, '当前装备数量');
+      logger.info(equipCount.length, '当前装备数量');
       if (equipCount.length >= CHECK_EQUIP_COUNT) {
         // 关闭物品栏
         baseAction.toggleItemBox('close');
@@ -141,10 +142,10 @@ const loopAutoAttackInWest = () => {
       // 这里避免与上面的任务临界冲突
       role.updateTaskStatus('done');
       i++;
-      console.log('重置成功');
+      logger.info('重置成功');
     })
     .catch(async err => {
-      console.log('云荒打怪失败', err);
+      logger.error('云荒打怪失败', err);
     });
 };
 
@@ -152,16 +153,16 @@ const loopAutoAttackInWest = () => {
 const loopCheckStatus = async () => {
   const hwnd = damoBindingManager.selectHwnd;
   if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-    console.log('未选择已绑定的窗口', hwnd);
+    logger.error('未选择已绑定的窗口', hwnd);
     throw new Error('未选择已绑定的窗口');
   }
   const role = damoBindingManager.getRole(hwnd);
   if (!role) {
-    console.log('未获取到角色', hwnd);
+    logger.error('未获取到角色', hwnd);
     throw new Error('未获取到角色');
   }
   const rec = damoBindingManager.get(hwnd);
-  console.log(`当前开始执行第${i + 1}次任务`, role.position);
+  logger.info(`当前开始执行第${i + 1}次任务`, role.position);
 
   const dm = rec?.ffoClient || role.bindDm;
   // let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
@@ -187,11 +188,11 @@ const loopCheckStatus = async () => {
   const petFoodCount = checkItemBoxItemCount(dm, role.bindWindowSize, 4, '宠物食物');
   // 检查装备是否已经损坏
   const isEquipBroken = checkEquipBroken(dm, role.bindWindowSize);
-  console.log(`蓝药数量`, redCount);
-  console.log(`人参数量`, blueCount);
-  console.log(`回城卷轴数量`, returnCount);
-  console.log(`宠物食物数量`, petFoodCount);
-  console.log(`装备是否已损坏`, isEquipBroken);
+  logger.info(`蓝药数量`, redCount);
+  logger.info(`人参数量`, blueCount);
+  logger.info(`回城卷轴数量`, returnCount);
+  logger.info(`宠物食物数量`, petFoodCount);
+  logger.info(`装备是否已损坏`, isEquipBroken);
   // 鼠标归位，防止影响下一次识别
   dm.moveTo(role.position?.x || 0, role.position?.y || 0);
   dm.delay(300);
@@ -199,7 +200,7 @@ const loopCheckStatus = async () => {
   await baseAction.openItemBox('装备');
   // 检查装备栏装备是否超过15件
   const equipCount = checkEquipCount(dm, role.bindWindowSize);
-  console.log(`装备数量`, equipCount.length);
+  logger.info(`装备数量`, equipCount.length);
   const needMoney = redCount < 50 || blueCount < 50 || isEquipBroken;
   if (equipCount.length > 14 || needMoney) {
     // 去仓库管理员取钱
@@ -211,7 +212,7 @@ const loopCheckStatus = async () => {
     ) as StoreManagerConfig;
     const withdrawOk = await new Conversation(role).StoreManager(config);
     if (!withdrawOk) {
-      console.log('仓库管理员取款失败');
+      logger.error('仓库管理员取款失败');
       return;
     }
     dm.delay(1000);
@@ -234,7 +235,7 @@ const loopCheckStatus = async () => {
       ...(blueCount < 50 ? [{ task: 'buy', item: '(大)法力药水', count: 400 - blueCount }] : []),
     ] as ItemMerchantConfig[]);
     if (!buyOk) {
-      console.log('道具商人购买药失败');
+      logger.error('道具商人购买药失败');
       return;
     }
     dm.delay(1000);
@@ -242,14 +243,14 @@ const loopCheckStatus = async () => {
 
   // 存钱
   const gold = getCurrentGold(role.bindDm, role.bindWindowSize);
-  console.log(`当前金币数量`, gold);
+  logger.info(`当前金币数量`, gold);
   if (Number(gold) > 0) {
     // 去仓库管理员取钱
     await moveActions.startAutoFindPath({ toPos: STORE_NPC, stationR, delay: 2000 });
     // 与仓库管理员对话
     const depositOk = await new Conversation(role).StoreManager({ task: 'deposit', money: '999' });
     if (!depositOk) {
-      console.log('仓库管理员存款失败');
+      logger.error('仓库管理员存款失败');
       return;
     }
   }
@@ -267,12 +268,12 @@ const loopCheckStatus = async () => {
 export const toggleYunHuang1West = () => {
   const hwnd = damoBindingManager.selectHwnd;
   if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-    console.log('未选择已绑定的窗口', hwnd);
+    logger.error('未选择已绑定的窗口', hwnd);
     throw new Error('未选择已绑定的窗口');
   }
   const role = damoBindingManager.getRole(hwnd);
   if (!role) {
-    console.log('未获取到角色', hwnd);
+    logger.error('未获取到角色', hwnd);
     throw new Error('未获取到角色');
   }
   let baseAction = new BaseAction(role);
@@ -280,7 +281,7 @@ export const toggleYunHuang1West = () => {
   let moveActions = new MoveActions(role);
   // 死亡时回调
   const deadCall = () => {
-    console.log('云荒打怪死亡开始进行死亡回调');
+    logger.info('云荒打怪死亡开始进行死亡回调');
     const deadTimer = setTimeout(
       async () => {
         // 关闭物品栏
@@ -319,7 +320,7 @@ export const toggleYunHuang1West = () => {
   const checkIsMove = (min: number, map: string) => {
     // 每隔3分钟获取一次角色坐标
     if (Date.now() - lastMoveTime > min * 60 * 1000 && role.map === map) {
-      console.log('每隔3分钟获取一次云荒地图坐标', lastPos, role.position);
+      logger.info('每隔3分钟获取一次云荒地图坐标', lastPos, role.position);
       if (lastPos.x === role.position?.x && lastPos.y === role.position?.y) {
         return true;
       }
@@ -331,13 +332,13 @@ export const toggleYunHuang1West = () => {
   };
   // 回城并且重置任务
   const goBackCityAndResetTask = async () => {
-    console.log('执行回城并且重置任务 - goBackCityAndResetTask');
+    logger.info('执行回城并且重置任务 - goBackCityAndResetTask');
     const moveActions = new MoveActions(role);
     // 关闭物品栏
     baseAction.toggleItemBox('close');
     const res = await baseAction.backCity({ x: 148, y: 96 }, 'F9', true);
     if (res === 'redName') {
-      console.log('前往仓库管理员处');
+      logger.info('前往仓库管理员处');
       await moveActions.startAutoFindPath({ toPos: { x: 203, y: 101 }, stationR, delay: 100 });
       loopCheckStatus();
       return;
@@ -355,7 +356,7 @@ export const toggleYunHuang1West = () => {
     await baseAction.backCity({ x: 148, y: 96 }, 'F9');
     role.updateTaskStatus('doing');
     role.unregisterRole();
-    console.log('经验快满了，终止打怪！！');
+    logger.info('经验快满了，终止打怪！！');
   };
 
   role.addGlobalStrategyTask([

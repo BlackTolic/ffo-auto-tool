@@ -1,5 +1,6 @@
 import { AutoT } from '../../../auto-plugin';
 import { TEST_PATH } from '../../../constant/config';
+import { logger } from '../../../utils/logger';
 import {
   DEFAULT_ADDRESS_NAME,
   DEFAULT_BLOOD_STATUS,
@@ -35,7 +36,7 @@ export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 export const isDeadPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): boolean => {
   const deadPos = DEFAULT_DEAD[bindWindowSize];
   const deadIcon = bindDm.ocr(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.color, deadPos.sim);
-  console.log(deadIcon, 'deadIcon');
+  logger.info(deadIcon, 'deadIcon');
   return deadIcon.includes('死亡');
 };
 
@@ -43,7 +44,7 @@ export const isDeadPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 export const isDeadCYPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const deadPos = DEFAULT_DEAD_CY[bindWindowSize];
   const deadIcon = bindDm.findStrFastE(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.string, deadPos.color, deadPos.sim);
-  // console.log(deadIcon, '彩玉复活后坐标');
+  // logger.info(deadIcon, '彩玉复活后坐标');
   return parseTextPos(deadIcon);
 };
 
@@ -114,7 +115,7 @@ export const isBlocked = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const goldPos = DEFAULT_GOLD[bindWindowSize];
   const goldText = bindDm.ocr(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, goldPos.color, goldPos.sim);
-  console.log(parseFFOCurrencyToGoldLabel(goldText), 'goldText');
+  logger.info(parseFFOCurrencyToGoldLabel(goldText), 'goldText');
   bindDm.capturePng(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, `${TEST_PATH}/current_gold.png`);
   return parseFFOCurrencyToGoldLabel(goldText);
 };
@@ -130,16 +131,16 @@ export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*
 export const switchItemBoxTabPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', tabText: string) => {
   const tabPos = DEFAULT_ITEM_BOX_TAB_SWITCH[bindWindowSize];
   const pos = bindDm.findStrFastE(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabText, tabPos.color, tabPos.sim);
-  console.log(pos, '切换物品栏tab页', tabText);
+  logger.info(pos, '切换物品栏tab页', tabText);
   return parseTextPos(pos);
 };
 
 // 检查装备是否已经损坏
 export const checkEquipBroken = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const equipBrokenPos = DEFAULT_EQUIP_DAMAGE[bindWindowSize];
-  // console.log(equipBrokenPos, bindDm, 'equipBrokenPos');
+  // logger.debug(equipBrokenPos, bindDm, 'equipBrokenPos');
   const equipBrokenText = bindDm.findColorE(equipBrokenPos.x1, equipBrokenPos.y1, equipBrokenPos.x2, equipBrokenPos.y2, equipBrokenPos.color, equipBrokenPos.sim);
-  // console.log(equipBrokenText, 'equipBrokenText');
+  // logger.debug(equipBrokenText, 'equipBrokenText');
   return parseRolePositionFromText(equipBrokenText);
 };
 
@@ -184,7 +185,7 @@ export const checkUnEquipEquip = (bindDm: AutoT, bindWindowSize: '1600*900' | '1
   const pos = bindDm.findStrFastE(unEquipPos.x1, unEquipPos.y1, unEquipPos.x2, unEquipPos.y2, unEquipPos.string, unEquipPos.color, unEquipPos.sim);
   const _pos = parseTextPos(pos);
   if (!_pos) {
-    console.log('未识别到装备信息');
+    logger.warn('未识别到装备信息');
     return null;
   }
   // bindDm.capturePng(_pos.x, _pos.y, _pos.x + 128, _pos.y + 153, `${TEST_PATH}/test4.png`);
@@ -194,10 +195,10 @@ export const checkUnEquipEquip = (bindDm: AutoT, bindWindowSize: '1600*900' | '1
   // bindDm.delay(200);
   // 装备属性
   const attr = bindDm.ocr(_pos.x, _pos.y + 153, _pos.x + 135, _pos.y + 306, '408ce8-111111|d830e8-111111|00f0c8-111111', unEquipPos.sim);
-  // console.log('装备类型和等级：', type);
-  // console.log('装备属性：', attr);
+  // logger.info('装备类型和等级：', type);
+  // logger.info('装备属性：', attr);
   const res = { type: type.match(/\(([^)]+)\)/)?.[1] ?? null, level: type?.match(/需要等级(\d+)/)?.[1] ?? null, attrName: attr.split('+')?.[0] ?? null, attrValue: attr.split('+')?.[1] ?? null };
-  // console.log(res);
+  // logger.info(res);
   return res;
 };
 
@@ -219,6 +220,6 @@ export const checkExpBar = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*80
 export const checkSystemPrompt = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
   const blockedPos = DEFAULT_SYSTERM_INFO[bindWindowSize];
   const blockedText = bindDm.findStrFastE(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, keyword, blockedPos.color, blockedPos.sim);
-  console.log(blockedText, 'blockedText');
+  logger.info(blockedText, 'blockedText');
   return !!parseRolePositionFromText(blockedText);
 };

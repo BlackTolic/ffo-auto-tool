@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 const URL = 'https://ark.cn-beijing.volces.com/api/v3/responses';
 const KEY = 'c3b75580-8bcd-42a4-993c-e9ccf8dd5c99';
@@ -35,10 +36,10 @@ export const getVerifyCodeByDouBao = async (url: string) => {
         },
       }
     );
-    console.log(JSON.stringify(response?.data?.output), 'response');
+    logger.info(JSON.stringify(response?.data?.output), 'response');
     return response?.data?.output;
   } catch (err) {
-    console.log('豆包识别验证码失败', err);
+    logger.error('豆包识别验证码失败', err);
     return '';
   }
 };

@@ -8,4 +8,3 @@ const MiningView: React.FC<MiningProps> = () => {
 };
 
 export default MiningView;
-

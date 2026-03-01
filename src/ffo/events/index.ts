@@ -6,6 +6,7 @@
 
 import { EventEmitter } from 'events';
 import { AutoT } from '../../auto-plugin';
+import { logger } from '../../utils/logger';
 import { Role } from './rolyer';
 
 // 中文注释：绑定配置（可按需覆盖默认值）
@@ -204,11 +205,11 @@ export class DamoBindingManager {
 
       try {
         // const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
-        console.log(client.dm.Ver(), 'client.dm');
+        logger.info(client.dm.Ver(), 'client.dm');
         // const ret = 2;
         const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
         // client.dm.delay(200);
-        console.log('BindWindow 结果', ret, hwnd, pid);
+        logger.info('BindWindow 结果', ret, hwnd, pid);
         if (ret !== 1) {
           // 中文注释：返回非 1 表示失败，抛错并通知事件
           throw new Error(`BindWindowEx 失败，返回值=${ret}, hwnd=${hwnd}, pid=${pid}`);
@@ -227,7 +228,7 @@ export class DamoBindingManager {
         } catch {}
       }
     }
-    console.log('[绑定] 枚举窗口 hwnds', hwnds);
+    logger.info('[绑定] 枚举窗口 hwnds', hwnds);
     return successCount;
   }
 
@@ -271,7 +272,7 @@ export const damoBindingManager = new DamoBindingManager();
 
 // 中文注释：默认订阅：当收到按 PID 绑定请求时，执行绑定逻辑
 ffoEvents.on('bind:pid', async (payload: BindRequestPayload) => {
-  console.log('[绑定] 收到按 PID 绑定请求', payload);
+  logger.info('[绑定] 收到按 PID 绑定请求', payload);
   const { pid, config } = payload;
   try {
     await damoBindingManager.bindWindowsForPid(pid, config);

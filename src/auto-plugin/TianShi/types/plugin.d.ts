@@ -3,7 +3,25 @@
  * @Date: 2019-09-21 18:19:09
  * @LastEditTime: 2019-09-22 21:34:35
  */
-import {GetWindowFlag, TsRet, WindowStateFlag, SpecialWindowFlag, EnumWindowFilter, displayMode, mouseMode, keypadMode, BindWindowMode, LockMode, Coordinate, MemoryBitNum, MemoryCharType, TsSwitch, MemoryIntByte, MemoryState, TsMode} from '../modules/interface';
+import {
+  GetWindowFlag,
+  TsRet,
+  WindowStateFlag,
+  SpecialWindowFlag,
+  EnumWindowFilter,
+  displayMode,
+  mouseMode,
+  keypadMode,
+  BindWindowMode,
+  LockMode,
+  Coordinate,
+  MemoryBitNum,
+  MemoryCharType,
+  TsSwitch,
+  MemoryIntByte,
+  MemoryState,
+  TsMode,
+} from '../modules/interface';
 export interface TSInstance {
   // 窗口
   FindWindow(className: string, title: string): number;
