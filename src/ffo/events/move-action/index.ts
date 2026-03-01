@@ -76,7 +76,7 @@ export class MoveActions {
     this.dm = role.bindDm;
     this.bindPlugin = role.bindPlugin;
     this.role = role;
-    this.offsetR = config?.offsetR || pointR;
+    this.offsetR = config?.offsetR;
   }
 
   async move(fromPos: Pos, curAimPos: Pos) {
@@ -178,7 +178,9 @@ export class MoveActions {
             // 到达下一张地图退出寻路
             if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
               // this.dm.LeftClick();
-              this.bindPlugin.moveToClick(x, y + 2);
+              // this.bindPlugin.moveToClick(x, y + 2);
+              // 点击脚下的死坐标
+              this.bindPlugin.moveToClick(800, 525);
               logger.info(`[自动寻路] 到达下一张地图退出寻路,点击坐标 (${x},${y + 2}) 停止寻路，`);
               isArrive = true;
               // 到达目标点位退出寻路

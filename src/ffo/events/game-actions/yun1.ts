@@ -39,7 +39,7 @@ const checkTime = 2;
 const stationR = 6;
 const CHECK_EQUIP_COUNT = 23;
 const DEAD_CALL_TIME = 20 * 60 * 1000;
-const YUN_HUANG_CALL_STATIC_TIME = 15 * 60 * 1000; // 云荒静止多少秒后开始回调移动
+const YUN_HUANG_CALL_STATIC_TIME = 15 * 1000; // 云荒静止多少秒后开始回调移动（单位：分钟）
 
 const delay10S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 10 * 1000, true);
 
