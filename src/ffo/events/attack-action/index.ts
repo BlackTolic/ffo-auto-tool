@@ -61,6 +61,7 @@ const attackRange = {
 export class AttackActions {
   public role: Role; // 角色信息
   public bindDm: any = null; // 大漠类
+  private bindPlugin: any = null; // 插件类
   public timer: NodeJS.Timeout | null = null;
   public timerMapList: Map<string, NodeJS.Timeout> = new Map();
   public buffTimerMapList: Map<string, NodeJS.Timeout> = new Map();
@@ -84,6 +85,7 @@ export class AttackActions {
     this.ocrMonster = { ...attackRange[this.role.bindWindowSize], ...(ocrMonster || OCR_MONSTER) };
     this.skillGroup = role.job === 'SS' ? SSSkillGroup : JKSkillGroup;
     this.buffGroup = role.job === 'SS' ? SSBuffGroup : JKBuffGroup;
+    this.bindPlugin = role.bindPlugin;
   }
 
   findMonsterPos(delX = 10, delY = 40) {
@@ -320,7 +322,7 @@ export class AttackActions {
         // 对怪物进行攻击
         const isRange = attackRange && isArriveAimNear(this.role.position, { x: attackRange.x, y: attackRange.y }, attackRange.r);
         if (!isRange && attackRange) {
-          logger.info(`[自动攻击] 未在范围内，需要移动到目标点：`, attackRange);
+          logger.info(`[自动攻击] 未在范围内，需要移动到目标点：(${attackRange.x},${attackRange.y}),r=${attackRange.r}`);
           const { x, y } = attackRange;
           const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
           new MoveActions(this.role).move({ x: roleX, y: roleY }, { x, y });
@@ -352,9 +354,12 @@ export class AttackActions {
         }
         // 地图发生改变，中断攻击
         if (map && map !== this.role.map) {
+          const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
           timer && clearInterval(timer);
           timer = null;
-          reject(new Error(`[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击`));
+          this.bindDm;
+          this.bindPlugin.moveToClick(roleX + 30, roleY);
+          reject('[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击');
         }
         if (!findMonsterPos && counter > times) {
           logger.info(`[自动攻击] 已连续${times}S无目标，结束自动攻击`);

@@ -245,6 +245,12 @@ export class Damo {
     }
   }
 
+  moveToLeftDown(x: number, y: number): void {
+    this.dm.moveTo(x, y);
+    this.dm.delay(300);
+    this.leftDown();
+  }
+
   leftDown(): number {
     return this.dm.LeftDown();
   }
@@ -323,9 +329,9 @@ export class Damo {
     //   return -1;
     // }
     const regCode = this.dm.Reg(registerCode, attachCode);
-    logger.info('大漠插件注册返回值: ', regCode, this.describeRegResult(regCode));
-    logger.info('大漠插件版本：', this.dm.Ver());
-    logger.info('大漠插件路径：', this.dm.GetBasePath());
+    logger.info(`[大漠插件] 大漠插件注册返回值: ${regCode} ${this.describeRegResult(regCode)}`);
+    logger.info(`[大漠插件] 大漠插件版本：${this.dm.Ver()}`);
+    logger.info(`[大漠插件] 大漠插件路径：${this.dm.GetBasePath()}`);
     return regCode;
   }
 

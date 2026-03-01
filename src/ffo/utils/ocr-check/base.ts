@@ -12,6 +12,7 @@ import {
   DEFAULT_GOLD,
   DEFAULT_INVITE_TEAM,
   DEFAULT_ISOLATE,
+  DEFAULT_ITEM_BOX,
   DEFAULT_ITEM_BOX_TAB,
   DEFAULT_ITEM_BOX_TAB_SWITCH,
   DEFAULT_MONSTER_NAME,
@@ -36,7 +37,6 @@ export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 export const isDeadPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): boolean => {
   const deadPos = DEFAULT_DEAD[bindWindowSize];
   const deadIcon = bindDm.ocr(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.color, deadPos.sim);
-  logger.info(deadIcon, 'deadIcon');
   return deadIcon.includes('死亡');
 };
 
@@ -44,7 +44,6 @@ export const isDeadPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 export const isDeadCYPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const deadPos = DEFAULT_DEAD_CY[bindWindowSize];
   const deadIcon = bindDm.findStrFastE(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.string, deadPos.color, deadPos.sim);
-  // logger.info(deadIcon, '彩玉复活后坐标');
   return parseTextPos(deadIcon);
 };
 
@@ -115,13 +114,19 @@ export const isBlocked = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const goldPos = DEFAULT_GOLD[bindWindowSize];
   const goldText = bindDm.ocr(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, goldPos.color, goldPos.sim);
-  logger.info(parseFFOCurrencyToGoldLabel(goldText), 'goldText');
   bindDm.capturePng(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, `${TEST_PATH}/current_gold.png`);
   return parseFFOCurrencyToGoldLabel(goldText);
 };
 
 // 检查物品栏是否打开
-export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): string | false => {
+export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): { x: number; y: number } | null => {
+  const tabPos = DEFAULT_ITEM_BOX[bindWindowSize];
+  const tabTextPos = bindDm.findStrFastE(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.string, tabPos.color, tabPos.sim);
+  return parseTextPos(tabTextPos);
+};
+
+// 检查物品栏具体打开的是哪一页
+export const checkItemBoxTabPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): string | false => {
   const tabPos = DEFAULT_ITEM_BOX_TAB[bindWindowSize];
   const tabText = bindDm.ocr(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.color, tabPos.sim);
   return tabText ? tabText : false;
@@ -131,7 +136,6 @@ export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*
 export const switchItemBoxTabPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', tabText: string) => {
   const tabPos = DEFAULT_ITEM_BOX_TAB_SWITCH[bindWindowSize];
   const pos = bindDm.findStrFastE(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabText, tabPos.color, tabPos.sim);
-  logger.info(pos, '切换物品栏tab页', tabText);
   return parseTextPos(pos);
 };
 
@@ -153,12 +157,18 @@ export const checkPetActive = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 
 // 检查物品栏物品数量
 export const checkItemBoxItemCount = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', itemSort: number = 1, message?: string) => {
+  // 先检查物品栏是否打开
+  const xPos = isItemBoxOpen(bindDm, bindWindowSize);
+  if (!xPos) {
+    logger.warn('物品栏未打开');
+    return 0;
+  }
   // 第一个格子物品数量
   const firstItem = {
-    '1600*900': { x1: 1189, y1: 599, x2: 1228, y2: 637, color: 'e8f0e8-111111', sim: 1.0 },
-    '1280*800': { x1: 1194, y1: 600, x2: 1228, y2: 638, color: 'e8f0e8-111111', sim: 1.0 },
+    '1600*900': { x1: xPos.x - 390, y1: xPos.y + 50, x2: xPos.x - 353, y2: xPos.y + 88, color: 'e8f0e8-111111', sim: 1.0 },
+    '1280*800': { x1: xPos.x - 390, y1: xPos.y + 50, x2: xPos.x - 353, y2: xPos.y + 88, color: 'e8f0e8-111111', sim: 1.0 },
   };
-  //1229,597,1268,635
+
   const itemPos = firstItem[bindWindowSize];
   const itemBoxItemText = bindDm.ocr(itemPos.x1 + (itemSort - 1) * 41, itemPos.y1, itemPos.x2 + (itemSort - 1) * 41, itemPos.y2, itemPos.color, itemPos.sim);
   return !itemBoxItemText ? 0 : Number(itemBoxItemText);
@@ -220,6 +230,5 @@ export const checkExpBar = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*80
 export const checkSystemPrompt = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
   const blockedPos = DEFAULT_SYSTERM_INFO[bindWindowSize];
   const blockedText = bindDm.findStrFastE(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, keyword, blockedPos.color, blockedPos.sim);
-  logger.info(blockedText, 'blockedText');
   return !!parseRolePositionFromText(blockedText);
 };

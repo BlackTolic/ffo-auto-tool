@@ -87,7 +87,7 @@ export class Role {
     this.bindDm = rec?.ffoClient.dm;
     this.bindPlugin = bindDm;
     const name = getRoleName(bindDm, this.bindWindowSize);
-    logger.info('当前绑定角色', name);
+    logger.info(`[角色信息] 当前绑定角色：${name}`);
     this.name = name;
     this.job = name.includes('花开无须折') ? 'SS' : 'JK';
     // 中文注释：使用 setImmediate 触发首轮执行，随后用 setTimeout 维持固定轮询间隔（避免事件循环被持续 setImmediate 挤压）
@@ -98,7 +98,8 @@ export class Role {
         // 未读取到坐标，结束所有操作
         if (!this.position) {
           logger.warn('[角色信息] 未获取到角色位置');
-          // 暂停所有点击事件
+          // 阻塞进程2S
+          this.bindPlugin.delay(2000);
         }
         this.map = getMapName(bindDm, this.bindWindowSize);
         // 获取选中的怪物名

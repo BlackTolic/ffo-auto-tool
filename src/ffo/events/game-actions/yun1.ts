@@ -26,7 +26,7 @@ const validEquip: ValidEquip = [
 
 const TASK_NAME = '云荒打怪捡装备';
 // const INIT_POS_YUN1 = { x: 91, y: 114 };
-const INIT_POS_YUN1 = { x: 130, y: 133 };
+const INIT_POS_YUN1 = { x: 132, y: 132 };
 const INIT_POS_ROUTE = { x: 148, y: 96 };
 const STORE_NPC = { x: 203, y: 101 };
 // const INIT_POS = { x: 168, y: 81 };
@@ -36,9 +36,9 @@ const PATH_POS = [
   { x: 40, y: 91 },
 ];
 const checkTime = 2;
-const stationR = 8;
+const stationR = 6;
 const CHECK_EQUIP_COUNT = 23;
-const DEAD_CALL_TIME = 1 * 1000;
+const DEAD_CALL_TIME = 20 * 60 * 1000;
 
 const delay5S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 5 * 1000, true);
 
@@ -48,8 +48,7 @@ let i = 0;
 // 选择回城方式
 const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions) => {
   // 进行红名检验
-  const res = await baseAction.backCity({ x: 148, y: 96 }, 'F9', true);
-  logger.info(res, 'res');
+  const res = await baseAction.backCity(INIT_POS_ROUTE, 'F9', true);
   if (res === 'redName') {
     return new Promise(async res => {
       await moveActions.startAutoFindPath({ toPos: { x: 183, y: 160 }, stationR, delay: 100, map: '云泽秘径' });
@@ -127,7 +126,7 @@ const loopAutoAttackInWest = () => {
       logger.info(`[云荒打怪] 检查当前装备数量: ${equipCount.length}`);
       if (equipCount.length >= CHECK_EQUIP_COUNT) {
         // 关闭物品栏
-        baseAction.toggleItemBox('close');
+        // baseAction.operateItemBox('close');
         // 结束buff
         atackActions.stopAddBuff();
         // 选择回城方式
@@ -146,7 +145,7 @@ const loopAutoAttackInWest = () => {
       logger.info(`[云荒打怪] 已完成第${i}次任务,下一轮重置开始`);
     })
     .catch(async err => {
-      logger.error('云荒打怪失败', err);
+      logger.error(err);
     });
 };
 
@@ -180,7 +179,7 @@ const loopCheckStatus = async () => {
   }
   // 上马
   await baseAction.pressSecondSkillBarSkill('F10');
-  // 检查物品栏是否已经打开
+  // 打开物品栏中的“消耗”页
   await baseAction.openItemBox('消耗');
   // 检查红、蓝、回城数量
   const redCount = checkItemBoxItemCount(dm, role.bindWindowSize, 1, '蓝药');
@@ -193,11 +192,11 @@ const loopCheckStatus = async () => {
   // 鼠标归位，防止影响下一次识别
   dm.moveTo(role.position?.x || 0, role.position?.y || 0);
   dm.delay(300);
-  // 检查物品栏是否已经打开
+  // 打开物品栏中的“装备”页
   await baseAction.openItemBox('装备');
   // 检查装备栏装备是否超过15件
   const equipCount = checkEquipCount(dm, role.bindWindowSize);
-  logger.info(`装备数量`, equipCount.length);
+  logger.info(`[云荒检查] 装备数量${equipCount.length}`);
   const needMoney = redCount < 50 || blueCount < 50 || isEquipBroken;
   if (equipCount.length > 14 || needMoney) {
     // 去仓库管理员取钱
@@ -280,7 +279,7 @@ export const toggleYunHuang1West = () => {
     logger.info(`[云荒检查] 云荒打怪死亡开始进行死亡回调 ${DEAD_CALL_TIME / 1000} 秒后执行`);
     const deadTimer = setTimeout(async () => {
       // 关闭物品栏
-      baseAction.toggleItemBox('close');
+      // baseAction.operateItemBox('close');
       // 关闭相关的定时设置
       role.clearAllActionTimer();
       // 结束buff
@@ -328,7 +327,7 @@ export const toggleYunHuang1West = () => {
     logger.info('[云荒检查] 执行回城并且重置任务 - goBackCityAndResetTask');
     const moveActions = new MoveActions(role);
     // 关闭物品栏
-    baseAction.toggleItemBox('close');
+    // baseAction.operateItemBox('close');
     const res = await baseAction.backCity({ x: 148, y: 96 }, 'F9', true);
     if (res === 'redName') {
       logger.info('[云荒检查] 前往仓库管理员处');
@@ -345,7 +344,7 @@ export const toggleYunHuang1West = () => {
   };
   // 关闭循环任务
   const closeLoopTask = async () => {
-    baseAction.toggleItemBox('close');
+    // baseAction.operateItemBox('close');
     await baseAction.backCity({ x: 148, y: 96 }, 'F9');
     role.updateTaskStatus('doing');
     role.unregisterRole();

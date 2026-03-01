@@ -104,26 +104,26 @@ export const DEFAULT_STATUS_ICON_POS = {
 
 // 与怪物有隔离
 export const DEFAULT_ISOLATE = {
-  '1600*900': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
+  '1600*900': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, string: '有阻挡', sim: DEFAULT_SIM },
   '1280*800': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
 };
 
 // 检查是否有物品栏打开
 export const DEFAULT_ITEM_BOX = {
-  '1600*900': { x1: 1181, y1: 542, x2: 1595, y2: 566, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
-  '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+  '1600*900': { x1: 1495, y1: 537, x2: 1600, y2: 637, string: '@X', color: 'b89838-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, string: '@X', color: 'b89838-111111', sim: DEFAULT_SIM },
 };
 
-// 检查物品栏切换的tab页
+// 检查物品栏切换的tab页 - 检测白字
 export const DEFAULT_ITEM_BOX_TAB = {
   // '1600*900': { x1: 1193, y1: 571, x2: 1403, y2: 595, color: 'e8e4e0-111111', sim: DEFAULT_SIM },
-  '1600*900': { x1: 1184, y1: 539, x2: 1480, y2: 612, color: 'e8e4e0-111111', sim: DEFAULT_SIM },
+  '1600*900': { x1: 1184, y1: 537, x2: 1600, y2: 662, color: 'e8e4e0-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 867, y1: 471, x2: 1270, y2: 507, color: 'e8e4e0-111111', sim: DEFAULT_SIM },
 };
 
-// 切换物品栏tab页
+// 切换物品栏tab页 - 检测黄字
 export const DEFAULT_ITEM_BOX_TAB_SWITCH = {
-  '1600*900': { x1: 1193, y1: 571, x2: 1403, y2: 595, color: '886c38-111111', sim: DEFAULT_SIM },
+  '1600*900': { x1: 1184, y1: 537, x2: 1600, y2: 662, color: '886c38-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 867, y1: 471, x2: 1270, y2: 507, color: '886c38-111111', sim: DEFAULT_SIM },
 };
 

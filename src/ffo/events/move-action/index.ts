@@ -63,6 +63,7 @@ export class MoveActions {
   private isPause = false; // 是否暂停移动
   private lastMoveTime = 0; // 上次移动时间戳
   private recordPos: Pos | null = null; // 记录上次移动的位置
+  private isRunLoop = true; // 是否运行循环
 
   constructor(role: Role) {
     this.dm = role.bindDm;
@@ -71,9 +72,14 @@ export class MoveActions {
   }
 
   async move(fromPos: Pos, curAimPos: Pos) {
+    // 未识别到坐标点，不进行寻路
+    if (!fromPos.x || !fromPos.y) {
+      logger.warn('[自动寻路] 未识别到坐标点', curAimPos);
+      return;
+    }
     const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
     const { x, y } = getCirclePoint(angle, this.role.bindWindowSize);
-    this.bindPlugin.moveToClick(x, y);
+    this.bindPlugin.moveToLeftDown(x, y);
     logger.info(`[自动寻路] 从 (${fromPos.x},${fromPos.y}) 移动到 (${curAimPos.x},${curAimPos.y}) `);
   }
 
@@ -154,6 +160,7 @@ export class MoveActions {
     return new Promise((res, rej) => {
       this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
       let isArrive: boolean | undefined;
+      let isRunLoop = true;
       logger.info(`[自动寻路] 执行startAutoFindPath，注册定时器`);
       // 中文注释：使用 setImmediate 首次触发，再用 setTimeout(300ms) 做周期轮询，避免事件循环拥塞
       const loop = () => {
@@ -164,7 +171,7 @@ export class MoveActions {
             if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
               // this.dm.LeftClick();
               this.bindPlugin.moveToClick(x, y + 2);
-              logger.info('点击停止', aimPos);
+              logger.info(`[自动寻路] 到达下一张地图退出寻路,点击坐标 (${x},${y + 2}) 停止寻路，`);
               isArrive = true;
               // 到达目标点位退出寻路
             } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, stationR)) {
@@ -184,12 +191,17 @@ export class MoveActions {
           if (map && map !== this.role.map) {
             this.role.clearActionTimer('autoFindPath');
             this.recordAimPosIndex = 0;
-            rej(new Error(`[自动寻路] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动寻路`));
+            this.isRunLoop = false; // 关闭循环
+            // 鼠标点击结束寻路的左键按下
+            this.dm.LeftClick();
+            logger.info(`[自动寻路] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动寻路`);
+            rej('[自动寻路] 已切换地图，结束自动寻路');
           }
           if (isArrive) {
             // 中文注释：到达后清理定时器并延时，确保角色静止
             this.role.clearActionTimer('autoFindPath');
             this.recordAimPosIndex = 0;
+            isRunLoop = false; // 关闭循环
             setTimeout(() => {
               logger.info(`[自动寻路] 已关闭自动寻路，并解除定时器,同时延时${delay}毫秒，确保已经静止`);
               // 这里刚进入地图没法读取坐标
@@ -197,6 +209,7 @@ export class MoveActions {
             }, delay);
           } else {
             // 中文注释：未到达则继续 300ms 后轮询一次，并更新可清理的句柄
+            if (!isRunLoop) return;
             const t = setTimeout(loop, refreshTime);
             this.role.addActionTimer('autoFindPath', t);
           }
