@@ -1,6 +1,6 @@
 import pino from 'pino';
 
-// Helper to safely access process.env
+// 辅助函数：安全地访问 process.env，避免在浏览器环境中报错
 const getEnv = (key: string) => {
   if (typeof process !== 'undefined' && process.env) {
     return process.env[key];
@@ -8,13 +8,15 @@ const getEnv = (key: string) => {
   return undefined;
 };
 
+// 判断是否在浏览器环境
 const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
+// 判断是否为开发环境（默认为开发环境）
 const isDev = getEnv('NODE_ENV') === 'development' || !getEnv('NODE_ENV');
 
 let pinoLogger: pino.Logger;
 
 if (isBrowser) {
-  // Browser configuration
+  // 浏览器环境配置
   pinoLogger = pino({
     browser: {
       asObject: true,
@@ -22,7 +24,7 @@ if (isBrowser) {
     level: 'info',
   });
 } else {
-  // Node.js configuration
+  // Node.js 环境配置
   const transport = isDev
     ? {
         target: 'pino-pretty',
@@ -41,20 +43,22 @@ if (isBrowser) {
   });
 }
 
+// 辅助函数：格式化日志参数
 const formatLog = (args: any[]): [object | undefined, string] => {
   if (args.length === 0) return [undefined, ''];
 
-  // Case 1: First argument is a string (Message)
+  // 情况 1: 第一个参数是字符串 (通常是日志消息)
   if (typeof args[0] === 'string') {
     const msg = args[0];
     const rest = args.slice(1);
     if (rest.length === 0) return [undefined, msg];
-    // If there are more arguments, put them in a 'context' object
-    // pino-pretty will display this object
-    return [{ context: rest.length === 1 ? rest[0] : rest }, msg];
+    // 如果有更多参数，将它们放入 'context' 对象中
+    // pino-pretty 将会显示这个对象
+    // return [{ context: rest.length === 1 ? rest[0] : rest }, msg];
+    return [rest.length === 1 ? rest[0] : rest, msg];
   }
 
-  // Case 2: First argument is an Error (Special handling for Errors)
+  // 情况 2: 第一个参数是 Error 对象 (特殊处理错误堆栈)
   if (args[0] instanceof Error) {
     const err = args[0];
     const rest = args.slice(1);
@@ -67,9 +71,9 @@ const formatLog = (args: any[]): [object | undefined, string] => {
     return [{ err }, msg];
   }
 
-  // Case 3: First argument is an object
+  // 情况 3: 第一个参数是普通对象
   if (typeof args[0] === 'object' && args[0] !== null) {
-    // Check if second argument is a string (common pattern: console.log(obj, "message"))
+    // 检查第二个参数是否为字符串 (常见模式: console.log(obj, "message"))
     if (args.length > 1 && typeof args[1] === 'string') {
       const obj = args[0];
       const msg = args[1];
@@ -79,12 +83,12 @@ const formatLog = (args: any[]): [object | undefined, string] => {
       }
       return [obj, msg];
     }
-    // Just object(s)
+    // 仅有对象
     if (args.length === 1) return [args[0], ''];
     return [{ args }, 'Log Object Sequence'];
   }
 
-  // Case 4: Primitive values (number, boolean, etc.)
+  // 情况 4: 原始类型值 (数字, 布尔值等)
   return [{ value: args[0], rest: args.slice(1) }, 'Log Value'];
 };
 
@@ -109,7 +113,7 @@ export const logger = {
     if (obj) pinoLogger.debug(obj, msg);
     else pinoLogger.debug(msg);
   },
-  // Expose the raw pino instance if needed
+  // 如果需要，暴露原始 pino 实例
   raw: pinoLogger,
 };
 
