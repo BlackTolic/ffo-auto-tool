@@ -31,6 +31,13 @@ export const DEFAULT_MONSTER_NAME = {
   '1280*800': { x1: 95, y1: 109, x2: 200, y2: 144, color: `${MONSTER_GREEN} | ${MONSTER_YELLOW} |${MONSTER_WHITE} |${MONSTER_RED}`, sim: DEFAULT_SIM },
 };
 
+// 检查怪物的血量是否为空
+export const DEFAULT_MONSTER_BLOOD_EMPTY = {
+  // 血量为绿色就是健康、因为攻击拉满，只有绿、红、空三种状态
+  '1600*900': { x1: 116, y1: 12, x2: 139, y2: 39, color: '20ac00-111111-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 116, y1: 12, x2: 139, y2: 39, color: 'e89828-111111|e89828-111111', sim: DEFAULT_SIM },
+};
+
 // 血量状态（获取指定区域颜色均值）
 export const DEFAULT_BLOOD_STATUS = {
   // 检测当前位置是黄色和绿色，如果没有黄色和绿色，说明血条空了

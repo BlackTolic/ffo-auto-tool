@@ -15,6 +15,7 @@ import {
   DEFAULT_ITEM_BOX,
   DEFAULT_ITEM_BOX_TAB,
   DEFAULT_ITEM_BOX_TAB_SWITCH,
+  DEFAULT_MONSTER_BLOOD_EMPTY,
   DEFAULT_MONSTER_NAME,
   DEFAULT_MOUNTED,
   DEFAULT_PET_ACTIVE,
@@ -81,6 +82,13 @@ export const getMonsterName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
   const monsterPos = DEFAULT_MONSTER_NAME[bindWindowSize];
   const monsterPosText = bindDm.ocr(monsterPos.x1, monsterPos.y1, monsterPos.x2, monsterPos.y2, monsterPos.color, monsterPos.sim);
   return monsterPosText;
+};
+
+// 检查怪物血量是否为空
+export const isMonsterEmptyHp = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', x: number, y: number) => {
+  const emptyHpPos = DEFAULT_MONSTER_BLOOD_EMPTY[bindWindowSize];
+  const emptyHpText = bindDm.findColorE(emptyHpPos.x1, emptyHpPos.y1, emptyHpPos.x2, emptyHpPos.y2, emptyHpPos.color, emptyHpPos.sim);
+  return !parseRolePositionFromText(emptyHpText);
 };
 
 // 获取血量状态（获取指定区域颜色均值）

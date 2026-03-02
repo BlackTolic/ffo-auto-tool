@@ -1,4 +1,4 @@
-import { OCR_PAN_GUI_MONSTER_3 } from '../../constant/monster-feature';
+import { OCR_DI_YI_WEI_MONSTER } from '../../constant/monster-feature';
 import { AutoFarmingAction, AutoFarmingInstance } from './auto-farming';
 
 const TASK_NAME = '捕捉地翼魔';
@@ -22,7 +22,7 @@ export const toggleCatchPetDiyimo = () => {
   const instance: AutoFarmingInstance = {
     initPos: INIT_POS,
     pathPos: PATH_POS,
-    ocrMonster: OCR_PAN_GUI_MONSTER_3,
+    ocrMonster: OCR_DI_YI_WEI_MONSTER,
     taskName: TASK_NAME,
   };
   autoFarmingAction = AutoFarmingAction.getInstance(instance);
