@@ -3,7 +3,7 @@ import logger from '../../../utils/logger';
 import { debounce } from '../../../utils/tool';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
 import { isArriveAimNear } from '../../utils/common';
-import { checkEquipBroken, checkEquipCount, checkExpBar, checkItemBoxItemCount, checkPetActive, getCurrentGold } from '../../utils/ocr-check/base';
+import { checkEquipBroken, checkEquipCount, checkExpBar, checkItemBoxItemCount, checkMounted, checkPetActive, getCurrentGold } from '../../utils/ocr-check/base';
 import { AttackActions } from '../attack-action';
 import { BaseAction, ValidEquip } from '../base-action';
 import { Conversation, ItemMerchantConfig, StoreManagerConfig } from '../conversation';
@@ -39,8 +39,9 @@ const checkTime = 2;
 const stationR = 6;
 const CHECK_EQUIP_COUNT = 23;
 const DEAD_CALL_TIME = 20 * 60 * 1000;
+const YUN_HUANG_CALL_STATIC_TIME = 15 * 1000; // 云荒静止多少秒后开始回调移动（单位：分钟）
 
-const delay5S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 5 * 1000, true);
+const delay10S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 10 * 1000, true);
 
 let autoFarmingAction: AutoFarmingAction | null = null;
 let i = 0;
@@ -73,7 +74,7 @@ const loopAutoAttackInWest = () => {
   }
   logger.info(`当前开始执行第${i + 1}次任务`, role.position);
   let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
-  let moveActions = new MoveActions(role);
+  let moveActions = new MoveActions(role, { offsetR: 300 }); // 将鼠标半径调整为300
   let baseAction = new BaseAction(role);
   // 添加buff
   atackActions.addBuff();
@@ -177,8 +178,12 @@ const loopCheckStatus = async () => {
   if (!isPetActive) {
     await baseAction.openPetBoxAndActivePet();
   }
-  // 上马
-  await baseAction.pressSecondSkillBarSkill('F10');
+  // 检查当前是否是坐骑状态
+  const isMounted = checkMounted(dm, role.bindWindowSize);
+  if (!isMounted) {
+    // 上马
+    await baseAction.pressSecondSkillBarSkill('F10');
+  }
   // 打开物品栏中的“消耗”页
   await baseAction.openItemBox('消耗');
   // 检查红、蓝、回城数量
@@ -200,13 +205,13 @@ const loopCheckStatus = async () => {
   const needMoney = redCount < 50 || blueCount < 50 || isEquipBroken;
   if (equipCount.length > 14 || needMoney) {
     // 去仓库管理员取钱
-    await moveActions.startAutoFindPath({ toPos: { x: 200, y: 98 }, stationR, delay: 2000 });
+    await moveActions.startAutoFindPath({ toPos: { x: 200, y: 98 }, stationR, delay: 4000 });
     // 与仓库管理员对话
     const config = Object.assign(
       needMoney ? { task: 'withdraw', money: '5' } : {},
       equipCount.length > 14 ? { saveEquipCall: () => baseAction.pickUpUsefulEquip(validEquip, 'saveEquip') } : {}
     ) as StoreManagerConfig;
-    const withdrawOk = await new Conversation(role).StoreManager(config);
+    const withdrawOk = await new Conversation(role).YunHuangStoreManager(config);
     if (!withdrawOk) {
       logger.error('仓库管理员取款失败');
       return;
@@ -244,7 +249,7 @@ const loopCheckStatus = async () => {
     // 去仓库管理员取钱
     await moveActions.startAutoFindPath({ toPos: STORE_NPC, stationR, delay: 2000 });
     // 与仓库管理员对话
-    const depositOk = await new Conversation(role).StoreManager({ task: 'deposit', money: '999' });
+    const depositOk = await new Conversation(role).YunHuangStoreManager({ task: 'deposit', money: '999' });
     if (!depositOk) {
       logger.error('仓库管理员存款失败');
       return;
@@ -277,13 +282,13 @@ export const toggleYunHuang1West = () => {
   // 死亡时回调
   const deadCall = () => {
     logger.info(`[云荒检查] 云荒打怪死亡开始进行死亡回调 ${DEAD_CALL_TIME / 1000} 秒后执行`);
+    // 关闭相关的定时设置
+    role.clearAllActionTimer();
+    // 结束buff
+    attackActions.stopAddBuff();
     const deadTimer = setTimeout(async () => {
       // 关闭物品栏
       // baseAction.operateItemBox('close');
-      // 关闭相关的定时设置
-      role.clearAllActionTimer();
-      // 结束buff
-      attackActions.stopAddBuff();
       // 移动到云荒1
       goBackCityAndResetTask();
       // 重新更新循环状态
@@ -361,9 +366,9 @@ export const toggleYunHuang1West = () => {
       callback: closeLoopTask,
     },
     {
-      condition: () => checkIsMove(20, '云荒部落') && !isArriveAimNear(role.position, INIT_POS_ROUTE, stationR),
-      // 添加防抖，改成5S执行一次
-      callback: () => delay5S(goBackCityAndResetTask),
+      condition: () => checkIsMove(YUN_HUANG_CALL_STATIC_TIME, '云荒部落') && !isArriveAimNear(role.position, INIT_POS_ROUTE, stationR),
+      // 添加防抖，改成10S执行一次
+      callback: () => delay10S(goBackCityAndResetTask),
     },
   ]);
 
