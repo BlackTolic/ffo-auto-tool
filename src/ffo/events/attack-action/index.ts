@@ -102,6 +102,8 @@ export class AttackActions {
 
   // 找到最近的怪物进行攻击 - 适用于群攻场景
   attackNearestMonster() {
+    // 检查血量是否危险
+    this.checkHealthStatus();
     const freeSkill = this.getFreeSkill();
     // 判断是否有闲置的技能
     if (!freeSkill) {
@@ -119,8 +121,7 @@ export class AttackActions {
     // logger.debug('怪物坐标', pos, '名字', monsterName);
     // 即将使用带lock技能
     this.useSkill(freeSkill);
-    // 检查血量是否危险
-    this.checkHealthStatus();
+
     // this.startAutoSkill(skillGroup);
   }
   // 找到最近的怪物进行攻击 - 适用于单体攻击场景

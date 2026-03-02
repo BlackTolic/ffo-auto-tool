@@ -39,9 +39,10 @@ const checkTime = 2;
 const stationR = 6;
 const CHECK_EQUIP_COUNT = 23;
 const DEAD_CALL_TIME = 20 * 60 * 1000;
-const YUN_HUANG_CALL_STATIC_TIME = 15 * 1000; // 云荒静止多少秒后开始回调移动（单位：分钟）
+const YUN_HUANG_CALL_STATIC_TIME = 15; // 云荒静止多少秒后开始回调移动（单位：分钟）
 
 const delay10S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 10 * 1000, true);
+const delay5S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 5 * 1000, true);
 
 let autoFarmingAction: AutoFarmingAction | null = null;
 let i = 0;
@@ -86,10 +87,10 @@ const loopAutoAttackInWest = () => {
       return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { ...INIT_POS_YUN1, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 174, y: 105 }, stationR, delay: 100, map: '云泽秘径' });
+      return moveActions.startAutoFindPath({ toPos: { x: 180, y: 108 }, stationR, delay: 100, map: '云泽秘径' });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 174, y: 105, r: stationR }, map: '云泽秘径' });
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 180, y: 108, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
       return moveActions.startAutoFindPath({ toPos: { x: 144, y: 81 }, stationR, delay: 100, map: '云泽秘径' });
@@ -98,10 +99,10 @@ const loopAutoAttackInWest = () => {
       return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 144, y: 81, r: 4 }, map: '云泽秘径' });
     })
     .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 120, y: 56 }, stationR, delay: 100, map: '云泽秘径' });
+      return moveActions.startAutoFindPath({ toPos: { x: 114, y: 57 }, stationR, delay: 100, map: '云泽秘径' });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 120, y: 56, r: stationR }, map: '云泽秘径' });
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 114, y: 57, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
       return moveActions.startAutoFindPath({ toPos: { x: 40, y: 91 }, stationR, delay: 100, map: '云泽秘径' });
@@ -256,8 +257,19 @@ const loopCheckStatus = async () => {
     }
   }
 
+  const arrYunHuang1 = async () => {
+    // 等待3S
+    await new Promise(res => setTimeout(res, 3 * 1000));
+    if (role.map === '云泽秘径') {
+      logger.error('[云荒检查] 地图改变后才开始');
+      return;
+    }
+    await moveActions.startAutoFindPath({ toPos: { x: 261, y: 119 }, stationR: 1, delay: 2000, aimPos: '云泽秘径', refreshTime: 1000 });
+    return arrYunHuang1;
+  };
+
   // 前往云荒1打怪
-  await moveActions.startAutoFindPath({ toPos: { x: 263, y: 120 }, stationR: 1, delay: 2000, aimPos: '云泽秘径', refreshTime: 1000 });
+  await arrYunHuang1();
   await moveActions.startAutoFindPath({ toPos: INIT_POS_YUN1, stationR, delay: 2000 });
   // 下马
   await baseAction.pressSecondSkillBarSkill('F9');
@@ -359,13 +371,14 @@ export const toggleYunHuang1West = () => {
   role.addGlobalStrategyTask([
     {
       condition: () => checkIsMove(3, '云泽秘径'),
-      callback: goBackCityAndResetTask,
+      callback: () => delay5S(goBackCityAndResetTask),
     },
     {
       condition: isLevelUp,
-      callback: closeLoopTask,
+      callback: () => delay10S(closeLoopTask),
     },
     {
+      // todo 开始执行云荒检查任务时才开始计时，不然会和死亡回调时间冲突
       condition: () => checkIsMove(YUN_HUANG_CALL_STATIC_TIME, '云荒部落') && !isArriveAimNear(role.position, INIT_POS_ROUTE, stationR),
       // 添加防抖，改成10S执行一次
       callback: () => delay10S(goBackCityAndResetTask),
