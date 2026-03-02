@@ -115,9 +115,6 @@ export class AutoFarmingAction {
   // 中文注释：切换自动寻路（第一次开启，第二次关闭）
   public toggle(taskList?: { taskName: string; loopOriginPos: Pos; action: () => void; interval: number }[]): AutoRouteToggleResult {
     try {
-      // if (!isArriveAimNear(this.role.position, this.initPos, 10)) {
-      //   return { ok: false, message: `当前位置${JSON.stringify(this.role.position)}不在${this.taskName}循环触发点，无法开启自动寻路` };
-      // }
       logger.info(`当前位置${JSON.stringify(this.role.position)}在${this.taskName}循环触发点，可开启自动寻路`);
       if (this.isRunning()) {
         this.stop();

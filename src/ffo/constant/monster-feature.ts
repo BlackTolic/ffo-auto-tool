@@ -46,3 +46,5 @@ export const OCR_JIN_HU_BEI_AN_MONSTER = { ...AttackRange1, string: MONSTER_FEAT
 export const OCR_MING_YU_BOSS = { ...AttackRange2, string: MONSTER_FEATURE['怨灵'], color: MONSTER_WHITE, sim: 1.0 };
 // 云荒一层
 export const OCR_YUN_HUAN_1_MONSTER = { ...AttackRange2, string: MONSTER_FEATURE['云荒一层'], color: `${MONSTER_GREEN} | ${MONSTER_YELLOW}| ${MONSTER_RED}`, sim: 1.0 };
+// 地翼魔、牛魔王
+export const OCR_DI_YI_WEI_MONSTER = { ...AttackRange2, string: '地翼魔|牛魔王', color: MONSTER_WHITE, sim: 1.0 };

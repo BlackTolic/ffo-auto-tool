@@ -13,6 +13,7 @@ interface KeyPressOptions {
   song?: number;
   sort?: number;
   type?: 'lock' | 'delay' | 'normal' | 'specify'; // 技能类型，lock 为锁定技能，delay 为延迟技能，normal 为普通技能
+  job?: 'JK' | 'SS'; // 职业，JK 为JK职业，SS 为SS职业
 }
 
 export interface ScanMonsterOptions {
@@ -184,7 +185,7 @@ export class AttackActions {
       this.bindDm.delay(300);
       this.bindDm.KeyUpChar(key);
       this.bindDm.delay(300);
-      // 延时技能需要左键点击释放
+      // 延时技能需要左键点击释放，并且JK的技能需要移动到目标脚下释放
       type === 'delay' && this.bindDm.LeftClick();
       this.cdController.set(key, true);
       let timer = setTimeout(() => {
