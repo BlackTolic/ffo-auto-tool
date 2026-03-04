@@ -54,7 +54,7 @@ function getCirclePoint(angle: number, bindWindowSize: string, offsetR?: number)
 }
 
 interface MoveConfig {
-  offsetR?: number; // 到达当前节点范围内半径（默认6）
+  offsetR?: number; //
   mirrorJitter?: boolean; // 移动时的镜像抖动（默认false）
 }
 

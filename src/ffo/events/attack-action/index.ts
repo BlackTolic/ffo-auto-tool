@@ -29,9 +29,9 @@ export interface ScanMonsterOptions {
 const JKSkillGroup: KeyPressOptions[] = [
   { key: 'F1', interval: 5 * 1000, song: 0, sort: 1 }, // 攻击技能
   { key: 'F2', interval: 5.5 * 1000, song: 0, sort: 2 }, // 攻击技能
-  { key: 'F3', interval: 4.5 * 1000, song: 0, sort: 4, type: 'delay' }, // 攻击技能
+  { key: 'F3', interval: 4.5 * 1000, song: 0, sort: 4, type: 'delay', job: 'JK' }, // 攻击技能
   { key: 'F4', interval: 4.5 * 1000, song: 0, sort: 3 }, // 攻击技能
-  { key: 'F5', interval: 7 * 1000, song: 0, sort: 5, type: 'delay' }, // 攻击技能
+  { key: 'F5', interval: 7 * 1000, song: 0, sort: 5, type: 'delay', job: 'JK' }, // 攻击技能
 ];
 
 const SSSkillGroup: KeyPressOptions[] = [
@@ -177,7 +177,7 @@ export class AttackActions {
 
   useSkill(skill: KeyPressOptions) {
     // logger.debug(skill, 'skill');
-    const { key, interval = 0, type } = skill;
+    const { key, interval = 0, type, job } = skill;
     // logger.debug(key, interval, type, 'useSkill', this.role.selectMonster);
     if (type === 'lock' && !this.role.selectMonster) {
       this.bindDm.LeftClick();
@@ -186,6 +186,9 @@ export class AttackActions {
       this.bindDm.delay(300);
       this.bindDm.KeyUpChar(key);
       this.bindDm.delay(300);
+      if (job === 'JK') {
+        this.bindPlugin.moveTo(897, 438);
+      }
       // 延时技能需要左键点击释放，并且JK的技能需要移动到目标脚下释放
       type === 'delay' && this.bindDm.LeftClick();
       this.cdController.set(key, true);
@@ -316,6 +319,7 @@ export class AttackActions {
   // 识别周围有无怪物，并且识别5秒
   scanMonster(options: ScanMonsterOptions) {
     const { attackType, times = 5, attackRange, map = '' } = options;
+    let moveAction = new MoveActions(this.role, { offsetR: 280 });
     return new Promise((resolve, reject) => {
       logger.info(`[自动攻击] 已启动：attackType=${attackType} | 目标点位=${attackRange?.x},${attackRange?.y} | 间隔=${times}S | 范围=${attackRange?.r || '无'}`);
       let counter = 0;
@@ -327,7 +331,7 @@ export class AttackActions {
           logger.info(`[自动攻击] 未在范围内，需要移动到目标点：(${attackRange.x},${attackRange.y}),r=${attackRange.r}`);
           const { x, y } = attackRange;
           const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
-          new MoveActions(this.role).move({ x: roleX, y: roleY }, { x, y });
+          moveAction.move({ x: roleX, y: roleY }, { x, y });
         }
 
         // logger.debug(isRange, '我是否在据点范围内');
@@ -352,7 +356,7 @@ export class AttackActions {
           logger.info(`[自动攻击] 已与怪物隔离，需要移动到目标点 (${attackRange.x},${attackRange.y})`);
           const { x, y } = attackRange;
           const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
-          new MoveActions(this.role).move({ x: roleX, y: roleY }, { x, y });
+          moveAction.move({ x: roleX, y: roleY }, { x, y });
         }
         // 地图发生改变，中断攻击
         if (map && map !== this.role.map) {
@@ -362,7 +366,7 @@ export class AttackActions {
           // this.bindPlugin.moveToClick(roleX + 30, roleY);
           // 点击脚下的死坐标
           this.bindPlugin.moveToClick(800, 525);
-          reject('[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击');
+          reject(`[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击`);
         }
         if (!findMonsterPos && counter > times) {
           logger.info(`[自动攻击] 已连续${times}S无目标，结束自动攻击`);

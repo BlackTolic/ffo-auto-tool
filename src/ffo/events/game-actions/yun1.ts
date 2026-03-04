@@ -11,7 +11,7 @@ import { MoveActions } from '../move-action';
 import { AutoFarmingAction, AutoFarmingInstance } from './auto-farming';
 
 const validEquip: ValidEquip = [
-  { type: '戒指' },
+  { type: '戒指', level: '102' },
   { type: '项链', attrName: '力量|智慧|体质|魔抗|护甲值' },
   { type: '项链', level: '102' },
   { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害|力量|体质' },
@@ -35,7 +35,7 @@ const PATH_POS = [
   { x: 119, y: 58 },
   { x: 40, y: 91 },
 ];
-const checkTime = 2;
+const checkTime = 3;
 const stationR = 6;
 const CHECK_EQUIP_COUNT = 23;
 const DEAD_CALL_TIME = 20 * 60 * 1000;
@@ -87,10 +87,10 @@ const loopAutoAttackInWest = () => {
       return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { ...INIT_POS_YUN1, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 180, y: 108 }, stationR, delay: 100, map: '云泽秘径' });
+      return moveActions.startAutoFindPath({ toPos: { x: 175, y: 98 }, stationR, delay: 100, map: '云泽秘径' });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 180, y: 108, r: stationR }, map: '云泽秘径' });
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 175, y: 98, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
       return moveActions.startAutoFindPath({ toPos: { x: 144, y: 81 }, stationR, delay: 100, map: '云泽秘径' });
@@ -188,13 +188,13 @@ const loopCheckStatus = async () => {
   // 打开物品栏中的“消耗”页
   await baseAction.openItemBox('消耗');
   // 检查红、蓝、回城数量
-  const redCount = checkItemBoxItemCount(dm, role.bindWindowSize, 1, '蓝药');
-  const blueCount = checkItemBoxItemCount(dm, role.bindWindowSize, 2, '人参');
+  const blueCount = checkItemBoxItemCount(dm, role.bindWindowSize, 1, '蓝药');
+  const redCount = checkItemBoxItemCount(dm, role.bindWindowSize, 2, '人参');
   const returnCount = checkItemBoxItemCount(dm, role.bindWindowSize, 3, '回城卷轴');
   // const petFoodCount = checkItemBoxItemCount(dm, role.bindWindowSize, 4, '宠物食物');
   // 检查装备是否已经损坏
   const isEquipBroken = checkEquipBroken(dm, role.bindWindowSize);
-  logger.info(`[云荒检查] 装备情况:${isEquipBroken ? '已损坏' : '未损坏'};蓝药数量${redCount};人参数量${blueCount};回城卷轴数量${returnCount};`);
+  logger.info(`[云荒检查] 装备情况:${isEquipBroken ? '已损坏' : '未损坏'};蓝药数量${blueCount};人参数量${redCount};回城卷轴数量${returnCount};`);
   // 鼠标归位，防止影响下一次识别
   dm.moveTo(role.position?.x || 0, role.position?.y || 0);
   dm.delay(300);
@@ -203,7 +203,12 @@ const loopCheckStatus = async () => {
   // 检查装备栏装备是否超过15件
   const equipCount = checkEquipCount(dm, role.bindWindowSize);
   logger.info(`[云荒检查] 装备数量${equipCount.length}`);
-  const needMoney = redCount < 50 || blueCount < 50 || isEquipBroken;
+  let needMoney;
+  if (redCount === 0 && blueCount === 0) {
+    needMoney = false;
+  } else {
+    needMoney = redCount < 50 || blueCount < 200 || isEquipBroken;
+  }
   if (equipCount.length > 14 || needMoney) {
     // 去仓库管理员取钱
     await moveActions.startAutoFindPath({ toPos: { x: 200, y: 98 }, stationR, delay: 4000 });
@@ -230,11 +235,13 @@ const loopCheckStatus = async () => {
       stationR,
       delay: 2000,
     });
+    console.log(redCount, 'redCount');
+    console.log(blueCount, 'blueCount');
     // 与道具商人对话
     const buyOk = await new Conversation(role).ItemMerchant([
       ...(isEquipBroken ? [{ task: 'fix' }] : []),
       ...(redCount < 50 ? [{ task: 'buy', item: '长白参', count: 200 - redCount }] : []),
-      ...(blueCount < 50 ? [{ task: 'buy', item: '(大)法力药水', count: 400 - blueCount }] : []),
+      ...(blueCount < 200 ? [{ task: 'buy', item: '(大)法力药水', count: 600 - blueCount }] : []),
     ] as ItemMerchantConfig[]);
     if (!buyOk) {
       logger.error('道具商人购买药失败');

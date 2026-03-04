@@ -171,7 +171,8 @@ export const checkMounted = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*8
   const mountedPos = DEFAULT_MOUNTED[bindWindowSize];
   const mountedText = bindDm.ocr(mountedPos.x1, mountedPos.y1, mountedPos.x2, mountedPos.y2, mountedPos.color, mountedPos.sim);
   bindDm.moveToClick(65, 85);
-  return mountedText;
+  // console.log(mountedText, 'mountedText');
+  return mountedText === '25';
 };
 
 // 检查物品栏物品数量
@@ -189,6 +190,7 @@ export const checkItemBoxItemCount = (bindDm: AutoT, bindWindowSize: '1600*900' 
   };
 
   const itemPos = firstItem[bindWindowSize];
+  bindDm.capturePng(itemPos.x1 + (itemSort - 1) * 41, itemPos.y1, itemPos.x2 + (itemSort - 1) * 41, itemPos.y2, `${TEST_PATH}/item_count_${itemSort}.png`);
   const itemBoxItemText = bindDm.ocr(itemPos.x1 + (itemSort - 1) * 41, itemPos.y1, itemPos.x2 + (itemSort - 1) * 41, itemPos.y2, itemPos.color, itemPos.sim);
   return !itemBoxItemText ? 0 : Number(itemBoxItemText);
 };
