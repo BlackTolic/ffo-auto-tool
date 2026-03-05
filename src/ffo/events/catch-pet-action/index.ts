@@ -1,18 +1,8 @@
 import { logger } from '../../../utils/logger';
 import { MonsterFeature, OCR_MONSTER } from '../../constant/monster-feature';
-import { VK_F } from '../../constant/virtual-key-code';
 import { parseTextPos } from '../../utils/common';
 import { isMonsterEmptyHp } from '../../utils/ocr-check/base';
 import { Role } from '../rolyer';
-
-interface KeyPressOptions {
-  key: keyof typeof VK_F;
-  interval: number | null;
-  isCd?: boolean;
-  song?: number;
-  sort?: number;
-  type?: 'lock' | 'delay' | 'normal' | 'specify'; // 技能类型，lock 为锁定技能，delay 为延迟技能，normal 为普通技能
-}
 
 export interface ScanMonsterOptions {
   attackType?: 'group' | 'single';
@@ -31,7 +21,7 @@ const attackRange = {
 };
 
 // dm.Ocr(380,117,1254,736,"000400-555555",1.0)
-export class AttackActions {
+export class CatchPetAction {
   public role: Role; // 角色信息
   public bindDm: any = null; // 大漠类
   private bindPlugin: any = null; // 插件类
@@ -51,7 +41,6 @@ export class AttackActions {
   findMonsterPos(delX = 10, delY = 40) {
     const { x1, y1, x2, y2, string, color, sim } = this.ocrMonster;
     const result = this.bindDm.FindStrFastE(x1, y1, x2, y2, string, color, sim);
-    // logger.debug('OCR结果', result);
     // 识别怪物的坐标
     const pos = parseTextPos(result);
     if (!pos || pos.x < 0 || pos.y < 0) return null;
@@ -63,12 +52,15 @@ export class AttackActions {
   // 找到最近的宠物进行捕捉
   attackNearestMonster() {
     const pos = this.findMonsterPos();
+    logger.info(`[自动捕捉] OCR结果: ${pos}`);
     if (!pos) return;
     const { x, y } = pos;
     // 右键锁定
     this.bindPlugin.moveToClick(x, y, 'right');
+    this.bindPlugin.delay(1000);
     // 检查是否是地翼魔，如果不是直接干死
     const monsterName = this.role.selectMonster;
+    console.log(monsterName, 'monsterName');
     if (monsterName && monsterName !== '地翼魔') {
       this.bindDm.KeyDownChar('F2');
       this.bindDm.delay(300);
@@ -78,13 +70,14 @@ export class AttackActions {
     }
     // 左键点击打残血量
     this.bindDm.LeftClick();
-    this.bindDm.delay(300);
-    const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
-    this.bindPlugin.moveToClick(roleX + 50, roleY, 'left');
+    this.bindDm.delay(500);
+    this.bindPlugin.moveToClick(795, 632, 'left');
     // 检查当前怪物的血量是否为空
-    const isEmptyHp = isMonsterEmptyHp(this.bindDm, this.role.bindWindowSize, x, y);
+    const isEmptyHp = isMonsterEmptyHp(this.bindPlugin, this.role.bindWindowSize);
+    console.log(isEmptyHp, 'isEmptyHp111');
     // 只抓7次
     if (isEmptyHp && monsterName && this.catchTimes < 8) {
+      this.bindDm.delay(300);
       // 开始捕捉
       this.bindDm.KeyDownChar('F1');
       this.bindDm.delay(300);

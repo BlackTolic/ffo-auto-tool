@@ -34,7 +34,7 @@ export const DEFAULT_MONSTER_NAME = {
 // 检查怪物的血量是否为空
 export const DEFAULT_MONSTER_BLOOD_EMPTY = {
   // 血量为绿色就是健康、因为攻击拉满，只有绿、红、空三种状态
-  '1600*900': { x1: 116, y1: 12, x2: 139, y2: 39, color: '20ac00-111111-111111', sim: DEFAULT_SIM },
+  '1600*900': { x1: 112, y1: 129, x2: 196, y2: 144, color: '20ac00-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 116, y1: 12, x2: 139, y2: 39, color: 'e89828-111111|e89828-111111', sim: DEFAULT_SIM },
 };
 

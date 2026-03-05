@@ -22,7 +22,6 @@ export const registerBoundEventHandlers = () => {
     lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄（供其他逻辑参考，不参与快捷键切换）
     const rec = damoBindingManager.get(hwnd);
     const role = new Role();
-
     // 中文注释：设置角色信息
     damoBindingManager.setRole(hwnd, role);
 
@@ -54,24 +53,6 @@ export const registerBoundEventHandlers = () => {
         logger.info('[OCR字典] 使用默认字典索引 0（未找到或加载失败）');
       }
 
-      // 中文注释：示例截图（可选）
-      // try {
-      //   // 截取当前窗口内容
-      //   const windowRect = dm?.GetWindowRect?.(hwnd);
-      //   if (!windowRect) {
-      //     logger.warn(`[截图失败] 获取窗口矩形失败 HWND=${hwnd}`);
-      //     return;
-      //   }
-      //   const cap = dm?.CapturePng?.(windowRect.left, windowRect.top, windowRect.right - 1, windowRect.bottom - 1, `${SCREENSHOT_PATH}/${pid}.png`);
-      //   if (cap) {
-      //     logger.info(`[截图] PNG=${cap} | ${SCREENSHOT_PATH}/${pid}.png`);
-      //   } else {
-      //     logger.warn(`[截图失败] 截图返回值=${cap} HWND=${hwnd}`);
-      //   }
-      // } catch (err) {
-      //   logger.error(`[截图失败] HWND=${hwnd}`, err);
-      // }
-
       // 注册角色信息 1280*800  1600*900
       role.registerRole('1600*900', hwnd);
       // role.registerRole('1280*800', hwnd);
@@ -79,19 +60,17 @@ export const registerBoundEventHandlers = () => {
       logger.warn(`[绑定事件] 处理失败: ${String((err as any)?.message || err)}`);
     }
   });
+
   // 中文注释：解绑事件处理（停止定时器与清理状态）
   ffoEvents.on('unbind', async ({ hwnd }) => {
     try {
-      // 中文注释：停止自动打怪（释放定时器）
-      // stopAutoCombat(hwnd);
-      // 中文注释：停止自动按键（释放定时器）
       stopKeyPress(hwnd);
       // 中文注释：更新自动按键状态并重置最近绑定句柄
-      // autoKeyOnByHwnd.delete(hwnd);
       const role = damoBindingManager.getRole(hwnd);
       if (role) {
         role.unregisterRole();
       }
+
       if (lastBoundHwnd === hwnd) lastBoundHwnd = null;
     } catch (err) {
       logger.warn(`[解绑事件] 清理失败: ${String((err as any)?.message || err)}`);

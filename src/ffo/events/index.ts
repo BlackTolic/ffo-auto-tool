@@ -123,28 +123,38 @@ export class DamoBindingManager {
   unbindWindow(hwnd: number): boolean {
     const rec = this.clientsByHwnd.get(hwnd);
     if (!rec) return false;
+
+    let success = false;
     try {
       // 中文注释：调用插件解绑当前绑定窗口
-      rec.ffoClient.unbindWindow();
+      const ret = rec.ffoClient.unbindWindow();
+      if (ret === 1) {
+        success = true;
+      } else {
+        logger.warn(`UnBindWindow failed: ret=${ret}, hwnd=${hwnd}`);
+      }
     } catch (err) {
+      logger.error(`UnBindWindow error: hwnd=${hwnd}`, err);
       ffoEvents.emit('error', { hwnd, error: err } as ErrorPayload);
     }
+
+    // 中文注释：清理内部状态
     this.clientsByHwnd.delete(hwnd);
+    this.roleByHwnd.delete(hwnd);
+    if (this.selectHwnd === hwnd) {
+      this.selectHwnd = null;
+    }
+
     ffoEvents.emit('unbind', { hwnd } as UnbindPayload);
-    return true;
+    return success;
   }
 
   // 中文注释：一次性解绑所有已绑定窗口（退出前调用）
   unbindAll(): void {
-    for (const [hwnd, rec] of this.clientsByHwnd.entries()) {
-      try {
-        rec.ffoClient.unbindWindow(); // 中文注释：逐个调用插件解绑
-      } catch (err) {
-        ffoEvents.emit('error', { hwnd, error: err } as ErrorPayload);
-      }
-      // 中文注释：删除记录并广播解绑事件
-      this.clientsByHwnd.delete(hwnd);
-      ffoEvents.emit('unbind', { hwnd } as UnbindPayload);
+    // 中文注释：创建副本以安全遍历
+    const hwnds = Array.from(this.clientsByHwnd.keys());
+    for (const hwnd of hwnds) {
+      this.unbindWindow(hwnd);
     }
   }
 
@@ -184,14 +194,11 @@ export class DamoBindingManager {
       ffoEvents.emit('error', { pid, error: err } as ErrorPayload);
       return 0;
     }
-
     // 中文注释：枚举窗口句柄
     // const hwnds = this.enumerateWindowsByPid(probe.dm, pid);
     // 天使
     const hwnds = this.enumerateWindowsByPid(probe, pid);
-
     let successCount = 0;
-
     for (const hwnd of hwnds) {
       // 中文注释：跳过已绑定的窗口，避免重复
       if (this.isBound(hwnd)) continue;
@@ -205,11 +212,11 @@ export class DamoBindingManager {
 
       try {
         // const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
-        logger.info(client.dm.Ver(), 'client.dm');
+        logger.info(`[插件绑定] 版本 ${client.dm.Ver()}`);
         // const ret = 2;
         const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
         // client.dm.delay(200);
-        logger.info('BindWindow 结果', ret, hwnd, pid);
+        logger.info(`[插件绑定] BindWindow 结果: ret=${ret}, hwnd=${hwnd}, pid=${pid}`);
         if (ret !== 1) {
           // 中文注释：返回非 1 表示失败，抛错并通知事件
           throw new Error(`BindWindowEx 失败，返回值=${ret}, hwnd=${hwnd}, pid=${pid}`);
@@ -221,6 +228,7 @@ export class DamoBindingManager {
         ffoEvents.emit('bound', { pid, hwnd } as BoundPayload);
       } catch (err) {
         // 中文注释：发生错误，通知订阅者
+        logger.error(`[插件绑定] BindWindow 错误: hwnd=${hwnd}, pid=${pid}`, err);
         ffoEvents.emit('error', { pid, hwnd, error: err } as ErrorPayload);
         // 中文注释：务必释放可能的绑定（防止半绑定状态）
         try {
@@ -228,7 +236,7 @@ export class DamoBindingManager {
         } catch {}
       }
     }
-    logger.info('[绑定] 枚举窗口 hwnds', hwnds);
+    logger.info('[插件绑定] 枚举窗口 hwnds', hwnds);
     return successCount;
   }
 
@@ -248,7 +256,10 @@ export class DamoBindingManager {
     let pid = 0;
     try {
       pid = Number(client.getWindowProcessId?.(hwnd) || 0);
-    } catch {}
+    } catch {
+      logger.error(`[插件绑定] 获取窗口 PID 失败，hwnd=${hwnd}`);
+      return false;
+    }
     try {
       const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
       if (ret !== 1) {

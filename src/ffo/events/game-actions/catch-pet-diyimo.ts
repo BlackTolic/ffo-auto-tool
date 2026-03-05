@@ -1,4 +1,7 @@
 import { OCR_DI_YI_WEI_MONSTER } from '../../constant/monster-feature';
+import { getBindWindowInfo } from '../../utils/common/rolyer';
+import { BaseAction } from '../base-action';
+import { CatchPetAction } from '../catch-pet-action';
 import { AutoFarmingAction, AutoFarmingInstance } from './auto-farming';
 
 const TASK_NAME = '捕捉地翼魔';
@@ -17,6 +20,8 @@ const PATH_POS = [
 
 let autoFarmingAction: AutoFarmingAction | null = null;
 
+const startCatchPet = () => {};
+
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
 export const toggleCatchPetDiyimo = () => {
   const instance: AutoFarmingInstance = {
@@ -25,8 +30,16 @@ export const toggleCatchPetDiyimo = () => {
     ocrMonster: OCR_DI_YI_WEI_MONSTER,
     taskName: TASK_NAME,
   };
+
+  const { hwnd, role } = getBindWindowInfo();
+  let baseAction = new BaseAction(role);
+  // 注意：确保已导入
+  let catchPetAction = new CatchPetAction(role, OCR_DI_YI_WEI_MONSTER);
+  catchPetAction.attackNearestMonster();
+
+  const taskList = [{ taskName: '捕捉地翼魔', loopOriginPos: INIT_POS, action: startCatchPet, interval: 2000 }];
   autoFarmingAction = AutoFarmingAction.getInstance(instance);
-  return autoFarmingAction.toggle();
+  // return autoFarmingAction.toggle(taskList);
 };
 
 export const pauseCatchPetDiyimo = () => {

@@ -85,8 +85,9 @@ export const getMonsterName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 };
 
 // 检查怪物血量是否为空
-export const isMonsterEmptyHp = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', x: number, y: number) => {
+export const isMonsterEmptyHp = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const emptyHpPos = DEFAULT_MONSTER_BLOOD_EMPTY[bindWindowSize];
+  console.log(emptyHpPos, 'emptyHpPos');
   const emptyHpText = bindDm.findColorE(emptyHpPos.x1, emptyHpPos.y1, emptyHpPos.x2, emptyHpPos.y2, emptyHpPos.color, emptyHpPos.sim);
   return !parseRolePositionFromText(emptyHpText);
 };
@@ -95,7 +96,6 @@ export const isMonsterEmptyHp = (bindDm: AutoT, bindWindowSize: '1600*900' | '12
 export const getBloodStatus = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const bloodStatusPos = DEFAULT_BLOOD_STATUS[bindWindowSize];
   const bloodStatusText = bindDm.findColorE(bloodStatusPos.x1, bloodStatusPos.y1, bloodStatusPos.x2, bloodStatusPos.y2, bloodStatusPos.color, bloodStatusPos.sim);
-  // logger.info('血量状态: %s', bloodStatusText);
   return parseRolePositionFromText(bloodStatusText) ? 'safe' : 'danger';
 };
 
