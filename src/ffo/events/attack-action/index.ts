@@ -214,6 +214,7 @@ export class AttackActions {
   stopAutoSkill() {
     this.skillPropsList.forEach(item => {
       const timer = this.timerMapList.get(item.key);
+
       if (timer) {
         clearInterval(timer);
         this.timerMapList.delete(item.key);
@@ -262,7 +263,7 @@ export class AttackActions {
 
   // 循环添加buff
   addBuff() {
-    if (this.buffTimerMapList.get('F6')) {
+    if (this.buffTimerMapList.has('F6')) {
       return;
     }
     this.buffGroup.forEach(item => {
@@ -285,7 +286,9 @@ export class AttackActions {
       } else {
         useSkill();
       }
-
+      if (this.buffTimerMapList.get(item.key)) {
+        return;
+      }
       const timer = setInterval(() => {
         try {
           if (isUseless) {

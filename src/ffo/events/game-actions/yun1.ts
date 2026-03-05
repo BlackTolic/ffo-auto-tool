@@ -87,10 +87,10 @@ const loopAutoAttackInWest = () => {
       return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { ...INIT_POS_YUN1, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 175, y: 98 }, stationR, delay: 100, map: '云泽秘径' });
+      return moveActions.startAutoFindPath({ toPos: { x: 172, y: 99 }, stationR, delay: 100, map: '云泽秘径' });
     })
     .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 175, y: 98, r: stationR }, map: '云泽秘径' });
+      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 172, y: 99, r: stationR }, map: '云泽秘径' });
     })
     .then(() => {
       return moveActions.startAutoFindPath({ toPos: { x: 144, y: 81 }, stationR, delay: 100, map: '云泽秘径' });
@@ -350,11 +350,9 @@ export const toggleYunHuang1West = () => {
   const goBackCityAndResetTask = async () => {
     logger.info('[云荒检查] 执行回城并且重置任务 - goBackCityAndResetTask');
     const moveActions = new MoveActions(role);
-    // 关闭物品栏
-    // baseAction.operateItemBox('close');
     const res = await baseAction.backCity({ x: 148, y: 96 }, 'F9', true);
     if (res === 'redName') {
-      logger.info('[云荒检查] 前往仓库管理员处');
+      logger.info('[云荒检查] 红名自动前往仓库管理员处');
       await moveActions.startAutoFindPath({ toPos: { x: 203, y: 101 }, stationR, delay: 100 });
       loopCheckStatus();
       return;
