@@ -29,9 +29,9 @@ export interface ScanMonsterOptions {
 const JKSkillGroup: KeyPressOptions[] = [
   { key: 'F1', interval: 5 * 1000, song: 0, sort: 1 }, // 攻击技能
   { key: 'F2', interval: 5.5 * 1000, song: 0, sort: 2 }, // 攻击技能
-  { key: 'F3', interval: 4.5 * 1000, song: 0, sort: 4, type: 'delay' }, // 攻击技能
+  { key: 'F3', interval: 4.5 * 1000, song: 0, sort: 4, type: 'delay', job: 'JK' }, // 攻击技能
   { key: 'F4', interval: 4.5 * 1000, song: 0, sort: 3 }, // 攻击技能
-  { key: 'F5', interval: 7 * 1000, song: 0, sort: 5, type: 'delay' }, // 攻击技能
+  { key: 'F5', interval: 7 * 1000, song: 0, sort: 5, type: 'delay', job: 'JK' }, // 攻击技能
 ];
 
 const SSSkillGroup: KeyPressOptions[] = [
@@ -103,6 +103,8 @@ export class AttackActions {
 
   // 找到最近的怪物进行攻击 - 适用于群攻场景
   attackNearestMonster() {
+    // 检查血量是否危险
+    this.checkHealthStatus();
     const freeSkill = this.getFreeSkill();
     // 判断是否有闲置的技能
     if (!freeSkill) {
@@ -120,8 +122,7 @@ export class AttackActions {
     // logger.debug('怪物坐标', pos, '名字', monsterName);
     // 即将使用带lock技能
     this.useSkill(freeSkill);
-    // 检查血量是否危险
-    this.checkHealthStatus();
+
     // this.startAutoSkill(skillGroup);
   }
   // 找到最近的怪物进行攻击 - 适用于单体攻击场景
@@ -176,7 +177,7 @@ export class AttackActions {
 
   useSkill(skill: KeyPressOptions) {
     // logger.debug(skill, 'skill');
-    const { key, interval = 0, type } = skill;
+    const { key, interval = 0, type, job } = skill;
     // logger.debug(key, interval, type, 'useSkill', this.role.selectMonster);
     if (type === 'lock' && !this.role.selectMonster) {
       this.bindDm.LeftClick();
@@ -185,13 +186,16 @@ export class AttackActions {
       this.bindDm.delay(300);
       this.bindDm.KeyUpChar(key);
       this.bindDm.delay(300);
+      if (job === 'JK') {
+        this.bindPlugin.moveTo(897, 438);
+      }
       // 延时技能需要左键点击释放，并且JK的技能需要移动到目标脚下释放
       type === 'delay' && this.bindDm.LeftClick();
       this.cdController.set(key, true);
-      let timer = setTimeout(() => {
+      const timerId = setTimeout(() => {
         this.cdController.set(key, false);
-        clearTimeout(timer);
       }, interval || 0);
+      this.role.addActionTimer(`skill_cd_${key}`, timerId);
     }
   }
 
@@ -210,6 +214,7 @@ export class AttackActions {
   stopAutoSkill() {
     this.skillPropsList.forEach(item => {
       const timer = this.timerMapList.get(item.key);
+
       if (timer) {
         clearInterval(timer);
         this.timerMapList.delete(item.key);
@@ -235,6 +240,7 @@ export class AttackActions {
         }
       }, periodMs);
       this.timerMapList.set(key, timer);
+      this.role.addActionTimer(`key_press_${key}`, timer);
       logger.info(`[自动按键] 已启动：key=${key} | 间隔=${periodMs}ms | 频率约=${(1000 / periodMs).toFixed(2)} 次/秒`);
     } else {
       // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
@@ -258,7 +264,7 @@ export class AttackActions {
 
   // 循环添加buff
   addBuff() {
-    if (this.buffTimerMapList.get('F6')) {
+    if (this.buffTimerMapList.has('F6')) {
       return;
     }
     this.buffGroup.forEach(item => {
@@ -281,7 +287,9 @@ export class AttackActions {
       } else {
         useSkill();
       }
-
+      if (this.buffTimerMapList.get(item.key)) {
+        return;
+      }
       const timer = setInterval(() => {
         try {
           if (isUseless) {
@@ -297,6 +305,7 @@ export class AttackActions {
         }
       }, item.interval || 0);
       this.buffTimerMapList.set(item.key, timer);
+      this.role.addActionTimer(`buff_${item.key}`, timer);
     });
   }
 
@@ -315,18 +324,19 @@ export class AttackActions {
   // 识别周围有无怪物，并且识别5秒
   scanMonster(options: ScanMonsterOptions) {
     const { attackType, times = 5, attackRange, map = '' } = options;
+    let moveAction = new MoveActions(this.role, { offsetR: 280 });
     return new Promise((resolve, reject) => {
       logger.info(`[自动攻击] 已启动：attackType=${attackType} | 目标点位=${attackRange?.x},${attackRange?.y} | 间隔=${times}S | 范围=${attackRange?.r || '无'}`);
       let counter = 0;
       let lastIsolateTime = 0;
-      let timer: NodeJS.Timeout | null = setInterval(() => {
+      const scanTimer = setInterval(() => {
         // 对怪物进行攻击
         const isRange = attackRange && isArriveAimNear(this.role.position, { x: attackRange.x, y: attackRange.y }, attackRange.r);
         if (!isRange && attackRange) {
           logger.info(`[自动攻击] 未在范围内，需要移动到目标点：(${attackRange.x},${attackRange.y}),r=${attackRange.r}`);
           const { x, y } = attackRange;
           const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
-          new MoveActions(this.role).move({ x: roleX, y: roleY }, { x, y });
+          moveAction.move({ x: roleX, y: roleY }, { x, y });
         }
 
         // logger.debug(isRange, '我是否在据点范围内');
@@ -351,26 +361,27 @@ export class AttackActions {
           logger.info(`[自动攻击] 已与怪物隔离，需要移动到目标点 (${attackRange.x},${attackRange.y})`);
           const { x, y } = attackRange;
           const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
-          new MoveActions(this.role).move({ x: roleX, y: roleY }, { x, y });
+          moveAction.move({ x: roleX, y: roleY }, { x, y });
         }
         // 地图发生改变，中断攻击
         if (map && map !== this.role.map) {
-          timer && clearInterval(timer);
-          timer = null;
+          clearInterval(scanTimer);
+          this.role.clearActionTimer('scanMonster');
           this.bindDm;
           // this.bindPlugin.moveToClick(roleX + 30, roleY);
           // 点击脚下的死坐标
           this.bindPlugin.moveToClick(800, 525);
-          reject('[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击');
+          reject(`[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击`);
         }
         if (!findMonsterPos && counter > times) {
           logger.info(`[自动攻击] 已连续${times}S无目标，结束自动攻击`);
-          timer && clearInterval(timer);
-          timer = null;
+          clearInterval(scanTimer);
+          this.role.clearActionTimer('scanMonster');
           resolve(true);
         }
         counter++;
       }, 1000);
+      this.role.addActionTimer('scanMonster', scanTimer);
     });
   }
 }

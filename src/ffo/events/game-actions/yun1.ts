@@ -11,7 +11,7 @@ import { MoveActions } from '../move-action';
 import { AutoFarmingAction, AutoFarmingInstance } from './auto-farming';
 
 const validEquip: ValidEquip = [
-  { type: '戒指' },
+  { type: '戒指', level: '102' },
   { type: '项链', attrName: '力量|智慧|体质|魔抗|护甲值' },
   { type: '项链', level: '102' },
   { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害|力量|体质' },
@@ -25,35 +25,82 @@ const validEquip: ValidEquip = [
 ];
 
 const TASK_NAME = '云荒打怪捡装备';
-// const INIT_POS_YUN1 = { x: 91, y: 114 };
-const INIT_POS_YUN1 = { x: 132, y: 132 };
-const INIT_POS_ROUTE = { x: 148, y: 96 };
-const STORE_NPC = { x: 203, y: 101 };
-// const INIT_POS = { x: 168, y: 81 };
+
+// 坐标常量定义
+const COORDS = {
+  INIT_POS_YUN1: { x: 132, y: 132 }, // 云1启动点
+  INIT_POS_ROUTE: { x: 148, y: 96 }, //  云荒部落启动点
+  STORE_NPC: { x: 203, y: 101 }, // 仓库管理员
+  RED_NAME_POS: { x: 183, y: 160 }, // 云1门口
+  STORE_PATH_POINT: { x: 200, y: 98 }, // 仓库管理员
+  MERCHANT_PATH: [
+    { x: 217, y: 83 },
+    { x: 167, y: 78 },
+  ], // 道具商人
+  ENTER_MAP_POS: { x: 261, y: 119 }, // 云荒部落出城点
+};
+
 const PATH_POS = [
   { x: 146, y: 79 },
   { x: 119, y: 58 },
   { x: 40, y: 91 },
+]; // 自动点 暂时无用
+
+const CONSTANTS = {
+  CHECK_TIME: 3, // 扫描怪物时间 3次，每次1S左右
+  STATION_R: 6, // 半径
+  CHECK_EQUIP_COUNT: 23, // 检查装备的数量
+  DEAD_CALL_TIME: 20 * 60 * 1000, // 死亡后等待时间，之后重新启动
+  YUN_HUANG_CALL_STATIC_TIME: 15, // 云荒静止多少秒后开始回调移动（单位：分钟）
+};
+
+const MAP_NAME = {
+  YUN_ZE: '云泽秘径',
+  YUN_HUANG: '云荒部落',
+};
+
+// 巡逻路径配置
+const PATROL_CONFIG = [
+  { pos: COORDS.INIT_POS_YUN1, r: 6, times: 3 },
+  { pos: { x: 172, y: 99 }, r: 6, times: 3 },
+  { pos: { x: 144, y: 81 }, r: 6, times: 3, scanR: 4 },
+  { pos: { x: 114, y: 57 }, r: 6, times: 3 },
+  { pos: { x: 40, y: 91 }, r: 6, times: 3 },
+  { pos: { x: 100, y: 120 }, r: 6, times: 3 },
+  { pos: COORDS.INIT_POS_YUN1, r: 6, times: 4 },
 ];
-const checkTime = 2;
-const stationR = 6;
-const CHECK_EQUIP_COUNT = 23;
-const DEAD_CALL_TIME = 20 * 60 * 1000;
-const YUN_HUANG_CALL_STATIC_TIME = 15 * 1000; // 云荒静止多少秒后开始回调移动（单位：分钟）
 
 const delay10S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 10 * 1000, true);
+const delay5S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 5 * 1000, true);
 
 let autoFarmingAction: AutoFarmingAction | null = null;
-let i = 0;
+let executionCount = 0;
+
+// 获取绑定角色
+const getBoundRole = () => {
+  const hwnd = damoBindingManager.selectHwnd;
+  if (!hwnd || !damoBindingManager.isBound(hwnd)) {
+    const msg = `未选择已绑定的窗口 ${hwnd}`;
+    logger.error(msg);
+    throw new Error(msg);
+  }
+  const role = damoBindingManager.getRole(hwnd);
+  if (!role) {
+    const msg = `未获取到角色 ${hwnd}`;
+    logger.error(msg);
+    throw new Error(msg);
+  }
+  return role;
+};
 
 // 选择回城方式
 const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions) => {
   // 进行红名检验
-  const res = await baseAction.backCity(INIT_POS_ROUTE, 'F9', true);
+  const res = await baseAction.backCity(COORDS.INIT_POS_ROUTE, 'F9', true);
   if (res === 'redName') {
     return new Promise(async res => {
-      await moveActions.startAutoFindPath({ toPos: { x: 183, y: 160 }, stationR, delay: 100, map: '云泽秘径' });
-      await moveActions.startAutoFindPath({ toPos: STORE_NPC, stationR, delay: 100 });
+      await moveActions.startAutoFindPath({ toPos: COORDS.RED_NAME_POS, stationR: CONSTANTS.STATION_R, delay: 100, map: MAP_NAME.YUN_ZE });
+      await moveActions.startAutoFindPath({ toPos: COORDS.STORE_NPC, stationR: CONSTANTS.STATION_R, delay: 100 });
       res('红名操作');
     });
   }
@@ -61,114 +108,69 @@ const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions
 };
 
 // 循环打怪
-const loopAutoAttackInWest = () => {
-  const hwnd = damoBindingManager.selectHwnd;
-  if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-    logger.error('未选择已绑定的窗口', hwnd);
-    throw new Error('未选择已绑定的窗口');
-  }
-  const role = damoBindingManager.getRole(hwnd);
-  if (!role) {
-    logger.error('未获取到角色', hwnd);
-    throw new Error('未获取到角色');
-  }
-  logger.info(`当前开始执行第${i + 1}次任务`, role.position);
-  let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
-  let moveActions = new MoveActions(role, { offsetR: 300 }); // 将鼠标半径调整为300
-  let baseAction = new BaseAction(role);
-  // 添加buff
-  atackActions.addBuff();
-  // 检查角色是群攻还是单攻击
-  const attackType = role.job === 'SS' ? 'group' : 'single';
-  return moveActions
-    .startAutoFindPath({ toPos: [INIT_POS_YUN1], stationR, delay: 100 })
-    .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { ...INIT_POS_YUN1, r: stationR }, map: '云泽秘径' });
-    })
-    .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 174, y: 105 }, stationR, delay: 100, map: '云泽秘径' });
-    })
-    .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 174, y: 105, r: stationR }, map: '云泽秘径' });
-    })
-    .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 144, y: 81 }, stationR, delay: 100, map: '云泽秘径' });
-    })
-    .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 144, y: 81, r: 4 }, map: '云泽秘径' });
-    })
-    .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 120, y: 56 }, stationR, delay: 100, map: '云泽秘径' });
-    })
-    .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 120, y: 56, r: stationR }, map: '云泽秘径' });
-    })
-    .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 40, y: 91 }, stationR, delay: 100, map: '云泽秘径' });
-    })
-    .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 40, y: 91, r: stationR }, map: '云泽秘径' });
-    })
-    .then(() => {
-      return moveActions.startAutoFindPath({ toPos: { x: 100, y: 120 }, stationR, delay: 100, map: '云泽秘径' });
-    })
-    .then(() => {
-      return atackActions.scanMonster({ attackType, times: checkTime, attackRange: { x: 100, y: 120, r: stationR }, map: '云泽秘径' });
-    })
-    .then(() => {
-      return moveActions.startAutoFindPath({ toPos: INIT_POS_YUN1, stationR, delay: 100, map: '云泽秘径' });
-    })
-    .then(() => {
-      return atackActions.scanMonster({ attackType, times: 4, attackRange: { ...INIT_POS_YUN1, r: stationR }, map: '云泽秘径' });
-    })
-    .then(() => {
-      // 检查装备栏是否已经满了
-      const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
-      logger.info(`[云荒打怪] 检查当前装备数量: ${equipCount.length}`);
-      if (equipCount.length >= CHECK_EQUIP_COUNT) {
-        // 关闭物品栏
-        // baseAction.operateItemBox('close');
-        // 结束buff
-        atackActions.stopAddBuff();
-        // 选择回城方式
-        return selectGoBackCity(baseAction, moveActions);
-      }
-      return false;
-    })
-    .then(res => {
+const loopAutoAttackInWest = async () => {
+  try {
+    const role = getBoundRole();
+    logger.info(`当前开始执行第${executionCount + 1}次任务`, role.position);
+
+    const atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
+    const moveActions = new MoveActions(role, { offsetR: 300 }); // 将鼠标半径调整为300
+    const baseAction = new BaseAction(role);
+
+    // 添加buff
+    atackActions.addBuff();
+    // 检查角色是群攻还是单攻击
+    const attackType = role.job === 'SS' ? 'group' : 'single';
+
+    // 执行巡逻打怪
+    for (const item of PATROL_CONFIG) {
+      await moveActions.startAutoFindPath({
+        toPos: item.pos,
+        stationR: CONSTANTS.STATION_R,
+        delay: 100,
+        map: MAP_NAME.YUN_ZE,
+      });
+      const attackRange = { ...item.pos, r: item.scanR || CONSTANTS.STATION_R };
+      await atackActions.scanMonster({
+        attackType,
+        times: item.times,
+        attackRange,
+        map: MAP_NAME.YUN_ZE,
+      });
+    }
+
+    // 检查装备栏是否已经满了
+    const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
+    logger.info(`[云荒打怪] 检查当前装备数量: ${equipCount.length}`);
+    if (equipCount.length >= CONSTANTS.CHECK_EQUIP_COUNT) {
+      // 结束buff
+      atackActions.stopAddBuff();
+      // 选择回城方式
+      const res = await selectGoBackCity(baseAction, moveActions);
       if (res === '红名操作') {
         loopCheckStatus();
         return;
       }
-      // 这里避免与上面的任务临界冲突
-      role.updateTaskStatus('done');
-      i++;
-      logger.info(`[云荒打怪] 已完成第${i}次任务,下一轮重置开始`);
-    })
-    .catch(async err => {
-      logger.error(err);
-    });
+    }
+
+    // 这里避免与上面的任务临界冲突
+    role.updateTaskStatus('done');
+    executionCount++;
+    logger.info(`[云荒打怪] 已完成第${executionCount}次任务,下一轮重置开始`);
+  } catch (err) {
+    logger.error(err);
+  }
 };
 
 // 循环检查状态，前往云荒1
 const loopCheckStatus = async () => {
-  const hwnd = damoBindingManager.selectHwnd;
-  if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-    logger.error('未选择已绑定的窗口', hwnd);
-    throw new Error('未选择已绑定的窗口');
-  }
-  const role = damoBindingManager.getRole(hwnd);
-  if (!role) {
-    logger.error('未获取到角色', hwnd);
-    throw new Error('未获取到角色');
-  }
-  const rec = damoBindingManager.get(hwnd);
-  logger.info(`当前开始执行第${i + 1}次任务`, role.position);
+  const role = getBoundRole();
+  const rec = damoBindingManager.get(role.hwnd as number);
+  logger.info(`当前开始执行第${executionCount + 1}次任务`, role.position);
 
   const dm = rec?.ffoClient || role.bindDm;
-  // let atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
-  let moveActions = new MoveActions(role);
-  let baseAction = new BaseAction(role);
+  const moveActions = new MoveActions(role);
+  const baseAction = new BaseAction(role);
 
   await new Promise(res => setTimeout(res, 5 * 1000));
   // 屏蔽所有人
@@ -187,25 +189,29 @@ const loopCheckStatus = async () => {
   // 打开物品栏中的“消耗”页
   await baseAction.openItemBox('消耗');
   // 检查红、蓝、回城数量
-  const redCount = checkItemBoxItemCount(dm, role.bindWindowSize, 1, '蓝药');
-  const blueCount = checkItemBoxItemCount(dm, role.bindWindowSize, 2, '人参');
+  const blueCount = checkItemBoxItemCount(dm, role.bindWindowSize, 1, '蓝药');
+  const redCount = checkItemBoxItemCount(dm, role.bindWindowSize, 2, '人参');
   const returnCount = checkItemBoxItemCount(dm, role.bindWindowSize, 3, '回城卷轴');
-  // const petFoodCount = checkItemBoxItemCount(dm, role.bindWindowSize, 4, '宠物食物');
+
   // 检查装备是否已经损坏
   const isEquipBroken = checkEquipBroken(dm, role.bindWindowSize);
-  logger.info(`[云荒检查] 装备情况:${isEquipBroken ? '已损坏' : '未损坏'};蓝药数量${redCount};人参数量${blueCount};回城卷轴数量${returnCount};`);
+  logger.info(`[云荒检查] 装备情况:${isEquipBroken ? '已损坏' : '未损坏'};蓝药数量${blueCount};人参数量${redCount};回城卷轴数量${returnCount};`);
+
   // 鼠标归位，防止影响下一次识别
   dm.moveTo(role.position?.x || 0, role.position?.y || 0);
   dm.delay(300);
+
   // 打开物品栏中的“装备”页
   await baseAction.openItemBox('装备');
   // 检查装备栏装备是否超过15件
   const equipCount = checkEquipCount(dm, role.bindWindowSize);
   logger.info(`[云荒检查] 装备数量${equipCount.length}`);
-  const needMoney = redCount < 50 || blueCount < 50 || isEquipBroken;
+
+  let needMoney = redCount === 0 && blueCount === 0 ? false : redCount < 50 || blueCount < 200 || isEquipBroken;
+
   if (equipCount.length > 14 || needMoney) {
     // 去仓库管理员取钱
-    await moveActions.startAutoFindPath({ toPos: { x: 200, y: 98 }, stationR, delay: 4000 });
+    await moveActions.startAutoFindPath({ toPos: COORDS.STORE_PATH_POINT, stationR: CONSTANTS.STATION_R, delay: 4000 });
     // 与仓库管理员对话
     const config = Object.assign(
       needMoney ? { task: 'withdraw', money: '5' } : {},
@@ -222,18 +228,15 @@ const loopCheckStatus = async () => {
   // 买药、修装备
   if (needMoney) {
     await moveActions.startAutoFindPath({
-      toPos: [
-        { x: 217, y: 83 },
-        { x: 167, y: 78 },
-      ],
-      stationR,
+      toPos: COORDS.MERCHANT_PATH,
+      stationR: CONSTANTS.STATION_R,
       delay: 2000,
     });
     // 与道具商人对话
     const buyOk = await new Conversation(role).ItemMerchant([
       ...(isEquipBroken ? [{ task: 'fix' }] : []),
       ...(redCount < 50 ? [{ task: 'buy', item: '长白参', count: 200 - redCount }] : []),
-      ...(blueCount < 50 ? [{ task: 'buy', item: '(大)法力药水', count: 400 - blueCount }] : []),
+      ...(blueCount < 200 ? [{ task: 'buy', item: '(大)法力药水', count: 600 - blueCount }] : []),
     ] as ItemMerchantConfig[]);
     if (!buyOk) {
       logger.error('道具商人购买药失败');
@@ -247,7 +250,7 @@ const loopCheckStatus = async () => {
   logger.info(`[云荒检查] 当前金币数量`, gold);
   if (Number(gold) > 0) {
     // 去仓库管理员取钱
-    await moveActions.startAutoFindPath({ toPos: STORE_NPC, stationR, delay: 2000 });
+    await moveActions.startAutoFindPath({ toPos: COORDS.STORE_NPC, stationR: CONSTANTS.STATION_R, delay: 2000 });
     // 与仓库管理员对话
     const depositOk = await new Conversation(role).YunHuangStoreManager({ task: 'deposit', money: '999' });
     if (!depositOk) {
@@ -257,8 +260,17 @@ const loopCheckStatus = async () => {
   }
 
   // 前往云荒1打怪
-  await moveActions.startAutoFindPath({ toPos: { x: 263, y: 120 }, stationR: 1, delay: 2000, aimPos: '云泽秘径', refreshTime: 1000 });
-  await moveActions.startAutoFindPath({ toPos: INIT_POS_YUN1, stationR, delay: 2000 });
+  // 确保进入地图
+  if (role.map !== MAP_NAME.YUN_ZE) {
+    await moveActions.startAutoFindPath({
+      toPos: COORDS.ENTER_MAP_POS,
+      stationR: 1,
+      delay: 2000,
+      aimPos: MAP_NAME.YUN_ZE,
+      refreshTime: 1000,
+    });
+  }
+  await moveActions.startAutoFindPath({ toPos: COORDS.INIT_POS_YUN1, stationR: CONSTANTS.STATION_R, delay: 2000 });
   // 下马
   await baseAction.pressSecondSkillBarSkill('F9');
   // 开始执行循环
@@ -267,37 +279,29 @@ const loopCheckStatus = async () => {
 
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
 export const toggleYunHuang1West = () => {
-  const hwnd = damoBindingManager.selectHwnd;
-  if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-    logger.error('未选择已绑定的窗口', hwnd);
-    throw new Error('未选择已绑定的窗口');
-  }
-  const role = damoBindingManager.getRole(hwnd);
-  if (!role) {
-    logger.error('未获取到角色', hwnd);
-    throw new Error('未获取到角色');
-  }
+  const role = getBoundRole();
   let baseAction = new BaseAction(role);
   let attackActions = new AttackActions(role);
+
   // 死亡时回调
   const deadCall = () => {
-    logger.info(`[云荒检查] 云荒打怪死亡开始进行死亡回调 ${DEAD_CALL_TIME / 1000} 秒后执行`);
+    logger.info(`[云荒检查] 云荒打怪死亡开始进行死亡回调 ${CONSTANTS.DEAD_CALL_TIME / 1000} 秒后执行`);
     // 关闭相关的定时设置
     role.clearAllActionTimer();
     // 结束buff
     attackActions.stopAddBuff();
     const deadTimer = setTimeout(async () => {
-      // 关闭物品栏
-      // baseAction.operateItemBox('close');
       // 移动到云荒1
       goBackCityAndResetTask();
       // 重新更新循环状态
       role.updateTaskStatus('done');
-      clearTimeout(deadTimer);
-    }, DEAD_CALL_TIME);
+    }, CONSTANTS.DEAD_CALL_TIME);
+    // 注册定时器以便清理
+    role.addActionTimer('deadCallTimer', deadTimer);
   };
+
   const instance: AutoFarmingInstance = {
-    initPos: INIT_POS_YUN1,
+    initPos: COORDS.INIT_POS_YUN1,
     pathPos: PATH_POS,
     ocrMonster: OCR_YUN_HUAN_1_MONSTER,
     taskName: TASK_NAME,
@@ -310,33 +314,50 @@ export const toggleYunHuang1West = () => {
     // 拒绝组队
     role.bindPlugin.moveToClick(closePos.x, closePos.y);
   });
-  // 添加全局策略任务,如果3分钟没有移动过，先检查周围是否有怪物，有怪物优先攻击怪物，打完怪物后回城
-  let lastMoveTime = 0;
-  let lastPos = { x: 0, y: 0 };
-  // 中文注释：检查是否移动过
-  const checkIsMove = (min: number, map: string) => {
-    // 每隔3分钟获取一次角色坐标
-    if (Date.now() - lastMoveTime > min * 60 * 1000 && role.map === map) {
-      logger.info(`[云荒检查] 每隔${min}分钟获取一次云荒地图坐标, 上一次坐标: (${lastPos.x},${lastPos.y}), 当前坐标: (${role.position?.x},${role.position?.y})`);
-      if (lastPos.x === role.position?.x && lastPos.y === role.position?.y) {
-        return true;
+
+  // 检查是否卡住（未移动）- 工厂函数，生成独立的状态闭包
+  const createStuckChecker = () => {
+    let lastMoveTime = 0;
+    let lastPos = { x: 0, y: 0 };
+
+    return (min: number, map: string) => {
+      // 地图不匹配直接返回
+      if (role.map !== map) return false;
+
+      // 每隔 min 分钟检查一次
+      if (Date.now() - lastMoveTime > min * 60 * 1000) {
+        const curX = role.position?.x ?? 0;
+        const curY = role.position?.y ?? 0;
+
+        logger.info(`[云荒检查] 每隔${min}分钟获取一次${map}地图坐标, 上一次坐标: (${lastPos.x},${lastPos.y}), 当前坐标: (${curX},${curY})`);
+
+        const isStuck = lastPos.x === curX && lastPos.y === curY;
+
+        // 无论是否卡住，都更新时间和坐标，开始下一个周期的计时
+        // 这样可以避免返回 true 后，因为时间未更新而导致在下一帧无限触发 true，进而导致 debounce 被无限重置无法执行回调
+        lastMoveTime = Date.now();
+        lastPos.x = curX;
+        lastPos.y = curY;
+
+        if (isStuck) {
+          return true; // 卡住了
+        }
       }
-      lastMoveTime = Date.now();
-      lastPos.x = role.position?.x ?? 0;
-      lastPos.y = role.position?.y ?? 0;
-    }
-    return false;
+      return false;
+    };
   };
+
+  const checkYunZeStuck = createStuckChecker();
+  const checkYunHuangStuck = createStuckChecker();
+
   // 回城并且重置任务
   const goBackCityAndResetTask = async () => {
     logger.info('[云荒检查] 执行回城并且重置任务 - goBackCityAndResetTask');
     const moveActions = new MoveActions(role);
-    // 关闭物品栏
-    // baseAction.operateItemBox('close');
-    const res = await baseAction.backCity({ x: 148, y: 96 }, 'F9', true);
+    const res = await baseAction.backCity(COORDS.INIT_POS_ROUTE, 'F9', true);
     if (res === 'redName') {
-      logger.info('[云荒检查] 前往仓库管理员处');
-      await moveActions.startAutoFindPath({ toPos: { x: 203, y: 101 }, stationR, delay: 100 });
+      logger.info('[云荒检查] 红名自动前往仓库管理员处');
+      await moveActions.startAutoFindPath({ toPos: COORDS.STORE_NPC, stationR: CONSTANTS.STATION_R, delay: 100 });
       loopCheckStatus();
       return;
     }
@@ -347,34 +368,35 @@ export const toggleYunHuang1West = () => {
   const isLevelUp = () => {
     return checkExpBar(role.bindPlugin, role.bindWindowSize);
   };
+
   // 关闭循环任务
   const closeLoopTask = async () => {
-    // baseAction.operateItemBox('close');
-    await baseAction.backCity({ x: 148, y: 96 }, 'F9');
+    await baseAction.backCity(COORDS.INIT_POS_ROUTE, 'F9');
     role.updateTaskStatus('doing');
     role.unregisterRole();
     logger.info('[云荒检查] 经验快满了，终止打怪！！');
   };
 
+  // 清除旧的全局策略任务
+  role.clearGlobalStrategyTask();
   role.addGlobalStrategyTask([
     {
-      condition: () => checkIsMove(3, '云泽秘径'),
-      callback: goBackCityAndResetTask,
+      condition: () => checkYunZeStuck(3, MAP_NAME.YUN_ZE),
+      callback: () => delay5S(goBackCityAndResetTask),
     },
     {
       condition: isLevelUp,
-      callback: closeLoopTask,
+      callback: () => delay10S(closeLoopTask),
     },
     {
-      condition: () => checkIsMove(YUN_HUANG_CALL_STATIC_TIME, '云荒部落') && !isArriveAimNear(role.position, INIT_POS_ROUTE, stationR),
-      // 添加防抖，改成10S执行一次
+      condition: () => checkYunHuangStuck(CONSTANTS.YUN_HUANG_CALL_STATIC_TIME, MAP_NAME.YUN_HUANG) && !isArriveAimNear(role.position, COORDS.INIT_POS_ROUTE, CONSTANTS.STATION_R),
       callback: () => delay10S(goBackCityAndResetTask),
     },
   ]);
 
   const taskList = [
-    { taskName: '云荒打怪捡装备', loopOriginPos: INIT_POS_YUN1, action: loopAutoAttackInWest, interval: 2000 },
-    { taskName: '云荒打怪状态补给', loopOriginPos: INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000 },
+    { taskName: '云荒打怪捡装备', loopOriginPos: COORDS.INIT_POS_YUN1, action: loopAutoAttackInWest, interval: 2000 },
+    { taskName: '云荒打怪状态补给', loopOriginPos: COORDS.INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000 },
   ];
 
   return autoFarmingAction.toggle(taskList);
@@ -390,5 +412,11 @@ export const restartCurActive = () => {
 
 // 中文注释：停止当前激活的无泪南郊动作（清空任务并停止自动寻路）
 export const stopCurActive = () => {
-  autoFarmingAction?.stop();
+  if (autoFarmingAction) {
+    autoFarmingAction.stop();
+    // 清理全局策略任务和死亡回调
+    autoFarmingAction.role.clearGlobalStrategyTask();
+    autoFarmingAction.role.addDeadCall(null);
+    autoFarmingAction.role.clearAllActionTimer();
+  }
 };

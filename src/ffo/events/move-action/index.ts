@@ -54,7 +54,7 @@ function getCirclePoint(angle: number, bindWindowSize: string, offsetR?: number)
 }
 
 interface MoveConfig {
-  offsetR?: number; // 到达当前节点范围内半径（默认6）
+  offsetR?: number; //
   mirrorJitter?: boolean; // 移动时的镜像抖动（默认false）
 }
 
@@ -204,19 +204,18 @@ export class MoveActions {
             this.isRunLoop = false; // 关闭循环
             // 鼠标点击结束寻路的左键按下
             this.dm.LeftClick();
-            logger.info(`[自动寻路] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动寻路`);
-            rej('[自动寻路] 已切换地图，结束自动寻路');
+            rej(`[自动寻路] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动寻路`);
           }
           if (isArrive) {
             // 中文注释：到达后清理定时器并延时，确保角色静止
             this.role.clearActionTimer('autoFindPath');
             this.recordAimPosIndex = 0;
-            isRunLoop = false; // 关闭循环
             setTimeout(() => {
               logger.info(`[自动寻路] 已关闭自动寻路，并解除定时器,同时延时${delay}毫秒，确保已经静止`);
               // 这里刚进入地图没法读取坐标
               res(true);
             }, delay);
+            isRunLoop = false; // 关闭循环
           } else {
             // 中文注释：未到达则继续 300ms 后轮询一次，并更新可清理的句柄
             if (!isRunLoop) return;

@@ -273,6 +273,9 @@ export class Role {
       logger.info('[角色信息] 已解除角色轮询');
     }
     this.clearAllActionTimer();
+    this.clearGlobalStrategyTask();
+    this.deadCall = null;
+    this.teamApplyCall = null;
     this.immediateId && clearImmediate(this.immediateId);
   }
 
@@ -342,7 +345,7 @@ export class Role {
     this.actionTimer.clear();
   }
 
-  addDeadCall(deadCall: () => void) {
+  addDeadCall(deadCall: (() => void) | null) {
     this.deadCall = deadCall;
   }
 
@@ -354,9 +357,13 @@ export class Role {
   // 添加全局策略任务,当某个条件达到时，立即执行回调任务
   addGlobalStrategyTask(tasks: { condition: () => boolean; callback: () => void }[]) {
     if (this.globalStrategyTask) {
-      logger.info('[角色信息] 全局策略任务已存在!');
-      return;
+      logger.info('[角色信息] 全局策略任务已存在，将被覆盖');
     }
     this.globalStrategyTask = tasks;
+  }
+
+  // 清除全局策略任务
+  clearGlobalStrategyTask() {
+    this.globalStrategyTask = null;
   }
 }

@@ -159,25 +159,23 @@ export class Conversation {
     const dialog = STORE_DIALOG_BOX[key];
     // 拖动滚动条
     this.bindPlugin.leftDownFromToMove({ x: 840, y: 138 }, { x: 840, y: 244 });
+    console.log(items, 'items');
     items.forEach(item => {
+      logger.info(`[道具商人] 购买道具${item.item}${item.count}`);
       const dialogPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, item.item, dialog.color, dialog.sim);
       const optionsPosText = parseTextPos(dialogPos);
-      logger.info(optionsPosText, 'optionsPosText');
       const x1 = Number(optionsPosText?.x || 0);
       const y1 = Number(optionsPosText?.y || 0);
       this.moveToClick({ x: x1 + 50, y: y1 });
       this.moveToClick({ x: x1 + 400, y: y1 });
+      // 输入数量
       this.bindPlugin.sendString(this.role.hwnd || 0, item.count);
       // 执行交易
       const inputPos = this.bindPlugin.findStrEx(dialog.x1, dialog.y1, dialog.x2, dialog.y2, '输入', INPUT_COLOR, dialog.sim);
       const inputPosText = parseTextPos(inputPos);
       inputPosText && this.moveToClick({ x: Number(inputPosText.x), y: Number(inputPosText.y) });
+      this.bindPlugin.delay(1000);
     });
-
-    //   if (isClose) {
-    //     logger.debug('关闭标记');
-    //     this.role.bindPlugin.delay(100);
-    //     this.role.bindPlugin.leftClick();
   }
 
   // 杨戬
@@ -354,10 +352,6 @@ export class Conversation {
       }
       if (!npcPos) {
         await new Promise(res => setTimeout(res, 3000));
-        npcPos = await this.findNPC('仓库管理员', 30, 50);
-      }
-      if (!npcPos) {
-        await new Promise(res => setTimeout(res, 3000));
         logger.info('没有找到仓库管理员');
         return;
       }
@@ -400,8 +394,6 @@ export class Conversation {
 
   // 与道具商人对话
   async ItemMerchant(config: ItemMerchantConfig[]) {
-    const key = this.role.bindWindowSize as keyof typeof STORE_DIALOG_BOX;
-    const dialog = STORE_DIALOG_BOX[key];
     return new Promise(async (resolve, reject) => {
       let npcPos = await this.findNPC('道具商人', 30, 50);
       if (!npcPos) {
@@ -412,7 +404,6 @@ export class Conversation {
         return;
       }
       const isOpenDialg = await this.openConversation(npcPos);
-      logger.info(isOpenDialg, '是否打开了对话框');
       if (!isOpenDialg) {
         return;
       }
@@ -423,12 +414,11 @@ export class Conversation {
         return;
       }
       this.moveToClick(isPass);
+      console.log(config, 'config');
       //  购买道具
       const buyItems = config.filter(item => item.task === 'buy');
-      logger.info(buyItems, '购买道具');
       // 修理装备
       const fix = config.filter(item => item.task === 'fix');
-      logger.info(fix, '修理装备');
       if (buyItems?.length) {
         this.dragScrollToBuy(buyItems);
         // 确认购买交易
