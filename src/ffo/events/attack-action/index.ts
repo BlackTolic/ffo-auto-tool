@@ -348,7 +348,7 @@ export class AttackActions {
         }
         // todo 缩小范围
         const findMonsterPos = this.findMonsterPos();
-        if (findMonsterPos) {
+        if (findMonsterPos || this.role.selectMonster) {
           counter = 0;
         }
         // 检测到与怪物有隔离

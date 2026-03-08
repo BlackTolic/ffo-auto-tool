@@ -61,13 +61,13 @@ const MAP_NAME = {
 
 // 巡逻路径配置
 const PATROL_CONFIG = [
-  { pos: COORDS.INIT_POS_YUN1, r: 6, times: 3 },
+  { pos: COORDS.INIT_POS_YUN1, r: 6, times: 3 }, // 原点
   { pos: { x: 172, y: 99 }, r: 6, times: 3 },
   { pos: { x: 144, y: 81 }, r: 6, times: 3, scanR: 4 },
   { pos: { x: 114, y: 57 }, r: 6, times: 3 },
   { pos: { x: 40, y: 91 }, r: 6, times: 3 },
-  { pos: { x: 100, y: 120 }, r: 6, times: 3 },
-  { pos: COORDS.INIT_POS_YUN1, r: 6, times: 4 },
+  { pos: { x: 100, y: 120 }, r: 7, times: 3 },
+  { pos: COORDS.INIT_POS_YUN1, r: 6, times: 3 },
 ];
 
 const delay10S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 10 * 1000, true);
@@ -108,17 +108,17 @@ const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions
 };
 
 // 循环打怪
-const loopAutoAttackInWest = async () => {
+const loopAutoAttackInWest = async (attackActions?: AttackActions) => {
   try {
     const role = getBoundRole();
     logger.info(`当前开始执行第${executionCount + 1}次任务`, role.position);
 
-    const atackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
+    // const attackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
     const moveActions = new MoveActions(role, { offsetR: 300 }); // 将鼠标半径调整为300
     const baseAction = new BaseAction(role);
 
     // 添加buff
-    atackActions.addBuff();
+    attackActions?.addBuff();
     // 检查角色是群攻还是单攻击
     const attackType = role.job === 'SS' ? 'group' : 'single';
 
@@ -131,7 +131,7 @@ const loopAutoAttackInWest = async () => {
         map: MAP_NAME.YUN_ZE,
       });
       const attackRange = { ...item.pos, r: item.scanR || CONSTANTS.STATION_R };
-      await atackActions.scanMonster({
+      await attackActions?.scanMonster({
         attackType,
         times: item.times,
         attackRange,
@@ -144,7 +144,7 @@ const loopAutoAttackInWest = async () => {
     logger.info(`[云荒打怪] 检查当前装备数量: ${equipCount.length}`);
     if (equipCount.length >= CONSTANTS.CHECK_EQUIP_COUNT) {
       // 结束buff
-      atackActions.stopAddBuff();
+      attackActions?.stopAddBuff();
       // 选择回城方式
       const res = await selectGoBackCity(baseAction, moveActions);
       if (res === '红名操作') {
@@ -259,9 +259,11 @@ const loopCheckStatus = async () => {
     }
   }
 
-  // 前往云荒1打怪
-  // 确保进入地图
-  if (role.map !== MAP_NAME.YUN_ZE) {
+  const isPassYZ = async () => {
+    // 确保进入地图
+    if (role.map === MAP_NAME.YUN_ZE) {
+      return;
+    }
     await moveActions.startAutoFindPath({
       toPos: COORDS.ENTER_MAP_POS,
       stationR: 1,
@@ -269,7 +271,12 @@ const loopCheckStatus = async () => {
       aimPos: MAP_NAME.YUN_ZE,
       refreshTime: 1000,
     });
-  }
+    dm.delay(1000);
+    return isPassYZ();
+  };
+
+  // 前往云荒1打怪
+  await isPassYZ();
   await moveActions.startAutoFindPath({ toPos: COORDS.INIT_POS_YUN1, stationR: CONSTANTS.STATION_R, delay: 2000 });
   // 下马
   await baseAction.pressSecondSkillBarSkill('F9');
@@ -281,7 +288,7 @@ const loopCheckStatus = async () => {
 export const toggleYunHuang1West = () => {
   const role = getBoundRole();
   let baseAction = new BaseAction(role);
-  let attackActions = new AttackActions(role);
+  let attackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
 
   // 死亡时回调
   const deadCall = () => {
@@ -291,13 +298,14 @@ export const toggleYunHuang1West = () => {
     // 结束buff
     attackActions.stopAddBuff();
     const deadTimer = setTimeout(async () => {
+      logger.info(`[云荒检查] 云荒打怪死亡开始执行死亡回调`);
       // 移动到云荒1
       goBackCityAndResetTask();
       // 重新更新循环状态
       role.updateTaskStatus('done');
     }, CONSTANTS.DEAD_CALL_TIME);
     // 注册定时器以便清理
-    role.addActionTimer('deadCallTimer', deadTimer);
+    // role.addActionTimer('deadCallTimer', deadTimer);
   };
 
   const instance: AutoFarmingInstance = {
@@ -306,6 +314,7 @@ export const toggleYunHuang1West = () => {
     ocrMonster: OCR_YUN_HUAN_1_MONSTER,
     taskName: TASK_NAME,
   };
+
   autoFarmingAction = AutoFarmingAction.getInstance(instance);
   // 注册死亡回调
   role.addDeadCall(deadCall);
@@ -328,18 +337,15 @@ export const toggleYunHuang1West = () => {
       if (Date.now() - lastMoveTime > min * 60 * 1000) {
         const curX = role.position?.x ?? 0;
         const curY = role.position?.y ?? 0;
-
         logger.info(`[云荒检查] 每隔${min}分钟获取一次${map}地图坐标, 上一次坐标: (${lastPos.x},${lastPos.y}), 当前坐标: (${curX},${curY})`);
-
-        const isStuck = lastPos.x === curX && lastPos.y === curY;
-
+        const isStuck = lastPos.x === curX && lastPos.y === curY && lastPos.x !== 0 && lastPos.y !== 0;
         // 无论是否卡住，都更新时间和坐标，开始下一个周期的计时
         // 这样可以避免返回 true 后，因为时间未更新而导致在下一帧无限触发 true，进而导致 debounce 被无限重置无法执行回调
         lastMoveTime = Date.now();
         lastPos.x = curX;
         lastPos.y = curY;
-
         if (isStuck) {
+          logger.info(`[云荒检查] ${map} 地图卡住了，开始执行相关回调任务`);
           return true; // 卡住了
         }
       }
@@ -381,22 +387,26 @@ export const toggleYunHuang1West = () => {
   role.clearGlobalStrategyTask();
   role.addGlobalStrategyTask([
     {
+      // 3分钟检查一次云泽是否卡住，然后回城重置任务
+      name: '云泽卡住检查重置回城',
       condition: () => checkYunZeStuck(3, MAP_NAME.YUN_ZE),
       callback: () => delay5S(goBackCityAndResetTask),
     },
     {
+      name: '升级停止任务',
       condition: isLevelUp,
       callback: () => delay10S(closeLoopTask),
     },
     {
+      name: '云荒卡住检查重置回城',
       condition: () => checkYunHuangStuck(CONSTANTS.YUN_HUANG_CALL_STATIC_TIME, MAP_NAME.YUN_HUANG) && !isArriveAimNear(role.position, COORDS.INIT_POS_ROUTE, CONSTANTS.STATION_R),
       callback: () => delay10S(goBackCityAndResetTask),
     },
   ]);
 
   const taskList = [
-    { taskName: '云荒打怪捡装备', loopOriginPos: COORDS.INIT_POS_YUN1, action: loopAutoAttackInWest, interval: 2000 },
-    { taskName: '云荒打怪状态补给', loopOriginPos: COORDS.INIT_POS_ROUTE, action: loopCheckStatus, interval: 8000 },
+    { taskName: '云荒打怪捡装备', loopOriginPos: COORDS.INIT_POS_YUN1, action: () => loopAutoAttackInWest(attackActions), interval: 2000 },
+    { taskName: '云荒打怪状态补给', loopOriginPos: COORDS.INIT_POS_ROUTE, action: () => loopCheckStatus(), interval: 8000 },
   ];
 
   return autoFarmingAction.toggle(taskList);

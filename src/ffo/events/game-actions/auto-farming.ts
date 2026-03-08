@@ -3,7 +3,7 @@ import logger from '../../../utils/logger';
 import { MonsterFeature } from '../../constant/monster-feature';
 import { AttackActions } from '../attack-action';
 import { MoveActions, Pos } from '../move-action';
-import { Role } from '../rolyer';
+import { Role, TaskProp } from '../rolyer';
 
 // 中文注释：自动寻路切换返回结果
 export interface AutoRouteToggleResult {
@@ -113,7 +113,7 @@ export class AutoFarmingAction {
   }
 
   // 中文注释：切换自动寻路（第一次开启，第二次关闭）
-  public toggle(taskList?: { taskName: string; loopOriginPos: Pos; action: () => void; interval: number }[]): AutoRouteToggleResult {
+  public toggle(taskList?: TaskProp[]): AutoRouteToggleResult {
     try {
       logger.info(`当前位置${JSON.stringify(this.role.position)}在${this.taskName}循环触发点，可开启自动寻路`);
       if (this.isRunning()) {

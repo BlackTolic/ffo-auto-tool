@@ -10,6 +10,9 @@ import { DEFAULT_MENUS_POS, DEFAULT_VERIFY_CODE_TEXT, VerifyCodeTextPos } from '
 import { isArriveAimNear, selectRightAnwser } from '../utils/common';
 import { readVerifyCodeImage } from '../utils/common/read-file';
 import { checkInviteTeam, getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getVerifyCodePos, isDeadCYPos, isOffline } from '../utils/ocr-check/base';
+import { AttackActions } from './attack-action';
+import { BaseAction } from './base-action';
+import { MoveActions } from './move-action';
 
 export type Pos = {
   x: number;
@@ -19,7 +22,7 @@ export type Pos = {
 export interface TaskProp {
   taskName: string;
   loopOriginPos: Pos;
-  action: () => void;
+  action: (baseActions?: BaseAction, moveActions?: MoveActions, attackActions?: AttackActions) => void;
   interval: number;
   taskStatus?: 'doing' | 'done';
   deadCall?: () => void;
@@ -29,6 +32,12 @@ export interface TaskProp {
 export interface RoleTaskSnapshot {
   taskName: string; // 中文注释：任务名称
   taskStatus?: 'doing' | 'done'; // 中文注释：任务状态：doing-进行中，done-已完成或就绪
+}
+
+export interface GlobalStrategyTask {
+  name?: string; // 中文注释：任务名称
+  condition: () => boolean; // 中文注释：任务条件
+  callback: (baseActions?: BaseAction, moveActions?: MoveActions, attackActions?: AttackActions) => void; // 中文注释：任务回调
 }
 
 const delay20S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 20 * 1000, true);
@@ -61,7 +70,7 @@ export class Role {
   private needCheckLeaveUp: boolean = false; // 是否需要检查升级状态
   private deadCall: (() => void) | null = null; // 死亡回调
   private teamApplyCall: ((closePos: Pos) => void) | null = null; // 组队申请回调
-  private globalStrategyTask: { condition: () => boolean; callback: () => void }[] | null = null; // 全局策略任务队列
+  private globalStrategyTask: GlobalStrategyTask[] | null = null; // 全局策略任务队列
   private immediateId: NodeJS.Immediate | null = null; // 立即执行任务ID
   private loopIsRuning: boolean = true; // 循环任务是否运行中
 
@@ -113,10 +122,12 @@ export class Role {
           inviteTeamPos && this.teamApplyCall(inviteTeamPos);
         }
         // 全局任务检查
+
         if (this.globalStrategyTask) {
           for (const task of this.globalStrategyTask) {
             // logger.debug(task.condition(), 'task.condition()');
             if (task.condition()) {
+              logger.info(`[全局任务检查] 执行任务：${task.name}`);
               task.callback();
               break;
             }
@@ -355,7 +366,7 @@ export class Role {
   }
 
   // 添加全局策略任务,当某个条件达到时，立即执行回调任务
-  addGlobalStrategyTask(tasks: { condition: () => boolean; callback: () => void }[]) {
+  addGlobalStrategyTask(tasks: GlobalStrategyTask[]) {
     if (this.globalStrategyTask) {
       logger.info('[角色信息] 全局策略任务已存在，将被覆盖');
     }
