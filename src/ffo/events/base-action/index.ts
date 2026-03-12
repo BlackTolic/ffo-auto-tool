@@ -208,20 +208,13 @@ export class BaseAction {
         logger.info('[炼化挑选] 没有未装备的装备');
         return;
       }
+      // 遍历每个列表，只要有一个符合条件，就认为是有用的装备
       const isUseful = validEquip.some(equip => {
-        logger.debug(equip, 'equip');
-        // 只设置了装备类型，其他条件没有设置的装备v，只要类型对了都要
-        if (equip.type && !equip.attrName && unEquipPos.type) {
-          return equip.type.includes(unEquipPos.type);
-        }
-        // 只设置了装备类型和属性，这两个对了才要
-        if (equip.attrName && equip.type && unEquipPos.attrName && unEquipPos.type) {
-          return equip.type.includes(unEquipPos.type) && equip.attrName.includes(unEquipPos.attrName);
-        }
-        // 只设置了装备类型和等级，这两个对了才要
-        if (equip.level && equip.type && unEquipPos.level && unEquipPos.type) {
-          return equip.type.includes(unEquipPos.type) && equip.level.includes(unEquipPos.level);
-        }
+        // 获取需要校验的装备属性
+        const checkInfo = (Object.keys(equip) as Array<keyof typeof equip>).filter(key => equip[key]);
+        // 需要进行检查的属性都OK
+        const isOk = checkInfo.every(key => unEquipPos[key] && (equip[key] as string).includes(unEquipPos[key] as string));
+        return isOk;
       });
       if (way === 'saveEquip' && isUseful) {
         this.bindPlugin.leftDoubleClick();

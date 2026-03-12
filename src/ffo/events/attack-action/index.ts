@@ -192,10 +192,10 @@ export class AttackActions {
       // 延时技能需要左键点击释放，并且JK的技能需要移动到目标脚下释放
       type === 'delay' && this.bindDm.LeftClick();
       this.cdController.set(key, true);
-      const timerId = setTimeout(() => {
+      setTimeout(() => {
         this.cdController.set(key, false);
       }, interval || 0);
-      this.role.addActionTimer(`skill_cd_${key}`, timerId);
+      // this.role.addActionTimer(`skill_cd_${key}`, timerId);
     }
   }
 
@@ -240,7 +240,7 @@ export class AttackActions {
         }
       }, periodMs);
       this.timerMapList.set(key, timer);
-      this.role.addActionTimer(`key_press_${key}`, timer);
+      // this.role.addActionTimer(`key_press_${key}`, timer);
       logger.info(`[自动按键] 已启动：key=${key} | 间隔=${periodMs}ms | 频率约=${(1000 / periodMs).toFixed(2)} 次/秒`);
     } else {
       // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
@@ -305,7 +305,7 @@ export class AttackActions {
         }
       }, item.interval || 0);
       this.buffTimerMapList.set(item.key, timer);
-      this.role.addActionTimer(`buff_${item.key}`, timer);
+      // this.role.addActionTimer(`buff_${item.key}`, timer);
     });
   }
 
@@ -329,7 +329,9 @@ export class AttackActions {
       logger.info(`[自动攻击] 已启动：attackType=${attackType} | 目标点位=${attackRange?.x},${attackRange?.y} | 间隔=${times}S | 范围=${attackRange?.r || '无'}`);
       let counter = 0;
       let lastIsolateTime = 0;
-      const scanTimer = setInterval(() => {
+      let isRunLoop = true;
+      const loop = () => {
+        if (!isRunLoop) return;
         // 对怪物进行攻击
         const isRange = attackRange && isArriveAimNear(this.role.position, { x: attackRange.x, y: attackRange.y }, attackRange.r);
         if (!isRange && attackRange) {
@@ -365,23 +367,30 @@ export class AttackActions {
         }
         // 地图发生改变，中断攻击
         if (map && map !== this.role.map) {
-          clearInterval(scanTimer);
+          isRunLoop = false;
           this.role.clearActionTimer('scanMonster');
           this.bindDm;
           // this.bindPlugin.moveToClick(roleX + 30, roleY);
           // 点击脚下的死坐标
           this.bindPlugin.moveToClick(800, 525);
           reject(`[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击`);
+          return;
         }
         if (!findMonsterPos && counter > times) {
           logger.info(`[自动攻击] 已连续${times}S无目标，结束自动攻击`);
-          clearInterval(scanTimer);
+          isRunLoop = false;
           this.role.clearActionTimer('scanMonster');
           resolve(true);
+          return;
         }
         counter++;
-      }, 1000);
-      this.role.addActionTimer('scanMonster', scanTimer);
+
+        if (isRunLoop) {
+          const scanTimer = setTimeout(loop, 1000);
+          this.role.addActionTimer('scanMonster', scanTimer);
+        }
+      };
+      setImmediate(loop);
     });
   }
 }

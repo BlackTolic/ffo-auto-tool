@@ -14,10 +14,11 @@ const validEquip: ValidEquip = [
   { type: '戒指', level: '102' },
   { type: '项链', attrName: '力量|智慧|体质|魔抗|护甲值' },
   { type: '项链', level: '102' },
-  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害|力量|体质' },
+  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力' },
+  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', level: '102', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害|力量|体质' },
   { type: '头盔', attrName: '生命最大值|力量|魔抗|体质|伤害|智慧' },
   { type: '手套', attrName: '物理攻击力|魔法攻击力|力量|体质|智慧' },
-  { type: '服装', attrName: '生命最大值|体质|护甲值|力量|智慧' },
+  { type: '服装', attrName: '生命最大值|体质|护甲值' },
   { type: '鞋子', attrName: '力量|智慧|体质|体质|敏捷' },
   { type: '面饰', attrName: '力量|智慧|体质|体质|敏捷' },
   { type: '背包', attrName: '力量|智慧|体质|体质|敏捷|最大负重' },
@@ -47,11 +48,11 @@ const PATH_POS = [
 ]; // 自动点 暂时无用
 
 const CONSTANTS = {
-  CHECK_TIME: 3, // 扫描怪物时间 3次，每次1S左右
+  CHECK_TIME: 2, // 扫描怪物时间 3次，每次1S左右
   STATION_R: 6, // 半径
   CHECK_EQUIP_COUNT: 23, // 检查装备的数量
-  DEAD_CALL_TIME: 20 * 60 * 1000, // 死亡后等待时间，之后重新启动
-  YUN_HUANG_CALL_STATIC_TIME: 15, // 云荒静止多少秒后开始回调移动（单位：分钟）
+  DEAD_CALL_TIME: 28 * 60 * 1000, // 死亡后等待时间，之后重新启动
+  YUN_HUANG_CALL_STATIC_TIME: 20, // 云荒静止多少秒后开始回调移动（单位：分钟）
 };
 
 const MAP_NAME = {
@@ -277,7 +278,7 @@ const loopCheckStatus = async () => {
 
   // 前往云荒1打怪
   await isPassYZ();
-  await moveActions.startAutoFindPath({ toPos: COORDS.INIT_POS_YUN1, stationR: CONSTANTS.STATION_R, delay: 2000 });
+  await moveActions.startAutoFindPath({ toPos: COORDS.INIT_POS_YUN1, stationR: CONSTANTS.STATION_R, delay: 500 });
   // 下马
   await baseAction.pressSecondSkillBarSkill('F9');
   // 开始执行循环
@@ -297,7 +298,7 @@ export const toggleYunHuang1West = () => {
     role.clearAllActionTimer();
     // 结束buff
     attackActions.stopAddBuff();
-    const deadTimer = setTimeout(async () => {
+    setTimeout(async () => {
       logger.info(`[云荒检查] 云荒打怪死亡开始执行死亡回调`);
       // 移动到云荒1
       goBackCityAndResetTask();
