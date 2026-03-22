@@ -3,6 +3,7 @@ import { ensureDamo } from '../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
 import { AttackActions } from '../ffo/events/attack-action';
+import { toggleWuLeiNanJiao } from '../ffo/events/game-actions/wu-lei-nan-jiao';
 import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { logger } from '../utils/logger';
@@ -121,6 +122,9 @@ export function registerGlobalHotkeys() {
 
   // 幻幽平原刷怪
   // registerHotkey('Alt+2', () => toggleHuanYouPinYuan1());
+
+  // 无泪南郊刷怪
+  registerHotkey('Alt+6', () => toggleWuLeiNanJiao());
 }
 
 // 中文注释：记录每个窗口的自动打怪操作实例（用于 Alt+R 开/关切换）
@@ -145,7 +149,7 @@ export const toggleAutoAttack = () => {
     // 中文注释：获取或创建持久化的 AttackActions 实例
     let actions = autoAttackActionsByHwnd.get(hwnd);
     if (!actions) {
-      actions = new AttackActions(role, OCR_NAN_JIAO_MONSTER);
+      actions = new AttackActions(role, { monsterFeature: OCR_NAN_JIAO_MONSTER, findMosterOffset: { x: 10, y: 80 } });
       autoAttackActionsByHwnd.set(hwnd, actions);
     }
 

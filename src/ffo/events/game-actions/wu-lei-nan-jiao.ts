@@ -5,7 +5,7 @@ import { logger } from '../../../utils/logger';
 import { OCR_NAN_JIAO_MONSTER } from '../../constant/monster-feature';
 import { isArriveAimNear } from '../../utils/common';
 import { AttackActions } from '../attack-action';
-import { MoveActions } from '../move-action';
+import { AutoFindPathConfig, MoveActions } from '../move-action';
 import { Role } from '../rolyer';
 
 const LOOP_INIT_POS = { x: 227, y: 53 };
@@ -39,13 +39,13 @@ export interface AutoRouteToggleResult {
 export class WuLeiNanJiaoAction {
   private static instanceMap = new Map<number, WuLeiNanJiaoAction>();
   public role: Role;
-  private actions: MoveActions;
-  private active: AttackActions;
+  private moveAction: MoveActions;
+  private attackAction: AttackActions;
 
   constructor(role: Role) {
     this.role = role;
-    this.actions = new MoveActions(role);
-    this.active = new AttackActions(role, OCR_NAN_JIAO_MONSTER);
+    this.moveAction = new MoveActions(role, { offsetR: 250 });
+    this.attackAction = new AttackActions(role, { monsterFeature: OCR_NAN_JIAO_MONSTER, findMosterOffset: { x: 10, y: 80 } });
   }
 
   public static getInstance(): WuLeiNanJiaoAction | null {
@@ -66,15 +66,24 @@ export class WuLeiNanJiaoAction {
   }
 
   public start() {
+    const autoFindPathConfig: AutoFindPathConfig = {
+      toPos: pos,
+      actions: this.attackAction,
+      attackMode: 'moveAndAttack',
+      refreshTime: 300,
+    };
+    // 添加buff
+    this.attackAction.addBuff();
     // 在(227,53)附近开启循环
     this.role.addIntervalActive({
       taskName: '无泪南郊练级',
       loopOriginPos: LOOP_INIT_POS,
       action: () => {
-        logger.info('无泪南郊练级任务启动！', this.role.position);
-        this.actions.startAutoFindPath(pos, this.active).then(res => {
+        const { x, y } = this.role.position || { x: 'null', y: 'null' };
+        logger.info(`[无泪南郊] 无泪南郊练级任务启动！, 当前位置: ${x}, ${y}`);
+        this.moveAction.startAutoFindPath(autoFindPathConfig).then(res => {
           this.role.updateTaskStatus('done');
-          logger.info('无泪南郊练级任务完成！', this.role.position);
+          logger.info(`[无泪南郊] 无泪南郊练级任务完成！, 当前位置: ${this.role.position?.x || 'null'}, ${this.role.position?.y || 'null'}`);
         });
       },
       interval: 5000,
@@ -83,19 +92,23 @@ export class WuLeiNanJiaoAction {
 
   public stop() {
     this.role.clearIntervalActive();
-    this.actions.stopAutoFindPath();
+    this.moveAction.stopAutoFindPath();
   }
 
   public isRunning(): boolean {
-    return !!(this.actions.timer || this.role.hasActiveTask());
+    return this.role.hasActiveTask();
   }
 
   public pause() {
-    this.actions.stopAutoFindPath();
+    this.moveAction.stopAutoFindPath();
   }
 
   public restart() {
-    this.actions.startAutoFindPath(pos, this.active);
+    const autoFindPathConfig = {
+      toPos: pos,
+      actions: this.attackAction,
+    };
+    this.moveAction.startAutoFindPath(autoFindPathConfig);
   }
 }
 

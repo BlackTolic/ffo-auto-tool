@@ -15,7 +15,6 @@ interface KeyPressOptions {
   type?: 'lock' | 'delay' | 'normal' | 'specify'; // 技能类型，lock 为锁定技能，delay 为延迟技能，normal 为普通技能
   job?: 'JK' | 'SS'; // 职业，JK 为JK职业，SS 为SS职业
 }
-
 export interface ScanMonsterOptions {
   attackType?: 'group' | 'single';
   times?: number;
@@ -25,7 +24,18 @@ export interface ScanMonsterOptions {
     r: number;
   };
   map?: string;
+  delPos?: {
+    x: number;
+    y: number;
+  };
 }
+
+export interface AttackActionsOptions {
+  scanConfig?: ScanMonsterOptions;
+  findMosterOffset?: { x: number; y: number }; //识别到怪物时，图标点击其名字的偏移
+  monsterFeature?: MonsterFeature; // 怪物特质
+}
+
 const JKSkillGroup: KeyPressOptions[] = [
   { key: 'F1', interval: 5 * 1000, song: 0, sort: 1 }, // 攻击技能
   { key: 'F2', interval: 5.5 * 1000, song: 0, sort: 2 }, // 攻击技能
@@ -50,12 +60,35 @@ const JKBuffGroup: KeyPressOptions[] = [
 const SSBuffGroup: KeyPressOptions[] = [
   { key: 'F6', interval: 5 * 60 * 1000, song: 0, type: 'specify' }, // 状态技能
   { key: 'F7', interval: 55 * 1000, song: 0, type: 'specify' }, // 状态技能
-  { key: 'F8', interval: 9 * 60 * 1000, song: 0, type: 'specify' }, // 状态技能
+  { key: 'F8', interval: 60 * 1000, song: 0, type: 'specify' }, // 状态技能
 ];
 
-const attackRange = {
+const ATTACK_RANGE = {
   '1600*900': { x1: 364, y1: 152, x2: 1293, y2: 677 },
   '1280*800': { x1: 337, y1: 154, x2: 968, y2: 587 },
+};
+
+const ATTACK_RANGE_GROUNP: any = {
+  '1600*900': {
+    G1: { x1: 231, y1: 103, x2: 835, y2: 434 }, // 左上 22.5-67.5
+    G2: { x1: 498, y1: 93, x2: 1102, y2: 424 }, // 上  67.5-112.5
+    G3: { x1: 741, y1: 115, x2: 1345, y2: 446 }, // 右上 112.5-157.5
+    G4: { x1: 714, y1: 142, x2: 1318, y2: 633 }, // 右 157.5-202.5 || 0-22.5 -22.5-0
+    G5: { x1: 743, y1: 375, x2: 1347, y2: 706 }, // 右下 157.5-202.5
+    G6: { x1: 506, y1: 393, x2: 1110, y2: 724 }, // 下 -112.5 -- -67.5
+    G7: { x1: 256, y1: 361, x2: 860, y2: 692 }, // 左下 -67.5 -- -22.5
+    G8: { x1: 328, y1: 143, x2: 932, y2: 634 }, // 左 0-22.5 -22.5-0
+  },
+  '1280*800': {
+    G1: { x1: 364, y1: 152, x2: 1293, y2: 677 },
+    G2: { x1: 364, y1: 152, x2: 1293, y2: 677 },
+    G3: { x1: 364, y1: 152, x2: 1293, y2: 677 },
+    G4: { x1: 364, y1: 152, x2: 1293, y2: 677 },
+    G5: { x1: 364, y1: 152, x2: 1293, y2: 677 },
+    G6: { x1: 364, y1: 152, x2: 1293, y2: 677 },
+    G7: { x1: 364, y1: 152, x2: 1293, y2: 677 },
+    G8: { x1: 364, y1: 152, x2: 1293, y2: 677 },
+  },
 };
 
 // dm.Ocr(380,117,1254,736,"000400-555555",1.0)
@@ -69,6 +102,10 @@ export class AttackActions {
   private skillPropsList: KeyPressOptions[] = [];
   private ocrMonster: MonsterFeature;
   private lastTime = 0; // 记录上次执行F10的时间戳
+  private delPos = {
+    x: 10,
+    y: 40,
+  };
   // 技能组
   private cdController: Map<keyof typeof VK_F, boolean> = new Map([
     ['F1', false],
@@ -79,30 +116,41 @@ export class AttackActions {
   ]);
   private skillGroup: KeyPressOptions[] = [];
   private buffGroup: KeyPressOptions[] = [];
+  private config: ScanMonsterOptions = {};
+  private findMosterOffset: { x: number; y: number } = { x: 10, y: 40 };
 
-  constructor(role: Role, ocrMonster?: MonsterFeature) {
+  constructor(role: Role, config?: AttackActionsOptions) {
     this.role = role;
     this.bindDm = role.bindDm;
-    this.ocrMonster = { ...attackRange[this.role.bindWindowSize], ...(ocrMonster || OCR_MONSTER) };
+    this.ocrMonster = { ...ATTACK_RANGE[this.role.bindWindowSize], ...(config?.monsterFeature || OCR_MONSTER) };
     this.skillGroup = role.job === 'SS' ? SSSkillGroup : JKSkillGroup;
     this.buffGroup = role.job === 'SS' ? SSBuffGroup : JKBuffGroup;
     this.bindPlugin = role.bindPlugin;
+    this.findMosterOffset = config?.findMosterOffset ?? { x: 10, y: 40 };
   }
 
-  findMonsterPos(delX = 10, delY = 40) {
-    const { x1, y1, x2, y2, string, color, sim } = this.ocrMonster;
+  findMonsterPos(dir?: string) {
+    let attackRangeGroup: any;
+    if (!dir) {
+      attackRangeGroup = this.ocrMonster;
+    } else {
+      attackRangeGroup = { ...this.ocrMonster, ...ATTACK_RANGE_GROUNP[this.role.bindWindowSize][dir] };
+    }
+    const { x1, y1, x2, y2, string, color, sim } = attackRangeGroup;
     const result = this.bindDm.FindStrFastE(x1, y1, x2, y2, string, color, sim);
     // logger.debug('OCR结果', result);
     // 识别怪物的坐标
     const pos = parseTextPos(result);
     if (!pos || pos.x < 0 || pos.y < 0) return null;
     // 往怪物名字坐标下方20丢技能
+    const delX = this.findMosterOffset.x;
+    const delY = this.findMosterOffset.y;
     const currentAttackTargetPos = { x: pos.x + delX, y: pos.y + delY };
     return currentAttackTargetPos;
   }
 
   // 找到最近的怪物进行攻击 - 适用于群攻场景
-  attackNearestMonster() {
+  attackNearestMonster(dir?: string) {
     // 检查血量是否危险
     this.checkHealthStatus();
     const freeSkill = this.getFreeSkill();
@@ -111,7 +159,7 @@ export class AttackActions {
       logger.info('[自动攻击] 技能在CD中');
       return;
     }
-    const pos = this.findMonsterPos();
+    const pos = this.findMonsterPos(dir);
     if (!pos) return;
     const { x, y } = pos;
     this.bindDm.MoveTo(x, y);

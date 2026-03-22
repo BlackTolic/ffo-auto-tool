@@ -299,7 +299,7 @@ export class Role {
     }
     // 挂载单个循环任务
     const { taskName, loopOriginPos, action, interval = 10000 } = props;
-    this.task = { taskName, loopOriginPos, action, interval };
+    this.taskList.push({ taskName, loopOriginPos, action, interval });
     this.lastTaskActionTs = 0; // 重置任务执行时间，确保新任务能立即执行（或按需调整）
   }
 

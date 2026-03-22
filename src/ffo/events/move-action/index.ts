@@ -13,6 +13,33 @@ export interface Pos {
   y: number;
 }
 
+const computedRange = (angle: number) => {
+  if (angle >= 22.5 && angle <= 67.5) {
+    return 'G5';
+  }
+  if (angle >= 67.5 && angle <= 112.5) {
+    return 'G6';
+  }
+  if (angle >= 112.5 && angle <= 157.5) {
+    return 'G7';
+  }
+  if ((angle >= 157.5 && angle <= 180) || (angle > -180 && angle < -157.5)) {
+    return 'G8';
+  }
+  if (angle >= -157.5 && angle <= -112.5) {
+    return 'G1';
+  }
+  if (angle >= -112.5 && angle <= -67.5) {
+    return 'G2';
+  }
+  if (angle >= -67.5 && angle <= -22.5) {
+    return 'G3';
+  }
+  if (angle >= -22.5 && angle <= 22.5) {
+    return 'G4';
+  }
+};
+
 export interface AutoFindPathConfig {
   toPos: Pos[] | Pos; // 目标位置（可以是多个位置，也可以是单个位置）
   actions?: AttackActions; // 赶路过程中的其他行为
@@ -21,6 +48,7 @@ export interface AutoFindPathConfig {
   delay?: number; // 检查到达当前节点范围内时间间隔（默认2000ms）
   refreshTime?: number; // 刷新时间
   map?: string; // 目标地图
+  attackMode?: 'moveAndAttack' | 'spotAttack'; // 攻击模式（moveAndAttack:一边移动一边技能好了就攻击；spotAttack:到达坐标后开始清理攻击）
 }
 
 const getInitPos = (bindWindowSize: string, offsetR?: number) => {
@@ -67,10 +95,12 @@ export class MoveActions {
   private actions?: AttackActions | null = null; // 赶路过程中的其他行为
   private isPause = false; // 是否暂停移动
   private lastMoveTime = 0; // 上次移动时间戳
+  private lastAttackTime = 0; // 上次攻击时间戳
   private recordPos: Pos | null = null; // 记录上次移动的位置
   private isRunLoop = true; // 是否运行循环
   private offsetR?: number; // 偏移半径
   private mirrorJitter = false; // 移动时的镜像抖动
+  private attackMode: 'moveAndAttack' | 'spotAttack' = 'moveAndAttack'; // 攻击模式（moveAndAttack:一边移动一边技能好了就攻击；spotAttack:到达坐标后开始清理攻击）
 
   constructor(role: Role, config?: MoveConfig) {
     this.dm = role.bindDm;
@@ -87,6 +117,29 @@ export class MoveActions {
     }
     const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
     const { x, y } = getCirclePoint(angle, this.role.bindWindowSize, this.offsetR);
+    this.bindPlugin.moveToLeftDown(x, y);
+    logger.info(`[自动寻路] 从 (${fromPos.x},${fromPos.y}) 移动到 (${curAimPos.x},${curAimPos.y}) `);
+  }
+
+  // 一边移动一边攻击
+  async moveAndAttack(fromPos: Pos, curAimPos: Pos) {
+    // 未识别到坐标点，不进行寻路
+    if (!fromPos.x || !fromPos.y) {
+      logger.warn('[自动寻路] 未识别到坐标点', curAimPos);
+      return;
+    }
+    const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
+    const { x, y } = getCirclePoint(angle, this.role.bindWindowSize, this.offsetR);
+    const freeSkill = this.actions?.getFreeSkill?.();
+    const findMonster = this.actions?.findMonsterPos?.();
+    if (freeSkill && findMonster && Date.now() - this.lastAttackTime > 2000) {
+      // 计算与（800，450）的角度
+      const angle = getAngle(x, y, 800, 450);
+      // 攻击最近的怪物
+      this.actions?.attackNearestMonster?.(computedRange(angle));
+      this.lastAttackTime = Date.now();
+      return;
+    }
     this.bindPlugin.moveToLeftDown(x, y);
     logger.info(`[自动寻路] 从 (${fromPos.x},${fromPos.y}) 移动到 (${curAimPos.x},${curAimPos.y}) `);
   }
@@ -112,7 +165,15 @@ export class MoveActions {
     // 判断是否达到最后一个目的坐标，没有到达就继续移动
     if (!(isArriveAimNear(fromPos, toPos[toPos.length - 1], stationR) && this.recordAimPosIndex === toPos.length - 1)) {
       const curAimPos = toPos[this.recordAimPosIndex];
-      !this.isPause && this.move(fromPos, curAimPos);
+      if (this.isPause) {
+        return false;
+      }
+      if (this.attackMode === 'moveAndAttack') {
+        // console.log(this.attackMode, 'moveAndAttack');
+        this.moveAndAttack(fromPos, curAimPos);
+      } else {
+        this.move(fromPos, curAimPos);
+      }
     }
     // 已到达/或者超过中途的坐标点后，切换下一个坐标
     const isArriveStation = isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], stationR) && this.recordAimPosIndex < toPos.length - 1;
@@ -161,9 +222,12 @@ export class MoveActions {
   }
 
   startAutoFindPath(config: AutoFindPathConfig) {
-    const { toPos, actions, aimPos, stationR = pointR, delay = 2000, refreshTime = 300, map = '' } = config;
+    const { toPos, actions, aimPos, stationR = pointR, delay = 2000, refreshTime = 300, map = '', attackMode } = config;
     if (actions) {
       this.actions = actions;
+    }
+    if (!attackMode) {
+      this.attackMode = 'moveAndAttack';
     }
     return new Promise((res, rej) => {
       this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
@@ -177,8 +241,6 @@ export class MoveActions {
             const { x, y } = this.role.position;
             // 到达下一张地图退出寻路
             if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
-              // this.dm.LeftClick();
-              // this.bindPlugin.moveToClick(x, y + 2);
               // 点击脚下的死坐标
               this.bindPlugin.moveToClick(800, 525);
               logger.info(`[自动寻路] 到达下一张地图退出寻路,点击坐标 (${x},${y + 2}) 停止寻路，`);
@@ -194,7 +256,7 @@ export class MoveActions {
           }
 
           // 这里攻击操作会在寻路过程中执行，且因为共同同一个鼠标控制，攻击可能会阻塞寻路操作
-          if (actions) {
+          if (actions && this.attackMode !== 'moveAndAttack') {
             actions.attackNearestMonster();
           }
         } finally {
