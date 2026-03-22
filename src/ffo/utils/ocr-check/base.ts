@@ -1,5 +1,4 @@
 import { AutoT } from '../../../auto-plugin';
-import { TEST_PATH } from '../../../constant/config';
 import { logger } from '../../../utils/logger';
 import {
   DEFAULT_ADDRESS_NAME,
@@ -124,7 +123,7 @@ export const isBlocked = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'
 export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const goldPos = DEFAULT_GOLD[bindWindowSize];
   const goldText = bindDm.ocr(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, goldPos.color, goldPos.sim);
-  bindDm.capturePng(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, `${TEST_PATH}/current_gold.png`);
+  // bindDm.capturePng(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, `${TEST_PATH}/current_gold.png`);
   return parseFFOCurrencyToGoldLabel(goldText);
 };
 
@@ -190,7 +189,7 @@ export const checkItemBoxItemCount = (bindDm: AutoT, bindWindowSize: '1600*900' 
   };
 
   const itemPos = firstItem[bindWindowSize];
-  bindDm.capturePng(itemPos.x1 + (itemSort - 1) * 41, itemPos.y1, itemPos.x2 + (itemSort - 1) * 41, itemPos.y2, `${TEST_PATH}/item_count_${itemSort}.png`);
+  // bindDm.capturePng(itemPos.x1 + (itemSort - 1) * 41, itemPos.y1, itemPos.x2 + (itemSort - 1) * 41, itemPos.y2, `${TEST_PATH}/item_count_${itemSort}.png`);
   const itemBoxItemText = bindDm.ocr(itemPos.x1 + (itemSort - 1) * 41, itemPos.y1, itemPos.x2 + (itemSort - 1) * 41, itemPos.y2, itemPos.color, itemPos.sim);
   return !itemBoxItemText ? 0 : Number(itemBoxItemText);
 };
