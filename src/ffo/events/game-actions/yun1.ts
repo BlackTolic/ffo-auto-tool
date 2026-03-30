@@ -288,7 +288,7 @@ const loopCheckStatus = async () => {
 export const toggleYunHuang1West = () => {
   const role = getBoundRole();
   let baseAction = new BaseAction(role);
-  let attackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
+  let attackActions = new AttackActions(role, { monsterFeature: OCR_YUN_HUAN_1_MONSTER });
 
   // 死亡时回调
   const deadCall = () => {

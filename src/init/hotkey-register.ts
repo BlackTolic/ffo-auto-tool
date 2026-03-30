@@ -3,7 +3,7 @@ import { ensureDamo } from '../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
 import { AttackActions } from '../ffo/events/attack-action';
-import { toggleWuLeiNanJiao } from '../ffo/events/game-actions/wu-lei-nan-jiao';
+import { toggleBiYiCityNorth } from '../ffo/events/game-actions/biyichengbei';
 import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { logger } from '../utils/logger';
@@ -124,7 +124,7 @@ export function registerGlobalHotkeys() {
   // registerHotkey('Alt+2', () => toggleHuanYouPinYuan1());
 
   // 无泪南郊刷怪
-  registerHotkey('Alt+6', () => toggleWuLeiNanJiao());
+  registerHotkey('Alt+6', () => toggleBiYiCityNorth());
 }
 
 // 中文注释：记录每个窗口的自动打怪操作实例（用于 Alt+R 开/关切换）
