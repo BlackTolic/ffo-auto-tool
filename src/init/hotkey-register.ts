@@ -4,6 +4,7 @@ import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
 import { AttackActions } from '../ffo/events/attack-action';
 import { toggleBiYiCityNorth } from '../ffo/events/game-actions/biyichengbei';
+import { toggleMingYu } from '../ffo/events/game-actions/ming-yu';
 import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { logger } from '../utils/logger';
@@ -115,7 +116,7 @@ export function registerGlobalHotkeys() {
   // registerHotkey('Alt+W', () => toggleAutoKey('F1', 90));
 
   // Alt+1 跑名誉
-  // registerHotkey('Alt+1', () => toggleMingYu());
+  registerHotkey('Alt+3', () => toggleMingYu());
 
   // Alt + S 云荒1层刷怪
   registerHotkey('Alt+S', () => toggleYunHuang1West());

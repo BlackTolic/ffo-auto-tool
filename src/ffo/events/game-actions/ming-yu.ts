@@ -1,6 +1,6 @@
 import { damoBindingManager } from '..';
 import logger from '../../../utils/logger';
-import { OCR_MING_YU_BOSS, OCR_PAN_GUI_MONSTER } from '../../constant/monster-feature';
+import { OCR_PAN_GUI_MONSTER } from '../../constant/monster-feature';
 import { AttackActions } from '../attack-action';
 import { BaseAction } from '../base-action';
 import { Conversation } from '../conversation';
@@ -44,7 +44,6 @@ let autoFarmingAction: AutoFarmingAction | null = null;
 
 // 名誉回调任务
 const loopAction = () => {
-  const test = true;
   const hwnd = damoBindingManager.selectHwnd;
   if (!hwnd || !damoBindingManager.isBound(hwnd)) {
     logger.warn('未选择已绑定的窗口', hwnd);
@@ -59,7 +58,7 @@ const loopAction = () => {
   //   fromLostTempleToMingYuBoss(role);
   //   return;
   // }
-  let atackActions = new AttackActions(role, OCR_MING_YU_BOSS);
+  let atackActions = new AttackActions(role, { monsterFeature: OCR_PAN_GUI_MONSTER });
   // 从楼兰城郊到城郊;
   fromLouLanToChengJiao(role)
     .then(res => {
@@ -155,8 +154,14 @@ const loopAction = () => {
 
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
 export const toggleMingYu = () => {
-  autoFarmingAction = AutoFarmingAction.getInstance(INIT_POS, PATH_POS, OCR_PAN_GUI_MONSTER, TASK_NAME);
-  return autoFarmingAction.toggle(loopAction);
+  autoFarmingAction = AutoFarmingAction.getInstance({
+    initPos: INIT_POS,
+    pathPos: PATH_POS,
+    ocrMonster: OCR_PAN_GUI_MONSTER,
+    taskName: TASK_NAME,
+  });
+  const taskList = [{ taskName: '楼兰跑名誉', loopOriginPos: INIT_POS, action: () => loopAction(), interval: 2000 }];
+  return autoFarmingAction.toggle(taskList);
 };
 
 export const pauseCurActive = () => {
