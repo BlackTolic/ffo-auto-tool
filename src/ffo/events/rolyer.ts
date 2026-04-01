@@ -106,7 +106,7 @@ export class Role {
         this.position = getRolePosition(bindDm, this.bindWindowSize); // 获取坐标信息
         // 未读取到坐标，结束所有操作
         if (!this.position) {
-          logger.warn('[角色信息] 未获取到角色位置');
+          logger.warn('[角色信息] 未获取到角色位置，阻塞两秒');
           // 阻塞进程2S
           this.bindPlugin.delay(2000);
         }

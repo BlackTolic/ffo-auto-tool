@@ -99,7 +99,7 @@ const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions
   const res = await baseAction.backCity(COORDS.INIT_POS_ROUTE, 'F9', true);
   if (res === 'redName') {
     return new Promise(async res => {
-      await moveActions.startAutoFindPath({ toPos: COORDS.RED_NAME_POS, stationR: CONSTANTS.STATION_R, delay: 100, map: MAP_NAME.YUN_ZE });
+      await moveActions.startAutoFindPath({ toPos: COORDS.RED_NAME_POS, stationR: CONSTANTS.STATION_R, delay: 100, taskMap: MAP_NAME.YUN_ZE });
       await moveActions.startAutoFindPath({ toPos: COORDS.STORE_NPC, stationR: CONSTANTS.STATION_R, delay: 100 });
       res('红名操作');
     });
@@ -128,7 +128,7 @@ const loopAutoAttackInWest = async (attackActions?: AttackActions) => {
         toPos: item.pos,
         stationR: CONSTANTS.STATION_R,
         delay: 100,
-        map: MAP_NAME.YUN_ZE,
+        taskMap: MAP_NAME.YUN_ZE,
       });
       const attackRange = { ...item.pos, r: item.scanR || CONSTANTS.STATION_R };
       await attackActions?.scanMonster({

@@ -1,7 +1,8 @@
-import { damoBindingManager } from '..';
 import logger from '../../../utils/logger';
-import { OCR_PAN_GUI_MONSTER } from '../../constant/monster-feature';
-import { AttackActions } from '../attack-action';
+import { debounce } from '../../../utils/tool';
+import { OCR_MING_YU_BOSS } from '../../constant/monster-feature';
+import { createStuckChecker, getBindWindowInfo } from '../../utils/common/rolyer';
+import { AttackActions, AttackActionsOptions } from '../attack-action';
 import { BaseAction } from '../base-action';
 import { Conversation } from '../conversation';
 import {
@@ -13,6 +14,7 @@ import {
   fromSunsetDuneToSunsetDuneWest,
   fromSunsetDuneWestToSphinx,
 } from '../move-action/lou-lan';
+import { Role } from '../rolyer';
 import { AutoFarmingAction } from './auto-farming';
 
 const TASK_NAME = '跑名誉';
@@ -26,7 +28,7 @@ const INIT_POS = { x: 278, y: 79 };
 // const INIT_POS = { x: 161, y: 78 };
 // const INIT_POS = { x: 75, y: 78 };
 
-// const INIT_POS = { x: 27, y: 95 };
+// const INIT_POS = { x: 257, y: 152 };
 
 const PATH_POS = [
   { x: 326, y: 92 },
@@ -40,116 +42,86 @@ const PATH_POS = [
   { x: 158, y: 58 },
 ];
 
+const skillGroup: AttackActionsOptions['skillGroup'] = [
+  { key: 'F1', interval: 6 * 1000, sort: 2, type: 'delay' }, // 攻击技能
+  { key: 'F2', interval: 5 * 1000, sort: 3, type: 'delay' }, // 攻击技能
+  { key: 'F4', interval: 1 * 7000, sort: 1, type: 'lock' },
+]; // 攻击技能
+
 let autoFarmingAction: AutoFarmingAction | null = null;
 
+const delay5S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 5 * 1000, true);
+
 // 名誉回调任务
-const loopAction = () => {
-  const hwnd = damoBindingManager.selectHwnd;
-  if (!hwnd || !damoBindingManager.isBound(hwnd)) {
-    logger.warn('未选择已绑定的窗口', hwnd);
-    throw new Error('未选择已绑定的窗口');
+const loopAction = async (role: Role) => {
+  let atackActions = new AttackActions(role, { monsterFeature: OCR_MING_YU_BOSS, skillGroup });
+  const baseAction = new BaseAction(role);
+  try {
+    const isArriveChengJiao = await fromLouLanToChengJiao(role);
+    if (!isArriveChengJiao) {
+      throw new Error('未到达城郊');
+    }
+    // 从城郊到名誉NPC
+    const isArriveMingYuNPC = await fromChengJiaoToMingYuNPC(role);
+    if (!isArriveMingYuNPC) {
+      throw new Error('未到达名誉NPC');
+    }
+    const isConversationRongGuang = await new Conversation(role).RongGuang();
+    if (!isConversationRongGuang) {
+      throw new Error('未完成领取名誉任务');
+    }
+    // 从名誉NPC到蚂蚁沙地北边
+    const isArriveAntHill = await fromMingYuNPCToAntHill(role);
+    if (!isArriveAntHill) {
+      throw new Error('未到达蚂蚁沙地北边');
+    }
+    // 从蚂蚁沙地北到落日沙丘
+    const isArriveSunsetDune = await fromAntHillToSunsetDune(role);
+    if (!isArriveSunsetDune) {
+      throw new Error('未到达落日沙丘');
+    }
+    // 从落日沙丘到落日沙丘西
+    const isArriveSunsetDuneWest = await fromSunsetDuneToSunsetDuneWest(role);
+    if (!isArriveSunsetDuneWest) {
+      throw new Error('未到达落日沙丘西');
+    }
+    // 从落日沙丘西到斯芬尼克
+    const isArriveSphinx = await fromSunsetDuneWestToSphinx(role);
+    if (!isArriveSphinx) {
+      throw new Error('未到达斯芬尼克');
+    }
+    // 与斯芬尼克对话
+    const isConversationSphinx = await new Conversation(role).Sphinx();
+    if (!isConversationSphinx) {
+      throw new Error('未完成与斯芬尼克对话');
+    }
+    // 从斯芬尼克出口到失落神殿BOSS
+    const isArriveLostTemple = await fromLostTempleToMingYuBoss(role);
+    if (!isArriveLostTemple) {
+      throw new Error('未到达失落神殿BOSS');
+    }
+    // 下马
+    await baseAction.pressSecondSkillBarSkill('F9');
+    // role.bindDm.delay(1000);
+    // 添加buff
+    // atackActions.addBuff();
+    // 开始攻击怪物
+    await atackActions.scanMonster({ attackType: 'single', attackRange: { x: 321, y: 130, r: 15 } });
+    // 停止添加buff
+    // atackActions.stopAddBuff();
+    role.bindDm.delay(2000);
+    logger.info('当前已经没有怪物了', role.position);
+    role.bindDm.delay(1000);
+    // 回城
+    await new BaseAction(role).backCity({ x: 278, y: 79 }, 'F9');
+    role.bindDm.delay(2000);
+    // 上马
+    await baseAction.pressSecondSkillBarSkill('F9');
+    // 更新状态
+    role.updateTaskStatus('done');
+  } catch (e) {
+    logger.error('跑名誉任务失败', e);
   }
-  const role = damoBindingManager.getRole(hwnd);
-  if (!role) {
-    logger.warn('未获取到角色', hwnd);
-    throw new Error('未获取到角色');
-  }
-  // if (test) {
-  //   fromLostTempleToMingYuBoss(role);
-  //   return;
-  // }
-  let atackActions = new AttackActions(role, { monsterFeature: OCR_PAN_GUI_MONSTER });
-  // 从楼兰城郊到城郊;
-  fromLouLanToChengJiao(role)
-    .then(res => {
-      if (!res) {
-        throw new Error('未到达城郊');
-      }
-      // 从城郊到名誉NPC
-      return fromChengJiaoToMingYuNPC(role);
-    })
-    .then(res => {
-      if (!res) {
-        throw new Error('未到达名誉NPC');
-      }
-      logger.info('完成从城郊到名誉NPC', res);
-      return res && new Conversation(role).RongGuang();
-    })
-    .then(res => {
-      if (!res) {
-        throw new Error('未完成领取名誉任务');
-      }
-      logger.info('完成领取名誉任务', res);
-      return res && fromMingYuNPCToAntHill(role);
-    })
-    .then(res => {
-      if (!res) {
-        throw new Error('未完成从名誉NPC到蚂蚁沙地北');
-      }
-      logger.info('完成从名誉NPC到蚂蚁沙地北', res);
-      return res && fromAntHillToSunsetDune(role);
-    })
-    .then(res => {
-      if (!res) {
-        throw new Error('未完成从蚂蚁沙地北到落日沙丘');
-      }
-      logger.info('完成从蚂蚁沙地北到落日沙丘 ', res);
-      return res && fromSunsetDuneToSunsetDuneWest(role);
-    })
-    .then(res => {
-      if (!res) {
-        throw new Error('未完成从落日沙丘到落日沙丘西');
-      }
-      logger.info('完成从落日沙丘到落日沙丘西', res);
-      return res && fromSunsetDuneWestToSphinx(role);
-    })
-    .then(res => {
-      if (!res) {
-        throw new Error('未完成从落日沙丘西到斯芬尼克');
-      }
-      logger.info('完成从落日沙丘西到斯芬尼克', res);
-      return res && new Conversation(role).Sphinx();
-    })
-    .then(res => {
-      if (!res) {
-        throw new Error('未完成与斯芬尼克对话');
-      }
-      logger.info('完成与斯芬尼克对话', res);
-      return res && fromLostTempleToMingYuBoss(role);
-    })
-    .then(res => {
-      if (!res) {
-        throw new Error('未完成从失落神殿一层前往名誉BOSS');
-      }
-      logger.info('从失落神殿一层前往名誉BOSS', res);
-      // 下马
-      atackActions.startKeyPress({ key: 'F5', interval: null });
-      role.bindDm.delay(1000);
-      // 添加buff
-      atackActions.addBuff();
-      // 杀怪
-      return atackActions.scanMonster({ attackType: 'single' }).then(res => {
-        // 停止添加buff
-        atackActions.stopAddBuff();
-        role.bindDm.delay(2000);
-      });
-      // }
-    })
-    .then(res => {
-      logger.info('当前已经没有怪物了', role.position);
-      role.bindDm.delay(1000);
-      return new BaseAction(role).backCity({ x: 278, y: 79 }, 'F9');
-    })
-    .then(res => {
-      logger.info('成功回城', res);
-      // 上马
-      atackActions.startKeyPress({ key: 'F5', interval: null });
-      role.bindDm.delay(2000);
-      role.updateTaskStatus('done');
-    })
-    .catch(err => {
-      logger.error('完成名誉任务失败', err);
-    });
 };
 
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
@@ -157,10 +129,37 @@ export const toggleMingYu = () => {
   autoFarmingAction = AutoFarmingAction.getInstance({
     initPos: INIT_POS,
     pathPos: PATH_POS,
-    ocrMonster: OCR_PAN_GUI_MONSTER,
+    ocrMonster: OCR_MING_YU_BOSS,
     taskName: TASK_NAME,
   });
-  const taskList = [{ taskName: '楼兰跑名誉', loopOriginPos: INIT_POS, action: () => loopAction(), interval: 2000 }];
+
+  const { role } = getBindWindowInfo();
+  const baseAction = new BaseAction(role);
+  // 回城并且重置任务
+  const goBackCityAndResetTask = async () => {
+    logger.info('[云荒检查] 执行回城并且重置任务 - goBackCityAndResetTask');
+    await baseAction.backCity(INIT_POS, 'F9', true);
+    role.updateTaskStatus('done');
+  };
+
+  // 检查名誉是否卡住
+  const checkMingYuStuck = createStuckChecker(role);
+  // 添加组队拒绝
+  role.updateTeamApplyCall(closePos => {
+    // 拒绝组队
+    role.bindPlugin.moveToClick(closePos.x, closePos.y);
+  });
+  // 注册全局任务
+  role.addGlobalStrategyTask([
+    {
+      // 3分钟检查一次跑名誉是否卡住，然后回城重置任务
+      name: '跑名誉过程中5分钟静止不动',
+      condition: () => checkMingYuStuck(5),
+      callback: () => delay5S(goBackCityAndResetTask),
+    },
+  ]);
+
+  const taskList = [{ taskName: '楼兰跑名誉', loopOriginPos: INIT_POS, action: () => loopAction(role), interval: 2000 }];
   return autoFarmingAction.toggle(taskList);
 };
 
