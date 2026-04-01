@@ -14,6 +14,7 @@ export const fromChengJiaoToMingYuNPC = (role: Role) => {
       { x: 190, y: 47 },
       { x: 158, y: 25 },
     ],
+    blockAllBeforeMove: true,
   });
 };
 
@@ -44,6 +45,7 @@ export const fromAntHillToSunsetDune = (role: Role) => {
       { x: 235, y: 53 },
       { x: 258, y: 45 },
     ],
+    blockAllBeforeMove: true,
     aimPos: '落日沙丘',
   });
 };
@@ -55,13 +57,14 @@ export const fromSunsetDuneToSunsetDuneWest = (role: Role) => {
       // { x: 161, y: 78 },
       { x: 160, y: 58 },
     ],
+    blockAllBeforeMove: true,
     aimPos: '落日沙丘西',
   });
 };
 
 // 从落日沙丘西到斯芬尼克
 export const fromSunsetDuneWestToSphinx = (role: Role) => {
-  return new MoveActions(role).startAutoFindPath({ toPos: [{ x: 255, y: 148 }] });
+  return new MoveActions(role).startAutoFindPath({ toPos: [{ x: 255, y: 148 }], blockAllBeforeMove: true });
 };
 
 // 从失落神殿一层前往名誉BOSS

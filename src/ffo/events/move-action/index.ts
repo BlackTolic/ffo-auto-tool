@@ -3,6 +3,7 @@ import * as math from '../../../utils/math';
 import { ORIGIN_POSITION } from '../../constant/OCR-pos';
 import { isArriveAimNear } from '../../utils/common';
 import { AttackActions } from '../attack-action';
+import { BaseAction } from '../base-action';
 import { Role } from '../rolyer';
 
 // 节点半径（用于判断是否到达当前节点范围内，如果到达，就切换到下一个节点）
@@ -49,6 +50,7 @@ export interface AutoFindPathConfig {
   refreshTime?: number; // 刷新时间
   taskMap?: string; // 需要进行作业的目标地图
   attackMode?: 'moveAndAttack' | 'spotAttack'; // 攻击模式（moveAndAttack:一边移动一边技能好了就攻击；spotAttack:到达坐标后开始清理攻击）
+  blockAllBeforeMove?: boolean; // 移动前屏蔽所有人
 }
 
 const getInitPos = (bindWindowSize: string, offsetR?: number) => {
@@ -214,7 +216,10 @@ export class MoveActions {
   }
 
   startAutoFindPath(config: AutoFindPathConfig) {
-    const { toPos, actions, aimPos, stationR = pointR, delay = 2000, refreshTime = 300, attackMode, taskMap } = config;
+    const { toPos, actions, aimPos, stationR = pointR, delay = 2000, refreshTime = 300, attackMode, taskMap, blockAllBeforeMove = false } = config;
+    if (blockAllBeforeMove) {
+      new BaseAction(this.role).blockAllPlayers();
+    }
     this.aimPos = aimPos;
     if (actions) {
       this.actions = actions;
