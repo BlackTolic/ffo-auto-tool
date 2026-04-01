@@ -2,6 +2,7 @@ import logger from '../../../utils/logger';
 import { debounce } from '../../../utils/tool';
 import { OCR_MING_YU_BOSS } from '../../constant/monster-feature';
 import { createStuckChecker, getBindWindowInfo } from '../../utils/common/rolyer';
+import { checkMountedByRoleSpeed } from '../../utils/ocr-check/base';
 import { AttackActions, AttackActionsOptions } from '../attack-action';
 import { BaseAction } from '../base-action';
 import { Conversation } from '../conversation';
@@ -45,7 +46,7 @@ const PATH_POS = [
 const skillGroup: AttackActionsOptions['skillGroup'] = [
   { key: 'F1', interval: 6 * 1000, sort: 2, type: 'delay' }, // 攻击技能
   { key: 'F2', interval: 5 * 1000, sort: 3, type: 'delay' }, // 攻击技能
-  { key: 'F4', interval: 1 * 7000, sort: 1, type: 'lock' },
+  { key: 'F4', interval: 1 * 700, sort: 1, type: 'lock' },
 ]; // 攻击技能
 
 let autoFarmingAction: AutoFarmingAction | null = null;
@@ -57,6 +58,13 @@ const loopAction = async (role: Role) => {
   let atackActions = new AttackActions(role, { monsterFeature: OCR_MING_YU_BOSS, skillGroup });
   const baseAction = new BaseAction(role);
   try {
+    const dm = role.bindPlugin;
+    // 检查当前是否是坐骑状态
+    const isMounted = checkMountedByRoleSpeed(dm, role.bindWindowSize);
+    if (!isMounted) {
+      // 上马
+      await baseAction.pressSecondSkillBarSkill('F9');
+    }
     const isArriveChengJiao = await fromLouLanToChengJiao(role);
     if (!isArriveChengJiao) {
       throw new Error('未到达城郊');
@@ -115,8 +123,6 @@ const loopAction = async (role: Role) => {
     // 回城
     await new BaseAction(role).backCity({ x: 278, y: 79 }, 'F9');
     role.bindDm.delay(2000);
-    // 上马
-    await baseAction.pressSecondSkillBarSkill('F9');
     // 更新状态
     role.updateTaskStatus('done');
   } catch (e) {

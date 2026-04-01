@@ -17,6 +17,7 @@ import {
   DEFAULT_MONSTER_BLOOD_EMPTY,
   DEFAULT_MONSTER_NAME,
   DEFAULT_MOUNTED,
+  DEFAULT_MOVE_SPEED,
   DEFAULT_PET_ACTIVE,
   DEFAULT_ROLE_NAME,
   DEFAULT_ROLE_POSITION,
@@ -164,7 +165,7 @@ export const checkPetActive = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
   return petActiveText !== '暂时没有宠物';
 };
 
-// 检查宠物是否是坐骑状态
+// 检查宠物是否是坐骑状态,通过宠物技能
 export const checkMounted = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   bindDm.moveToClick(65, 85);
   const mountedPos = DEFAULT_MOUNTED[bindWindowSize];
@@ -172,6 +173,17 @@ export const checkMounted = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*8
   bindDm.moveToClick(65, 85);
   // console.log(mountedText, 'mountedText');
   return mountedText === '25';
+};
+
+// 检查宠物是否是坐骑状态,如果是鞍宠物是没有坐骑技能的，需要用人物速度来判断
+export const checkMountedByRoleSpeed = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  bindDm.moveToClick(48, 38);
+  bindDm.delay(500);
+  bindDm.moveToClick(825, 243);
+  const moveSpeedPos = DEFAULT_MOVE_SPEED[bindWindowSize];
+  const moveSpeedText = bindDm.ocr(moveSpeedPos.x1, moveSpeedPos.y1, moveSpeedPos.x2, moveSpeedPos.y2, moveSpeedPos.color, moveSpeedPos.sim);
+  bindDm.moveToClick(803, 85);
+  return Number(moveSpeedText) > 400;
 };
 
 // 检查物品栏物品数量
