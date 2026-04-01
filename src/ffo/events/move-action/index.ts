@@ -47,7 +47,7 @@ export interface AutoFindPathConfig {
   stationR?: number; // 到达当前节点范围内半径（默认6）
   delay?: number; // 检查到达当前节点范围内时间间隔（默认2000ms）
   refreshTime?: number; // 刷新时间
-  map?: string; // 目标地图
+  taskMap?: string; // 需要进行作业的目标地图
   attackMode?: 'moveAndAttack' | 'spotAttack'; // 攻击模式（moveAndAttack:一边移动一边技能好了就攻击；spotAttack:到达坐标后开始清理攻击）
 }
 
@@ -101,6 +101,7 @@ export class MoveActions {
   private offsetR?: number; // 偏移半径
   private mirrorJitter = false; // 移动时的镜像抖动
   private attackMode: 'moveAndAttack' | 'spotAttack' = 'moveAndAttack'; // 攻击模式（moveAndAttack:一边移动一边技能好了就攻击；spotAttack:到达坐标后开始清理攻击）
+  private aimPos?: Pos | string | null = null; // 目标位置（可以是坐标，也可以是文本描述）
 
   constructor(role: Role, config?: MoveConfig) {
     this.dm = role.bindDm;
@@ -185,7 +186,11 @@ export class MoveActions {
     }
 
     // 到达最后的终点坐标
-    if (isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], stationR) && this.recordAimPosIndex === toPos.length - 1) {
+    const isLastPos = isArriveAimNear(fromPos, toPos[this.recordAimPosIndex], stationR) && this.recordAimPosIndex === toPos.length - 1;
+    // 如果设置了目标位置，且到达了目标位置，成功到达;未设置目标地图名字，到达最后一个坐标也算到达
+    const isArrive = (typeof this.aimPos === 'string' && this.aimPos === this.role.map) || (typeof this.aimPos !== 'string' && isLastPos);
+    if (isArrive) {
+      // 点击脚下的死坐标
       this.dm.LeftClick();
       logger.info(`[自动寻路] 已到达指定位置(${toPos[this.recordAimPosIndex].x},${toPos[this.recordAimPosIndex].y})`);
       return true;
@@ -208,21 +213,9 @@ export class MoveActions {
     }
   }
 
-  // 在范围内随机移动
-  randomMoveInRange(initPos: Pos, R: number, action: () => void, end: () => boolean) {
-    // return new Promise((res, rej) => {
-    //   let timer = setInterval(() => {
-    //     const randomPos = this.randomMoveInRange(initPos, R);
-    //     action();
-    //     if (typeof end === 'function' && end() === true) {
-    //       res(randomPos);
-    //     }
-    //   }, 1000);
-    // });
-  }
-
   startAutoFindPath(config: AutoFindPathConfig) {
-    const { toPos, actions, aimPos, stationR = pointR, delay = 2000, refreshTime = 300, map = '', attackMode } = config;
+    const { toPos, actions, aimPos, stationR = pointR, delay = 2000, refreshTime = 300, attackMode, taskMap } = config;
+    this.aimPos = aimPos;
     if (actions) {
       this.actions = actions;
     }
@@ -237,22 +230,24 @@ export class MoveActions {
       // 中文注释：使用 setImmediate 首次触发，再用 setTimeout(300ms) 做周期轮询，避免事件循环拥塞
       const loop = () => {
         try {
-          if (this.role.position) {
-            const { x, y } = this.role.position;
-            // 到达下一张地图退出寻路
-            if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
-              // 点击脚下的死坐标
-              this.bindPlugin.moveToClick(800, 525);
-              logger.info(`[自动寻路] 到达下一张地图退出寻路,点击坐标 (${x},${y + 2}) 停止寻路，`);
-              isArrive = true;
-              // 到达目标点位退出寻路
-            } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, stationR)) {
-              this.dm.LeftClick();
-              isArrive = true;
-            } else {
-              // 判断是否到达目的地
-              isArrive = Array.isArray(toPos) ? this.fromTo(this.role.position, toPos, stationR) && this.recordAimPosIndex === toPos.length - 1 : this.fromTo(this.role.position, toPos, stationR);
-            }
+          if (!this.role.position) {
+            logger.info(`[自动寻路] 未检测到坐标`);
+            return;
+          }
+          const { x, y } = this.role.position;
+          // 到达下一张地图退出寻路
+          if (aimPos && typeof aimPos === 'string' && this.role.map === aimPos) {
+            // 点击脚下的死坐标
+            this.bindPlugin.moveToClick(800, 525);
+            logger.info(`[自动寻路] 到达下一张地图退出寻路,点击坐标 (${x},${y + 2}) 停止寻路，`);
+            isArrive = true;
+            // 到达目标点位退出寻路
+          } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, stationR)) {
+            this.dm.LeftClick();
+            isArrive = true;
+          } else {
+            // 判断是否到达目的地
+            isArrive = Array.isArray(toPos) ? this.fromTo(this.role.position, toPos, stationR) && this.recordAimPosIndex === toPos.length - 1 : this.fromTo(this.role.position, toPos, stationR);
           }
 
           // 这里攻击操作会在寻路过程中执行，且因为共同同一个鼠标控制，攻击可能会阻塞寻路操作
@@ -260,13 +255,14 @@ export class MoveActions {
             actions.attackNearestMonster();
           }
         } finally {
-          if (map && map !== this.role.map) {
+          // 目标地图与当前地图不同，（可能是被杀了）
+          if (taskMap && this.role.map !== taskMap) {
             this.role.clearActionTimer('autoFindPath');
             this.recordAimPosIndex = 0;
             this.isRunLoop = false; // 关闭循环
             // 鼠标点击结束寻路的左键按下
             this.dm.LeftClick();
-            rej(`[自动寻路] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动寻路`);
+            rej(`[自动寻路] 已切换地图，当前地图${this.role.map}，目标地图${aimPos}，结束自动寻路`);
           }
           if (isArrive) {
             // 中文注释：到达后清理定时器并延时，确保角色静止

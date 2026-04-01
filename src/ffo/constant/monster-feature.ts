@@ -2,7 +2,8 @@ export const MONSTER_GREEN = '40bc00-111111';
 export const MONSTER_YELLOW = 'd8cc18-111111';
 export const MONSTER_RED = 'e85048-111111';
 export const MONSTER_WHITE = 'a8a8a0-111111';
-
+export const MONSTER_ORIGINAL = 'e85000-111111';
+export const MONSTER_YELLOW_2 = 'd8c810-111111';
 export const MONSTER_FEATURE: Record<string, string> = {
   QQ糖: 'QQ糖',
   精英: '精英',
@@ -15,6 +16,7 @@ export const MONSTER_FEATURE: Record<string, string> = {
   怨灵: '被缚的|怨灵|执念|之眼|幻影|侍卫|被',
   云荒一层: '堕灵玄鸟|冥蜘蛛|堕灵|鸟|蜘蛛|怒风',
   黄鹤遗址: '地翼魔|牛魔王',
+  比翼城北: '喷火鸟|葵乡仙子|虫非花',
 };
 
 export interface MonsterFeature {
@@ -51,3 +53,5 @@ export const OCR_MING_YU_BOSS = { ...AttackRange2, string: MONSTER_FEATURE['怨�
 export const OCR_YUN_HUAN_1_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['云荒一层'], color: `${MONSTER_GREEN} | ${MONSTER_YELLOW}| ${MONSTER_RED}`, sim: 1.0 };
 // 地翼魔、牛魔王
 export const OCR_DI_YI_WEI_MONSTER = { ...AttackRange4, string: MONSTER_FEATURE['黄鹤遗址'], color: MONSTER_WHITE, sim: 1.0 };
+// 比翼城北
+export const OCR_BI_YI_WEI_MONSTER = { ...AttackRange1, string: MONSTER_FEATURE['比翼城北'], color: `${MONSTER_GREEN} | ${MONSTER_YELLOW}| ${MONSTER_ORIGINAL} | ${MONSTER_YELLOW_2}`, sim: 1.0 };

@@ -17,7 +17,7 @@ const validEquip: ValidEquip = [
   { type: '法杖|双手剑|长剑|双刃|暗器|长枪', level: '102', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害|力量|体质' },
   { type: '头盔', attrName: '生命最大值|力量|魔抗|体质|伤害|智慧' },
   { type: '手套', attrName: '物理攻击力|魔法攻击力|力量|体质|智慧' },
-  { type: '服装', attrName: '生命最大值|体质|护甲值' },
+  { type: '服装', attrName: '生命最大值|体质|护甲值|智慧' },
   { type: '鞋子', attrName: '力量|智慧|体质|体质|敏捷' },
   { type: '面饰', attrName: '力量|智慧|体质|体质|敏捷' },
   { type: '背包', attrName: '力量|智慧|体质|体质|敏捷|最大负重' },
@@ -99,7 +99,7 @@ const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions
   const res = await baseAction.backCity(COORDS.INIT_POS_ROUTE, 'F9', true);
   if (res === 'redName') {
     return new Promise(async res => {
-      await moveActions.startAutoFindPath({ toPos: COORDS.RED_NAME_POS, stationR: CONSTANTS.STATION_R, delay: 100, map: MAP_NAME.YUN_ZE });
+      await moveActions.startAutoFindPath({ toPos: COORDS.RED_NAME_POS, stationR: CONSTANTS.STATION_R, delay: 100, taskMap: MAP_NAME.YUN_ZE });
       await moveActions.startAutoFindPath({ toPos: COORDS.STORE_NPC, stationR: CONSTANTS.STATION_R, delay: 100 });
       res('红名操作');
     });
@@ -128,7 +128,7 @@ const loopAutoAttackInWest = async (attackActions?: AttackActions) => {
         toPos: item.pos,
         stationR: CONSTANTS.STATION_R,
         delay: 100,
-        map: MAP_NAME.YUN_ZE,
+        taskMap: MAP_NAME.YUN_ZE,
       });
       const attackRange = { ...item.pos, r: item.scanR || CONSTANTS.STATION_R };
       await attackActions?.scanMonster({
@@ -288,7 +288,7 @@ const loopCheckStatus = async () => {
 export const toggleYunHuang1West = () => {
   const role = getBoundRole();
   let baseAction = new BaseAction(role);
-  let attackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
+  let attackActions = new AttackActions(role, { monsterFeature: OCR_YUN_HUAN_1_MONSTER });
 
   // 死亡时回调
   const deadCall = () => {

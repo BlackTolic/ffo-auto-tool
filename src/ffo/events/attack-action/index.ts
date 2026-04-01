@@ -24,16 +24,13 @@ export interface ScanMonsterOptions {
     r: number;
   };
   map?: string;
-  delPos?: {
-    x: number;
-    y: number;
-  };
 }
 
 export interface AttackActionsOptions {
   scanConfig?: ScanMonsterOptions;
   findMosterOffset?: { x: number; y: number }; //识别到怪物时，图标点击其名字的偏移
   monsterFeature?: MonsterFeature; // 怪物特质
+  skillGroup?: KeyPressOptions[]; // 制定技能组合
 }
 
 const JKSkillGroup: KeyPressOptions[] = [
@@ -102,10 +99,6 @@ export class AttackActions {
   private skillPropsList: KeyPressOptions[] = [];
   private ocrMonster: MonsterFeature;
   private lastTime = 0; // 记录上次执行F10的时间戳
-  private delPos = {
-    x: 10,
-    y: 40,
-  };
   // 技能组
   private cdController: Map<keyof typeof VK_F, boolean> = new Map([
     ['F1', false],
@@ -123,7 +116,11 @@ export class AttackActions {
     this.role = role;
     this.bindDm = role.bindDm;
     this.ocrMonster = { ...ATTACK_RANGE[this.role.bindWindowSize], ...(config?.monsterFeature || OCR_MONSTER) };
-    this.skillGroup = role.job === 'SS' ? SSSkillGroup : JKSkillGroup;
+    if (config?.skillGroup) {
+      this.skillGroup = config.skillGroup;
+    } else {
+      this.skillGroup = role.job === 'SS' ? SSSkillGroup : JKSkillGroup;
+    }
     this.buffGroup = role.job === 'SS' ? SSBuffGroup : JKBuffGroup;
     this.bindPlugin = role.bindPlugin;
     this.findMosterOffset = config?.findMosterOffset ?? { x: 10, y: 40 };
@@ -175,7 +172,7 @@ export class AttackActions {
   }
   // 找到最近的怪物进行攻击 - 适用于单体攻击场景
   attackNearestMonsterForSingle() {
-    const freeSkill = this.getFreeSkill();
+    const freeSkill = this.getFreeSkill({ attackType: 'single' });
     // 判断是否有闲置的技能
     if (!freeSkill) {
       logger.info('[自动攻击] 技能在CD中');
@@ -248,7 +245,7 @@ export class AttackActions {
   }
 
   // 获取空闲时间的技能
-  getFreeSkill(): KeyPressOptions | null {
+  getFreeSkill(options?: { attackType?: 'single' | 'group' }): KeyPressOptions | null {
     // 在cdController中找到一个为false的技能,且优先级最高的
     const filterSkill = this.skillGroup.filter(item => this.cdController.get(item.key) === false).sort((a, b) => a.sort! - b.sort!);
     // logger.debug(filterSkill, '空闲技能');

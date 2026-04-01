@@ -152,6 +152,12 @@ export const DEFAULT_MOUNTED = {
   '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
 };
 
+// 检查固定位置的移动速度
+export const DEFAULT_MOVE_SPEED = {
+  '1600*900': { x1: 622, y1: 249, x2: 774, y2: 272, color: 'e8f0e8-111111', sim: 1.0 },
+  '1280*800': { x1: 48, y1: 38, x2: 825, y2: 243, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+};
+
 // 检查装备是否损坏
 export const DEFAULT_EQUIP_DAMAGE = {
   '1600*900': { x1: 1085, y1: 577, x2: 1181, y2: 692, color: 'c84020-111111', sim: DEFAULT_SIM },
