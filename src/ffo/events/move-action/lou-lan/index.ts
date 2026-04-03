@@ -1,13 +1,12 @@
 import { MoveActions } from '..';
-import { Role } from '../../rolyer';
 
-export const fromLouLanToChengJiao = (role: Role) => {
-  return new MoveActions(role).startAutoFindPath({ toPos: [{ x: 325, y: 95 }], aimPos: '楼兰城郊' });
+export const fromLouLanToChengJiao = (moveActions: MoveActions) => {
+  return moveActions.startAutoFindPath({ toPos: [{ x: 325, y: 95 }], aimPos: '楼兰城郊' });
 };
 
 // 中文注释：从城交到名誉NPC
-export const fromChengJiaoToMingYuNPC = (role: Role) => {
-  return new MoveActions(role).startAutoFindPath({
+export const fromChengJiaoToMingYuNPC = (moveActions: MoveActions) => {
+  return moveActions.startAutoFindPath({
     toPos: [
       { x: 71, y: 64 },
       { x: 111, y: 57 },
@@ -15,12 +14,13 @@ export const fromChengJiaoToMingYuNPC = (role: Role) => {
       { x: 158, y: 25 },
     ],
     blockAllBeforeMove: true,
+    taskMap: '楼兰城郊',
   });
 };
 
 // 从名誉NPC到蚂蚁沙地北边
-export const fromMingYuNPCToAntHill = (role: Role) => {
-  return new MoveActions(role).startAutoFindPath({
+export const fromMingYuNPCToAntHill = (moveActions: MoveActions) => {
+  return moveActions.startAutoFindPath({
     toPos: [
       { x: 169, y: 33 },
       { x: 190, y: 44 },
@@ -39,8 +39,8 @@ export const fromMingYuNPCToAntHill = (role: Role) => {
 };
 
 // 从蚂蚁沙地北到落日沙丘
-export const fromAntHillToSunsetDune = (role: Role) => {
-  return new MoveActions(role).startAutoFindPath({
+export const fromAntHillToSunsetDune = (moveActions: MoveActions) => {
+  return moveActions.startAutoFindPath({
     toPos: [
       { x: 235, y: 53 },
       { x: 258, y: 45 },
@@ -51,8 +51,8 @@ export const fromAntHillToSunsetDune = (role: Role) => {
 };
 
 // 从落日沙丘到落日沙丘西
-export const fromSunsetDuneToSunsetDuneWest = (role: Role) => {
-  return new MoveActions(role).startAutoFindPath({
+export const fromSunsetDuneToSunsetDuneWest = (moveActions: MoveActions) => {
+  return moveActions.startAutoFindPath({
     toPos: [
       // { x: 161, y: 78 },
       { x: 160, y: 58 },
@@ -63,12 +63,12 @@ export const fromSunsetDuneToSunsetDuneWest = (role: Role) => {
 };
 
 // 从落日沙丘西到斯芬尼克
-export const fromSunsetDuneWestToSphinx = (role: Role) => {
-  return new MoveActions(role).startAutoFindPath({ toPos: [{ x: 255, y: 148 }], blockAllBeforeMove: true });
+export const fromSunsetDuneWestToSphinx = (moveActions: MoveActions) => {
+  return moveActions.startAutoFindPath({ toPos: [{ x: 255, y: 148 }], blockAllBeforeMove: true });
 };
 
 // 从失落神殿一层前往名誉BOSS
-export const fromLostTempleToMingYuBoss = (role: Role) => {
+export const fromLostTempleToMingYuBoss = (moveActions: MoveActions) => {
   // 距离短但是雷多
   const route1 = [
     { x: 44, y: 94 },
@@ -108,5 +108,5 @@ export const fromLostTempleToMingYuBoss = (role: Role) => {
     { x: 314, y: 139 },
     { x: 321, y: 130 },
   ];
-  return new MoveActions(role).startAutoFindPath({ toPos: route2 });
+  return moveActions.startAutoFindPath({ toPos: route2 });
 };

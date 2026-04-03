@@ -2,10 +2,11 @@ import logger from '../../../utils/logger';
 import { debounce } from '../../../utils/tool';
 import { OCR_MING_YU_BOSS } from '../../constant/monster-feature';
 import { createStuckChecker, getBindWindowInfo } from '../../utils/common/rolyer';
-import { checkMountedByRoleSpeed } from '../../utils/ocr-check/base';
+import { checkMountedByRoleSpeed, checkPetActive } from '../../utils/ocr-check/base';
 import { AttackActions, AttackActionsOptions } from '../attack-action';
 import { BaseAction } from '../base-action';
 import { Conversation } from '../conversation';
+import { MoveActions } from '../move-action';
 import {
   fromAntHillToSunsetDune,
   fromChengJiaoToMingYuNPC,
@@ -54,23 +55,31 @@ let autoFarmingAction: AutoFarmingAction | null = null;
 const delay5S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 5 * 1000, true);
 
 // 名誉回调任务
-const loopAction = async (role: Role) => {
+const loopAction = async (role: Role, moveActions: MoveActions) => {
   let atackActions = new AttackActions(role, { monsterFeature: OCR_MING_YU_BOSS, skillGroup });
   const baseAction = new BaseAction(role);
   try {
     const dm = role.bindPlugin;
+    // 屏蔽所有人
+    baseAction.blockAllPlayers();
+    // 检查宠物是否激活
+    const isPetActive = checkPetActive(dm, role.bindWindowSize);
+    if (!isPetActive) {
+      // 需要使用的宠物必须放在第一个格子上
+      await baseAction.openPetBoxAndActivePet();
+    }
     // 检查当前是否是坐骑状态
     const isMounted = checkMountedByRoleSpeed(dm, role.bindWindowSize);
     if (!isMounted) {
       // 上马
       await baseAction.pressSecondSkillBarSkill('F9');
     }
-    const isArriveChengJiao = await fromLouLanToChengJiao(role);
+    const isArriveChengJiao = await fromLouLanToChengJiao(moveActions);
     if (!isArriveChengJiao) {
       throw new Error('未到达城郊');
     }
     // 从城郊到名誉NPC
-    const isArriveMingYuNPC = await fromChengJiaoToMingYuNPC(role);
+    const isArriveMingYuNPC = await fromChengJiaoToMingYuNPC(moveActions);
     if (!isArriveMingYuNPC) {
       throw new Error('未到达名誉NPC');
     }
@@ -79,22 +88,22 @@ const loopAction = async (role: Role) => {
       throw new Error('未完成领取名誉任务');
     }
     // 从名誉NPC到蚂蚁沙地北边
-    const isArriveAntHill = await fromMingYuNPCToAntHill(role);
+    const isArriveAntHill = await fromMingYuNPCToAntHill(moveActions);
     if (!isArriveAntHill) {
       throw new Error('未到达蚂蚁沙地北边');
     }
     // 从蚂蚁沙地北到落日沙丘
-    const isArriveSunsetDune = await fromAntHillToSunsetDune(role);
+    const isArriveSunsetDune = await fromAntHillToSunsetDune(moveActions);
     if (!isArriveSunsetDune) {
       throw new Error('未到达落日沙丘');
     }
     // 从落日沙丘到落日沙丘西
-    const isArriveSunsetDuneWest = await fromSunsetDuneToSunsetDuneWest(role);
+    const isArriveSunsetDuneWest = await fromSunsetDuneToSunsetDuneWest(moveActions);
     if (!isArriveSunsetDuneWest) {
       throw new Error('未到达落日沙丘西');
     }
     // 从落日沙丘西到斯芬尼克
-    const isArriveSphinx = await fromSunsetDuneWestToSphinx(role);
+    const isArriveSphinx = await fromSunsetDuneWestToSphinx(moveActions);
     if (!isArriveSphinx) {
       throw new Error('未到达斯芬尼克');
     }
@@ -104,7 +113,7 @@ const loopAction = async (role: Role) => {
       throw new Error('未完成与斯芬尼克对话');
     }
     // 从斯芬尼克出口到失落神殿BOSS
-    const isArriveLostTemple = await fromLostTempleToMingYuBoss(role);
+    const isArriveLostTemple = await fromLostTempleToMingYuBoss(moveActions);
     if (!isArriveLostTemple) {
       throw new Error('未到达失落神殿BOSS');
     }
@@ -141,9 +150,13 @@ export const toggleMingYu = () => {
 
   const { role } = getBindWindowInfo();
   const baseAction = new BaseAction(role);
+  const moveActions = new MoveActions(role);
   // 回城并且重置任务
   const goBackCityAndResetTask = async () => {
-    logger.info('[云荒检查] 执行回城并且重置任务 - goBackCityAndResetTask');
+    // 停止正在执行的任务
+    moveActions.stopAutoFindPath();
+    // 回城
+    logger.info('[静止检查] 执行回城并且重置任务 - goBackCityAndResetTask');
     await baseAction.backCity(INIT_POS, 'F9', true);
     role.updateTaskStatus('done');
   };
@@ -159,13 +172,13 @@ export const toggleMingYu = () => {
   role.addGlobalStrategyTask([
     {
       // 3分钟检查一次跑名誉是否卡住，然后回城重置任务
-      name: '跑名誉过程中5分钟静止不动',
-      condition: () => checkMingYuStuck(5),
+      name: '跑名誉过程中3分钟静止不动',
+      condition: () => checkMingYuStuck(3),
       callback: () => delay5S(goBackCityAndResetTask),
     },
   ]);
 
-  const taskList = [{ taskName: '楼兰跑名誉', loopOriginPos: INIT_POS, action: () => loopAction(role), interval: 2000 }];
+  const taskList = [{ taskName: '楼兰跑名誉', loopOriginPos: INIT_POS, action: () => loopAction(role, moveActions), interval: 2000 }];
   return autoFarmingAction.toggle(taskList);
 };
 

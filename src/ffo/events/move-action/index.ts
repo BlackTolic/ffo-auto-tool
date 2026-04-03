@@ -99,11 +99,12 @@ export class MoveActions {
   private lastMoveTime = 0; // 上次移动时间戳
   private lastAttackTime = 0; // 上次攻击时间戳
   private recordPos: Pos | null = null; // 记录上次移动的位置
-  private isRunLoop = true; // 是否运行循环
+  private cancelPreviousAutoFindPath?: (reason?: string) => void;
   private offsetR?: number; // 偏移半径
   private mirrorJitter = false; // 移动时的镜像抖动
   private attackMode: 'moveAndAttack' | 'spotAttack' = 'moveAndAttack'; // 攻击模式（moveAndAttack:一边移动一边技能好了就攻击；spotAttack:到达坐标后开始清理攻击）
   private aimPos?: Pos | string | null = null; // 目标位置（可以是坐标，也可以是文本描述）
+  private isRunLoop = true; // 是否循环移动
 
   constructor(role: Role, config?: MoveConfig) {
     this.dm = role.bindDm;
@@ -217,6 +218,12 @@ export class MoveActions {
 
   startAutoFindPath(config: AutoFindPathConfig) {
     const { toPos, actions, aimPos, stationR = pointR, delay = 2000, refreshTime = 300, attackMode, taskMap, blockAllBeforeMove = false } = config;
+
+    // 如果已有寻路任务，先停止它，确保只有一个寻路任务在运行
+    if (this.cancelPreviousAutoFindPath) {
+      this.cancelPreviousAutoFindPath('[自动寻路] 任务被新的寻路任务覆盖，已停止前一个任务。');
+    }
+
     if (blockAllBeforeMove) {
       new BaseAction(this.role).blockAllPlayers();
     }
@@ -227,14 +234,33 @@ export class MoveActions {
     if (!attackMode) {
       this.attackMode = 'moveAndAttack';
     }
+
     return new Promise((res, rej) => {
       this.finalPos = Array.isArray(toPos) ? toPos[toPos.length - 1] : toPos;
       let isArrive: boolean | undefined;
-      let isRunLoop = true;
+      this.isRunLoop = true;
+
+      // 设置取消当前任务的回调
+      this.cancelPreviousAutoFindPath = (reason = '[自动寻路] 任务已停止。') => {
+        this.isRunLoop = false;
+        this.role.clearActionTimer('autoFindPath');
+        this.cancelPreviousAutoFindPath = undefined;
+        this.recordAimPosIndex = 0;
+        // 停止寻路时释放鼠标左键，避免卡住按下状态
+        try {
+          if (this.bindPlugin && typeof this.bindPlugin.moveToClick === 'function') {
+            this.bindPlugin.moveToClick(800, 525);
+          }
+        } catch {}
+        rej(reason);
+      };
+
       logger.info(`[自动寻路] 执行startAutoFindPath，注册定时器`);
       // 中文注释：使用 setImmediate 首次触发，再用 setTimeout(300ms) 做周期轮询，避免事件循环拥塞
       const loop = () => {
         try {
+          if (!this.isRunLoop) return; // 如果循环已被关闭，直接退出
+
           if (!this.role.position) {
             logger.info(`[自动寻路] 未检测到坐标`);
             return;
@@ -260,28 +286,30 @@ export class MoveActions {
             actions.attackNearestMonster();
           }
         } finally {
+          if (!this.isRunLoop) return; // 如果循环已被关闭，直接退出
+
           // 目标地图与当前地图不同，（可能是被杀了）
           if (taskMap && this.role.map !== taskMap) {
-            this.role.clearActionTimer('autoFindPath');
-            this.recordAimPosIndex = 0;
-            this.isRunLoop = false; // 关闭循环
+            const reason = `[自动寻路] 已切换地图，当前地图${this.role.map}，任务地图${taskMap}，结束自动寻路`;
+            this.cancelPreviousAutoFindPath?.(reason);
             // 鼠标点击结束寻路的左键按下
             this.dm.LeftClick();
-            rej(`[自动寻路] 已切换地图，当前地图${this.role.map}，目标地图${aimPos}，结束自动寻路`);
+            return;
           }
           if (isArrive) {
             // 中文注释：到达后清理定时器并延时，确保角色静止
             this.role.clearActionTimer('autoFindPath');
             this.recordAimPosIndex = 0;
+            this.cancelPreviousAutoFindPath = undefined; // 标记任务结束，清除取消回调
             setTimeout(() => {
               logger.info(`[自动寻路] 已关闭自动寻路，并解除定时器,同时延时${delay}毫秒，确保已经静止`);
               // 这里刚进入地图没法读取坐标
               res(true);
             }, delay);
-            isRunLoop = false; // 关闭循环
+            this.isRunLoop = false; // 关闭循环
           } else {
             // 中文注释：未到达则继续 300ms 后轮询一次，并更新可清理的句柄
-            if (!isRunLoop) return;
+            if (!this.isRunLoop) return;
             const t = setTimeout(loop, refreshTime);
             this.role.addActionTimer('autoFindPath', t);
           }
@@ -292,14 +320,19 @@ export class MoveActions {
   }
 
   stopAutoFindPath() {
-    this.role.clearActionTimer('autoFindPath');
-    // 中文注释：停止寻路时释放鼠标左键，避免卡住按下状态
-    try {
-      if (this.dm && typeof this.dm.LeftUp === 'function') {
-        this.dm.LeftUp();
-      }
-    } catch {}
-    logger.info('[角色信息] 已关闭自动寻路');
+    this.isRunLoop = false;
+    if (this.cancelPreviousAutoFindPath) {
+      this.cancelPreviousAutoFindPath('[角色信息] 已手动关闭自动寻路');
+    } else {
+      this.role.clearActionTimer('autoFindPath');
+      // 中文注释：停止寻路时释放鼠标左键，避免卡住按下状态
+      try {
+        if (this.bindPlugin && typeof this.bindPlugin.moveToClick === 'function') {
+          this.bindPlugin.moveToClick(800, 525);
+        }
+      } catch {}
+      logger.info('[角色信息] 已手动关闭自动寻路(无进行中任务)');
+    }
   }
 
   // 暂停移动
