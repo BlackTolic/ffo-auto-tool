@@ -307,6 +307,10 @@ export default class MingYuTask {
         // 上马
         await soldierBaseAction.pressSecondSkillBarSkill('F9');
       }
+      const isArriveChengJiao = await fromLouLanToChengJiao(this.soldier.moveActions);
+      if (!isArriveChengJiao) {
+        throw new Error('未到达城郊');
+      }
       // 从城郊到名誉NPC
       const isArriveMingYuNPC = await fromChengJiaoToMingYuNPC(this.soldier.moveActions);
       if (!isArriveMingYuNPC) {
@@ -360,15 +364,10 @@ export default class MingYuTask {
   // 两种方式从城郊到失落神殿
   // 1、自己跑图到失落神殿BOSS
   async runToLostTemple(soldier: RoleTaskItem) {
+    logger.info('开始跑图到失落神殿BOSS');
     if (!soldier.role || !soldier.moveActions || !soldier.baseAction || !soldier.attackActions) {
       throw new Error('请先注册士兵');
     }
-
-    const isArriveChengJiao = await fromLouLanToChengJiao(soldier.moveActions);
-    if (!isArriveChengJiao) {
-      throw new Error('未到达城郊');
-    }
-
     // 从名誉NPC到蚂蚁沙地北边
     const isArriveAntHill = await fromMingYuNPCToAntHill(soldier.moveActions);
     if (!isArriveAntHill) {
@@ -393,6 +392,7 @@ export default class MingYuTask {
 
   // 2、辅助传送到失落神殿BOSS
   private async sendToLostTemple(soldier: RoleTaskItem, assistant: RoleTaskItem) {
+    logger.info('开始传送士兵到失落神殿BOSS');
     if (!soldier.role || !soldier.moveActions || !soldier.baseAction || !soldier.attackActions) {
       throw new Error('请先注册士兵');
     }

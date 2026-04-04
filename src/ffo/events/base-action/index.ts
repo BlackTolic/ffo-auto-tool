@@ -204,7 +204,6 @@ export class BaseAction {
       this.bindPlugin.delay(500);
       // 检查饥渴度
       const petInfoText = checkPetInfo(this.bindPlugin, this.role?.bindWindowSize || '1600*900');
-      console.log('[宠物] 饥渴度', petInfoText);
       const thirst = petInfoText?.thirst ?? -1;
       if (thirst >= 75) {
         // 大于75 使用第二列F7
@@ -220,9 +219,9 @@ export class BaseAction {
         // 大于50 使用第二列F9
         this.pressSecondSkillBarSkill(key3, Math.ceil(thirst / 3));
       }
-      if (thirst >= 3) {
+      if (thirst >= 6) {
         // 大于50 使用第二列F9
-        this.pressSecondSkillBarSkill(key3, Math.ceil(thirst / 3));
+        this.pressSecondSkillBarSkill(key3, Math.floor(thirst / 3));
       }
       // 关闭宠物栏
       this.bindPlugin.moveTo(802, 84);
