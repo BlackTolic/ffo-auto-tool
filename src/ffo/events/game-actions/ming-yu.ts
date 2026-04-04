@@ -2,7 +2,7 @@ import logger from '../../../utils/logger';
 import { debounce } from '../../../utils/tool';
 import { OCR_MING_YU_BOSS } from '../../constant/monster-feature';
 import { createStuckChecker, getBindWindowInfo } from '../../utils/common/rolyer';
-import { checkMountedByRoleSpeed, checkPetActive } from '../../utils/ocr-check/base';
+import { checkMountedByRoleSpeed } from '../../utils/ocr-check/base';
 import { AttackActions, AttackActionsOptions } from '../attack-action';
 import { BaseAction } from '../base-action';
 import { Conversation } from '../conversation';
@@ -53,6 +53,7 @@ const skillGroup: AttackActionsOptions['skillGroup'] = [
 let autoFarmingAction: AutoFarmingAction | null = null;
 
 const delay5S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 5 * 1000, true);
+const delay1M = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 60 * 1000, true);
 
 // 名誉回调任务
 const loopAction = async (role: Role, moveActions: MoveActions) => {
@@ -62,12 +63,10 @@ const loopAction = async (role: Role, moveActions: MoveActions) => {
     const dm = role.bindPlugin;
     // 屏蔽所有人
     baseAction.blockAllPlayers();
-    // 检查宠物是否激活
-    const isPetActive = checkPetActive(dm, role.bindWindowSize);
-    if (!isPetActive) {
-      // 需要使用的宠物必须放在第一个格子上
-      await baseAction.openPetBoxAndActivePet();
-    }
+    // 宠物激活,需要使用的宠物必须放在第一个格子上
+    await baseAction.openPetBoxAndActivePet();
+    // 喂养宠物
+    await baseAction.openPetBoxAndFeed();
     // 检查当前是否是坐骑状态
     const isMounted = checkMountedByRoleSpeed(dm, role.bindWindowSize);
     if (!isMounted) {
@@ -151,6 +150,10 @@ export const toggleMingYu = () => {
   const { role } = getBindWindowInfo();
   const baseAction = new BaseAction(role);
   const moveActions = new MoveActions(role);
+
+  // 挂机前置操作
+  baseAction.preMount();
+
   // 回城并且重置任务
   const goBackCityAndResetTask = async () => {
     // 停止正在执行的任务
@@ -166,7 +169,7 @@ export const toggleMingYu = () => {
   // 添加组队拒绝
   role.updateTeamApplyCall(closePos => {
     // 拒绝组队
-    role.bindPlugin.moveToClick(closePos.x, closePos.y);
+    closePos && role.bindPlugin.moveToClick(closePos.x, closePos.y);
   });
   // 注册全局任务
   role.addGlobalStrategyTask([
@@ -176,6 +179,12 @@ export const toggleMingYu = () => {
       condition: () => checkMingYuStuck(3),
       callback: () => delay5S(goBackCityAndResetTask),
     },
+    // {
+    //   // 安全锁弹出之后，输入密码
+    //   name: '安全锁弹出之后，输入密码',
+    //   condition: () => checkPasswordLock(role.bindPlugin, role.bindWindowSize || '1600*900'),
+    //   callback: () => delay1M(() => baseAction.inputPassword('666666')),
+    // },
   ]);
 
   const taskList = [{ taskName: '楼兰跑名誉', loopOriginPos: INIT_POS, action: () => loopAction(role, moveActions), interval: 2000 }];

@@ -2,11 +2,9 @@ import { logger } from '../../../utils/logger';
 import { MAIN_CITY } from '../../constant/NPC_position';
 import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
-import { checkEquipCount, checkSystemPrompt, checkUnEquipEquip, isItemBoxOpen, switchItemBoxTabPos } from '../../utils/ocr-check/base';
+import { checkEquipCount, checkPasswordLockPassword, checkPetActive, checkPetInfo, checkSystemPrompt, checkUnEquipEquip, isItemBoxOpen, switchItemBoxTabPos } from '../../utils/ocr-check/base';
 import { AttackActions } from '../attack-action';
 import { Role } from '../rolyer';
-
-type Timer = NodeJS.Timeout | null;
 
 export type ValidEquip = {
   type: string;
@@ -18,12 +16,19 @@ export type ValidEquip = {
 export class BaseAction {
   private bindPlugin: any = null;
   private role: Role | null = null;
+  private passwordItem: string[] = [];
   // 回城前角色坐标
   // private beforePos: { x: number; y: number } | null = null;
 
   constructor(role: Role) {
     this.role = role;
     this.bindPlugin = role.bindPlugin;
+  }
+
+  // 挂机前置操作
+  preMount() {
+    // 将地图切换为小地图
+    this.bindPlugin.moveToClick(1589, 96);
   }
 
   // 屏蔽所有玩家
@@ -56,35 +61,43 @@ export class BaseAction {
       // 设置重复回城直到随机到达目标坐标
       const repeatBack = (fixPos: { x: number; y: number }, maxTimes: number = 20) => {
         let i = 0;
-        let timer: Timer = setInterval(() => {
+        const loop = () => {
           // 回到了终点
           if (this.role?.position && isArriveAimNear(this.role?.position, fixPos, 20)) {
             logger.info('[回城] 回城成功');
-            timer && clearInterval(timer);
-            timer = null;
+            this.role?.clearActionTimer('repeatBack');
             res(true);
-          } else {
-            ways === 'F9' && this.role ? new AttackActions(this.role).startKeyPress({ key: 'F9', interval: null }) : this.bindPlugin.leftClick();
+            return;
           }
+
           if (checkRedName) {
             const systemPrompt = checkSystemPrompt(this.bindPlugin, this.role?.bindWindowSize ?? '1600*900', '红名玩家不允许使用回城卷轴');
             if (systemPrompt) {
               logger.warn(`[回城] 检测到红名提示，中断回城操作`);
-              timer && clearInterval(timer);
-              timer = null;
+              this.role?.clearActionTimer('repeatBack');
               res('redName');
               return;
             }
           }
+
           // 超过最大次数
           if (i >= maxTimes) {
             logger.error('[回城] 回城失败');
-            timer && clearInterval(timer);
-            timer = null;
+            this.role?.clearActionTimer('repeatBack');
             rej(false);
+            return;
           }
+
+          // 未到达，执行回城动作
+          ways === 'F9' && this.role ? new AttackActions(this.role).startKeyPress({ key: 'F9', interval: null }) : this.bindPlugin.leftClick();
+
+          i++;
           // 这里必须要超过4S 否则无法读到地图坐标
-        }, 4000);
+          const timer = setTimeout(loop, 4000);
+          this.role?.addActionTimer('repeatBack', timer as any);
+        };
+        // 立即触发首次执行
+        setImmediate(loop);
       };
       const { items } = this.role?.menusPos ?? {};
       // 回城前角色坐标
@@ -156,6 +169,13 @@ export class BaseAction {
   // 打开宠物栏并且激活宠物
   openPetBoxAndActivePet() {
     return new Promise((res, rej) => {
+      // 检查宠物是否激活
+      const isPetActive = checkPetActive(this.bindPlugin, this.role?.bindWindowSize || '1600*900');
+      if (isPetActive) {
+        logger.info('[宠物] 已经是激活状态');
+        res(true);
+        return;
+      }
       // 打开宠物栏
       this.bindPlugin.moveTo(64, 82);
       this.bindPlugin.delay(300);
@@ -174,14 +194,54 @@ export class BaseAction {
     });
   }
 
-  // 按下第二栏技能栏技能
-  pressSecondSkillBarSkill(pressKey: string) {
+  // 打开宠物栏并且喂宠物
+  openPetBoxAndFeed() {
     return new Promise((res, rej) => {
-      // 打开物品栏
+      // 打开宠物栏
+      this.bindPlugin.moveTo(64, 82);
+      this.bindPlugin.delay(300);
+      this.bindPlugin.leftClick();
+      this.bindPlugin.delay(500);
+      // 检查饥渴度
+      const petInfoText = checkPetInfo(this.bindPlugin, this.role?.bindWindowSize || '1600*900');
+      console.log('[宠物] 饥渴度', petInfoText);
+      const thirst = petInfoText?.thirst ?? -1;
+      if (thirst >= 75) {
+        // 大于75 使用第二列F7
+        this.pressSecondSkillBarSkill('F7', Math.ceil((thirst - 75) / 3));
+        // 大于50 使用第二列F8
+        this.pressSecondSkillBarSkill('F8', Math.ceil((thirst - 50) / 3));
+        // 大于0 使用第二列F9
+        this.pressSecondSkillBarSkill('F9', Math.ceil(thirst / 3));
+      }
+      if (thirst >= 50) {
+        // 大于50 使用第二列F8
+        this.pressSecondSkillBarSkill('F8', Math.ceil((thirst - 50) / 3));
+        // 大于50 使用第二列F8
+        this.pressSecondSkillBarSkill('F9', Math.ceil(thirst / 3));
+      }
+      if (thirst >= 1) {
+        // 大于50 使用第二列F8
+        this.pressSecondSkillBarSkill('F9', Math.ceil(thirst / 3));
+      }
+      // 关闭宠物栏
+      this.bindPlugin.moveTo(802, 84);
+      this.bindPlugin.delay(300);
+      this.bindPlugin.leftClick();
+      this.bindPlugin.delay(300);
+      res(true);
+    });
+  }
+
+  // 按下第二栏技能栏技能
+  pressSecondSkillBarSkill(pressKey: string, times: number = 1) {
+    return new Promise((res, rej) => {
       this.bindPlugin.keyPress(VK_F['tab']);
-      this.bindPlugin.delay(300);
-      this.bindPlugin.keyPress(VK_F[pressKey]);
-      this.bindPlugin.delay(300);
+      for (let i = 0; i < times; i++) {
+        this.bindPlugin.delay(300);
+        this.bindPlugin.keyPress(VK_F[pressKey]);
+        this.bindPlugin.delay(300);
+      }
       this.bindPlugin.keyPress(VK_F['tab']);
       res(true);
     });
@@ -234,6 +294,39 @@ export class BaseAction {
     // });
     // const { equip } = this.role?.menusPos ?? {};
     logger.info('[炼化挑选] 完成装备筛选');
+  }
+
+  // 输入密码
+  inputPassword(password: string) {
+    if (!password) {
+      logger.info('密码不能为空');
+      return;
+    }
+    let record = 0;
+    let errCount = 0;
+    const passwordItem = password.split('');
+    const inputSingle = (str: string) => {
+      if (record === passwordItem.length - 1 || errCount >= 20) {
+        return;
+      }
+      const passwordPos = checkPasswordLockPassword(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', str);
+      if (passwordPos) {
+        this.bindPlugin.moveToClick(passwordPos.x, passwordPos.y);
+        this.bindPlugin.delay(300);
+        this.bindPlugin.moveTo(785, 785);
+        this.bindPlugin.delay(300);
+        record++;
+      } else {
+        errCount++;
+        logger.info(`密码${record}位输入错误`);
+      }
+      // 延时1S
+      this.bindPlugin.delay(1000);
+      return inputSingle(passwordItem[record]);
+    };
+    inputSingle(passwordItem[record]);
+    // 点击确定
+    this.bindPlugin.moveTo(708, 505);
   }
 }
 

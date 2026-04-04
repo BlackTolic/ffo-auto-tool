@@ -146,6 +146,18 @@ export const DEFAULT_PET_ACTIVE = {
   '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
 };
 
+// 检查是否处于队伍的队长状态
+export const DEFAULT_TEAM_LEADER = {
+  '1600*900': { x1: 1245, y1: 858, color: DEFAULT_COLOR, sim: DEFAULT_SIM },
+  '1280*800': { x1: 857, y1: 438, x2: 1279, y2: 472, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+};
+
+// 检查宠物信息（包括等级、饥渴、信赖）
+export const DEFAULT_PET_INFO = {
+  '1600*900': { x1: 714, y1: 148, x2: 800, y2: 206, color: 'c09438-111111|c09418-111111|e8f0e8-111111', sim: 1.0 },
+  '1280*800': { x1: 716, y1: 152, x2: 808, y2: 210, color: 'c09438-111111|c09418-111111|e8f0e8-111111', sim: 1.0 },
+};
+
 // 检查是否是坐骑状态
 export const DEFAULT_MOUNTED = {
   '1600*900': { x1: 767, y1: 302, x2: 812, y2: 342, color: 'e8f0e8-111111', sim: DEFAULT_SIM },
@@ -200,10 +212,16 @@ export const DEFAULT_UN_EQUIP = {
   '1280*800': { x1: 1194, y1: 600, x2: 1228, y2: 638, string: '@O', color: '20e438-111111', sim: DEFAULT_SIM },
 };
 
-// 别人的队伍邀请
-export const DEFAULT_INVITE_TEAM = {
+// 关闭突然弹出的弹框
+export const DEFAULT_CLOSE_DIALOG = {
   '1600*900': { x1: 604, y1: 280, x2: 1001, y2: 609, string: '@X', color: 'b89838-111111', sim: 1.0 },
   '1280*800': { x1: 604, y1: 280, x2: 1001, y2: 609, string: '@X', color: 'c0a060-111111|a08440-111111|907028-111111', sim: 1.0 },
+};
+
+// 识别邀请队伍的弹框
+export const DEFAULT_INVITE_TEAM = {
+  '1600*900': { x1: 726, y1: 343, x2: 856, y2: 366, color: 'b89868-111111|806430-111111|a08040-111111', sim: 1.0 },
+  '1280*800': { x1: 726, y1: 343, x2: 856, y2: 366, color: 'b89868-111111|806430-111111|a08040-111111', sim: 1.0 },
 };
 
 // 检查经验栏是不是快升级了
@@ -217,4 +235,16 @@ export const DEFAULT_EXP_BAR = {
 export const DEFAULT_SYSTERM_INFO = {
   '1600*900': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
   '1280*800': { x1: 26, y1: 760, x2: 393, y2: 864, color: DEFAULT_COLOR_RED, sim: DEFAULT_SIM },
+};
+
+// 识别到财产密码锁
+export const DEFAULT_PASSWORD_LOCK = {
+  '1600*900': { x1: 677, y1: 378, x2: 910, y2: 393, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 677, y1: 378, x2: 910, y2: 393, color: 'd8e4d8-111111|b8c0b8-111111', sim: DEFAULT_SIM },
+};
+
+// 识别安全锁范围
+export const DEFAULT_PASSWORD_LOCK_RANGE = {
+  '1600*900': { x1: 181, y1: 3, x2: 968, y2: 366, color: '7706458-101010|787870-101010', sim: DEFAULT_SIM },
+  '1280*800': { x1: 677, y1: 378, x2: 910, y2: 393, color: '706458-101010|787870-101010', sim: DEFAULT_SIM },
 };
