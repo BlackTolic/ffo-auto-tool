@@ -96,7 +96,7 @@ export class Role {
     this.bindDm = rec?.ffoClient.dm;
     this.bindPlugin = bindDm;
     const name = getRoleName(bindDm, this.bindWindowSize);
-    logger.info(`[角色信息] 当前绑定角色：${name}`);
+    logger.info(`[角色信息] 当前注册角色：${name}`);
     this.name = name;
     this.job = name.includes('花开无须折') ? 'SS' : 'JK';
     // 中文注释：使用 setImmediate 触发首轮执行，随后用 setTimeout 维持固定轮询间隔（避免事件循环被持续 setImmediate 挤压）

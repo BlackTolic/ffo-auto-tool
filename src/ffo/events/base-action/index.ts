@@ -195,7 +195,7 @@ export class BaseAction {
   }
 
   // 打开宠物栏并且喂宠物
-  openPetBoxAndFeed() {
+  openPetBoxAndFeed(key1: string = 'F7', key2: string = 'F8', key3: string = 'F9') {
     return new Promise((res, rej) => {
       // 打开宠物栏
       this.bindPlugin.moveTo(64, 82);
@@ -208,21 +208,21 @@ export class BaseAction {
       const thirst = petInfoText?.thirst ?? -1;
       if (thirst >= 75) {
         // 大于75 使用第二列F7
-        this.pressSecondSkillBarSkill('F7', Math.ceil((thirst - 75) / 3));
+        this.pressSecondSkillBarSkill(key1, Math.ceil((thirst - 75) / 3));
         // 大于50 使用第二列F8
-        this.pressSecondSkillBarSkill('F8', Math.ceil((thirst - 50) / 3));
+        this.pressSecondSkillBarSkill(key2, Math.ceil((thirst - 50) / 3));
         // 大于0 使用第二列F9
-        this.pressSecondSkillBarSkill('F9', Math.ceil(thirst / 3));
+        this.pressSecondSkillBarSkill(key3, Math.ceil(thirst / 3));
       }
       if (thirst >= 50) {
         // 大于50 使用第二列F8
-        this.pressSecondSkillBarSkill('F8', Math.ceil((thirst - 50) / 3));
-        // 大于50 使用第二列F8
-        this.pressSecondSkillBarSkill('F9', Math.ceil(thirst / 3));
+        this.pressSecondSkillBarSkill(key2, Math.ceil((thirst - 50) / 3));
+        // 大于50 使用第二列F9
+        this.pressSecondSkillBarSkill(key3, Math.ceil(thirst / 3));
       }
-      if (thirst >= 1) {
-        // 大于50 使用第二列F8
-        this.pressSecondSkillBarSkill('F9', Math.ceil(thirst / 3));
+      if (thirst >= 3) {
+        // 大于50 使用第二列F9
+        this.pressSecondSkillBarSkill(key3, Math.ceil(thirst / 3));
       }
       // 关闭宠物栏
       this.bindPlugin.moveTo(802, 84);

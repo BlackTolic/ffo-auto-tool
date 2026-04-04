@@ -4,11 +4,10 @@ import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
 import { AttackActions } from '../ffo/events/attack-action';
 import { toggleBiYiCityNorth } from '../ffo/events/game-actions/biyichengbei';
-import { toggleMingYu } from '../ffo/events/game-actions/ming-yu';
+import { mingYuTask } from '../ffo/events/game-actions/ming-yu';
 import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { logger } from '../utils/logger';
-
 // 中文注释：记录每个窗口当前是否开启了自动按键
 const autoKeyOnByHwnd = new Map<number, boolean>();
 
@@ -116,8 +115,11 @@ export function registerGlobalHotkeys() {
   // registerHotkey('Alt+W', () => toggleAutoKey('F1', 90));
 
   // Alt+1 跑名誉
-  registerHotkey('Alt+3', () => toggleMingYu());
-
+  registerHotkey('Alt+2', () => mingYuTask.registerSoldierTask());
+  // Alt+2 跑云荒1层
+  registerHotkey('Alt+3', () => mingYuTask.startMingYuTask());
+  // Alt+2 跑云荒1层
+  registerHotkey('Alt+4', () => toggleYunHuang1West());
   // Alt + S 云荒1层刷怪
   registerHotkey('Alt+S', () => toggleYunHuang1West());
 
