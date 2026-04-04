@@ -73,6 +73,7 @@ export class Role {
   private globalStrategyTask: GlobalStrategyTask[] | null = null; // 全局策略任务队列
   private immediateId: NodeJS.Immediate | null = null; // 立即执行任务ID
   private loopIsRuning: boolean = true; // 循环任务是否运行中
+  public emailMessage: string = ''; // 邮件消息
 
   constructor() {}
 
@@ -229,7 +230,7 @@ export class Role {
             emailStrategy.sendMessage({
               to: '1031690983@qq.com',
               subject: '角色死亡',
-              text: `角色 ${name} 已死亡`,
+              text: `角色 ${name} 已死亡, ${this.emailMessage}`,
               attachments: [
                 {
                   filename: '阵亡截图.png', // 邮件内部的文件名（可自定义）
@@ -376,5 +377,10 @@ export class Role {
   // 清除全局策略任务
   clearGlobalStrategyTask() {
     this.globalStrategyTask = null;
+  }
+
+  // 手动更新角色信息
+  updateRoleInfo(roleInfo: { emailMessage: string }) {
+    this.emailMessage = roleInfo.emailMessage;
   }
 }
