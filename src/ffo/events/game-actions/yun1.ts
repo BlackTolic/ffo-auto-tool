@@ -63,6 +63,8 @@ const MAP_NAME = {
   YUN_HUANG: '云荒部落',
 };
 
+// 如果位置在145.137， 前往 172，99 会被直接卡住，需要先回到上一个坐标点，才能继续往前
+
 // 巡逻路径配置
 const PATROL_CONFIG = [
   { pos: COORDS.INIT_POS_YUN1, r: 6, times: 3 }, // 原点
@@ -329,7 +331,7 @@ export const toggleYunHuang1West = () => {
   // 添加组队拒绝
   role.updateTeamApplyCall(closePos => {
     // 拒绝组队
-    role.bindPlugin.moveToClick(closePos.x, closePos.y);
+    closePos && role.bindPlugin.moveToClick(closePos.x, closePos.y);
   });
 
   // 检查是否卡住（未移动）- 工厂函数，生成独立的状态闭包

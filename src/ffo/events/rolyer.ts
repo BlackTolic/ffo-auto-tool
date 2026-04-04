@@ -69,7 +69,7 @@ export class Role {
   private needCheckDead: boolean = true; // 是否需要检查死亡
   private needCheckLeaveUp: boolean = false; // 是否需要检查升级状态
   private deadCall: (() => void) | null = null; // 死亡回调
-  private teamApplyCall: ((closePos: Pos) => void) | null = null; // 组队申请回调
+  private teamApplyCall: ((rejectPos?: Pos, agreePos?: Pos) => void) | null = null; // 组队申请回调
   private globalStrategyTask: GlobalStrategyTask[] | null = null; // 全局策略任务队列
   private immediateId: NodeJS.Immediate | null = null; // 立即执行任务ID
   private loopIsRuning: boolean = true; // 循环任务是否运行中
@@ -97,7 +97,7 @@ export class Role {
     this.bindDm = rec?.ffoClient.dm;
     this.bindPlugin = bindDm;
     const name = getRoleName(bindDm, this.bindWindowSize);
-    logger.info(`[角色信息] 当前绑定角色：${name}`);
+    logger.info(`[角色信息] 当前注册角色：${name}`);
     this.name = name;
     this.job = name.includes('花开无须折') ? 'SS' : 'JK';
     // 中文注释：使用 setImmediate 触发首轮执行，随后用 setTimeout 维持固定轮询间隔（避免事件循环被持续 setImmediate 挤压）
@@ -119,8 +119,8 @@ export class Role {
 
         // 队伍邀请
         if (typeof this.teamApplyCall === 'function') {
-          const inviteTeamPos = checkInviteTeam(bindDm, this.bindWindowSize);
-          inviteTeamPos && this.teamApplyCall(inviteTeamPos);
+          const isInviteTeam = checkInviteTeam(bindDm, this.bindWindowSize);
+          isInviteTeam && this.teamApplyCall({ x: 870, y: 573 }, { x: 738, y: 573 });
         }
         // 全局任务检查
 
@@ -362,7 +362,7 @@ export class Role {
   }
 
   // 中文注释：更新组队申请回调
-  updateTeamApplyCall(teamApplyCall: (closePos: Pos) => void) {
+  updateTeamApplyCall(teamApplyCall: (rejectPos?: Pos | undefined, agreePos?: Pos | undefined) => void) {
     this.teamApplyCall = teamApplyCall;
   }
 

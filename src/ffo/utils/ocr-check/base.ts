@@ -3,6 +3,7 @@ import { logger } from '../../../utils/logger';
 import {
   DEFAULT_ADDRESS_NAME,
   DEFAULT_BLOOD_STATUS,
+  DEFAULT_CLOSE_DIALOG,
   DEFAULT_DEAD,
   DEFAULT_DEAD_CY,
   DEFAULT_EQUIP_COUNT,
@@ -18,7 +19,10 @@ import {
   DEFAULT_MONSTER_NAME,
   DEFAULT_MOUNTED,
   DEFAULT_MOVE_SPEED,
+  DEFAULT_PASSWORD_LOCK,
+  DEFAULT_PASSWORD_LOCK_RANGE,
   DEFAULT_PET_ACTIVE,
+  DEFAULT_PET_INFO,
   DEFAULT_ROLE_NAME,
   DEFAULT_ROLE_POSITION,
   DEFAULT_SERVER_DISCONNECT,
@@ -165,6 +169,30 @@ export const checkPetActive = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
   return petActiveText !== '暂时没有宠物';
 };
 
+// 检查宠物信息（包括等级、饥渴、信赖）
+export interface PetInfo {
+  level: number | null;
+  petType: string;
+  thirst: number | null;
+  trust: number | null;
+}
+export const checkPetInfo = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): PetInfo | null => {
+  const petInfoPos = DEFAULT_PET_INFO[bindWindowSize];
+  const petInfoText = bindDm.ocr(petInfoPos.x1, petInfoPos.y1, petInfoPos.x2, petInfoPos.y2, petInfoPos.color, petInfoPos.sim) as string;
+  // console.log(petInfoText, 'petInfoText');
+  if (!petInfoText) {
+    return null;
+  }
+  // 1. 匹配 字母/汉字 + 数字 + 汉字
+  const regex = /(?<=[a-zA-Z\u4e00-\u9fa5])(\d+)/g;
+  return {
+    level: Number(petInfoText?.match?.(regex)?.[0] || '') ?? null, // 等级
+    petType: petInfoText.indexOf('肉') !== -1 ? '肉' : '草', // 宠物食性
+    thirst: Number(petInfoText?.match?.(regex)?.[1] || '') ?? null, // 饥渴
+    trust: Number(petInfoText?.match?.(regex)?.[2] || '') ?? null, // 信赖
+  };
+};
+
 // 检查宠物是否是坐骑状态,通过宠物技能
 export const checkMounted = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   bindDm.moveToClick(65, 85);
@@ -247,6 +275,13 @@ export const checkUnEquipEquip = (bindDm: AutoT, bindWindowSize: '1600*900' | '1
 // 别人的队伍邀请
 export const checkInviteTeam = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const inviteTeamPos = DEFAULT_INVITE_TEAM[bindWindowSize];
+  const inviteTeamText = bindDm.ocr(inviteTeamPos.x1, inviteTeamPos.y1, inviteTeamPos.x2, inviteTeamPos.y2, inviteTeamPos.color, inviteTeamPos.sim);
+  return inviteTeamText.includes('邀') && inviteTeamText.includes('伍');
+};
+
+// 关闭任何突然弹出的弹框
+export const closeDialog = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const inviteTeamPos = DEFAULT_CLOSE_DIALOG[bindWindowSize];
   const inviteTeamText = bindDm.findStrFastE(inviteTeamPos.x1, inviteTeamPos.y1, inviteTeamPos.x2, inviteTeamPos.y2, inviteTeamPos.string, inviteTeamPos.color, inviteTeamPos.sim);
   return parseTextPos(inviteTeamText);
 };
@@ -263,4 +298,22 @@ export const checkSystemPrompt = (bindDm: AutoT, bindWindowSize: '1600*900' | '1
   const blockedPos = DEFAULT_SYSTERM_INFO[bindWindowSize];
   const blockedText = bindDm.findStrFastE(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, keyword, blockedPos.color, blockedPos.sim);
   return !!parseRolePositionFromText(blockedText);
+};
+
+// 识别到财产密码锁
+export const checkPasswordLock = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const passwordLockPos = DEFAULT_PASSWORD_LOCK[bindWindowSize];
+  const passwordLockText = bindDm.ocr(passwordLockPos.x1, passwordLockPos.y1, passwordLockPos.x2, passwordLockPos.y2, passwordLockPos.color, passwordLockPos.sim);
+  return passwordLockText.includes('操作锁定');
+};
+
+// 识别到财产密码锁中的密码
+export const checkPasswordLockPassword = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
+  const password = DEFAULT_PASSWORD_LOCK_RANGE[bindWindowSize];
+  const passwordPos = bindDm.findStrFastE(password.x1, password.y1, password.x2, password.y2, keyword, password.color, password.sim);
+  // 截图
+  // bindDm.capturePng(password.x1, password.y1, password.x2, password.y2, `${TEST_PATH}/test6.png`);
+  console.log(keyword, 'keyword');
+  console.log(passwordPos, 'passwordPos');
+  return parseTextPos(passwordPos);
 };

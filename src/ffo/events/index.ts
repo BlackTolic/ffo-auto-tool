@@ -64,6 +64,7 @@ export class DamoBindingManager {
   // 中文注释：以窗口句柄为 key 的客户端映射
   private clientsByHwnd: Map<number, DamoClientRecord> = new Map();
 
+  // 中文注释：以窗口句柄为 key 的角色映射
   private roleByHwnd: Map<number, Role> = new Map();
 
   // 中文注释：默认绑定配置（可被调用方覆盖）
