@@ -191,9 +191,10 @@ export class Damo {
   async loadDictFromFileAsync(index: number, filePath: string): Promise<number> {
     try {
       const absPath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
+      // 中文注释：大漠 SetDict 接口支持传入文件路径，由插件内部读取，效率更高且避开了 COM 字符串长度限制
       const ret = this.dm.SetDict(index, absPath);
       if (ret === 1) {
-        this.dictSource = { type: 'file', path: absPath, length: ret.length };
+        this.dictSource = { type: 'file', path: absPath };
       }
       return ret;
     } catch (e) {
@@ -284,8 +285,8 @@ export class Damo {
     return String(this.dm.EnumWindow(parent, title, class_name, filter) || '');
   }
 
-  enumWindowByProcessId(pid: number, title: string, class_name: string, filter: number): number {
-    return this.dm.EnumWindowByProcessId(pid, title, class_name, filter);
+  enumWindowByProcessId(pid: number, title: string, class_name: string, filter: number): string {
+    return String(this.dm.EnumWindowByProcessId(pid, title, class_name, filter) || '');
   }
   leftClick(): number {
     return this.dm.LeftClick();

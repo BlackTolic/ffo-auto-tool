@@ -14,22 +14,28 @@ const autoKeyOnByHwnd = new Map<number, boolean>();
 // 注册快捷键
 const registerHotkey = (keyName: string, callback: (dm?: any, pid?: number) => any) => {
   try {
-    const ok = globalShortcut.register(keyName, () => {
-      if (typeof callback !== 'function') {
-        return;
+    const ok = globalShortcut.register(keyName, async () => {
+      try {
+        if (typeof callback !== 'function') {
+          return;
+        }
+        const dm = ensureDamo();
+        // 中文注释：获取当前前台窗口句柄
+        const hwnd = dm.getForegroundWindow();
+        damoBindingManager.selectHwnd = hwnd;
+        if (!hwnd || hwnd <= 0) {
+          logger.warn('[快捷键] 未检测到前台窗口');
+          return;
+        }
+        // 中文注释：获取窗口所属进程 ID
+        const pid = (dm as any).dm?.GetWindowProcessId?.(hwnd);
+        const ret = await callback(dm, pid);
+        if (ret) {
+          logger.info(`[快捷键] ${keyName} 触发`);
+        }
+      } catch (e) {
+        logger.error(`[快捷键] ${keyName} 执行异常：`, (e as any)?.message || e);
       }
-      const dm = ensureDamo();
-      // 中文注释：获取当前前台窗口句柄
-      const hwnd = dm.getForegroundWindow();
-      damoBindingManager.selectHwnd = hwnd;
-      if (!hwnd || hwnd <= 0) {
-        logger.warn('[快捷键] 未检测到前台窗口');
-        return;
-      }
-      // 中文注释：获取窗口所属进程 ID
-      const pid = (dm as any).dm?.GetWindowProcessId?.(hwnd);
-      const ret = callback(dm, pid);
-      if (ret) logger.info(`[快捷键] ${keyName} 触发`, ret);
     });
     if (!ok) logger.warn(`[快捷键] ${keyName} 注册失败`, ok);
   } catch (e) {
@@ -94,7 +100,7 @@ export const toggleAutoKey = (
 
 // 通过依赖注入复用主进程已有方法，避免循环依赖
 export function registerGlobalHotkeys() {
-  // Alt+Q绑定句柄
+  // Alt+Q 绑定句柄
   registerHotkey('Alt+Q', async (dm, pid) => {
     if (!pid || pid <= 0) {
       logger.info('[快捷键] Alt+Q 失败 | 无法获取 PID');
@@ -114,11 +120,15 @@ export function registerGlobalHotkeys() {
   // 中文注释：Alt+W 切换自动按键
   // registerHotkey('Alt+W', () => toggleAutoKey('F1', 90));
 
-  // Alt+1 跑名誉
-  registerHotkey('Alt+2', () => mingYuTask.registerSoldierTask());
-  // Alt+2 跑云荒1层
+  // Alt+2 注册士兵任务
+  registerHotkey('Alt+2', () => {
+    console.log('注册士兵任务xxx');
+    // mingYuTask.registerSoldierTask();
+    return true;
+  });
+  // Alt+3 跑名誉
   registerHotkey('Alt+3', () => mingYuTask.startMingYuTask());
-  // Alt+2 跑云荒1层
+  // Alt+4 跑云荒1层
   registerHotkey('Alt+4', () => toggleYunHuang1West());
   // Alt + S 云荒1层刷怪
   registerHotkey('Alt+S', () => toggleYunHuang1West());

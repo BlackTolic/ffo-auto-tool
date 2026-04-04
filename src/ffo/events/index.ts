@@ -5,7 +5,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { AutoT } from '../../auto-plugin';
+import { AutoT, ensureDamo } from '../../auto-plugin';
 import { logger } from '../../utils/logger';
 import { Role } from './rolyer';
 
@@ -67,31 +67,16 @@ export class DamoBindingManager {
   // 中文注释：以窗口句柄为 key 的角色映射
   private roleByHwnd: Map<number, Role> = new Map();
 
+  // 中文注释：绑定状态锁，防止并发触发绑定逻辑
+  private isBinding: boolean = false;
+
   // 中文注释：默认绑定配置（可被调用方覆盖）
   private defaultConfig: Required<BindConfig> = {
-    // display: 'gdi',
-    // mouse: 'windows',
-    // keypad: 'windows',
-    // api: 'dx.public.active.api',
-    // mode: 0,
-    //********************************************************** */
-    // display: 'dx2',
-    // mouse: 'dx.mouse.position.lock.api|dx.mouse.api|dx.mouse.cursor',
-    // keypad: 'dx.keypad.api',
-    // api: 'dx.public.active.api|dx.public.hide.dll|dx.public.graphic.protect|dx.public.down.cpu',
-    // mode: 0,
-    //********************************************************** */
     display: 'dx.graphic.2d',
     mouse: 'dx.mouse.position.lock.api|dx.mouse.position.lock.message',
     keypad: 'dx.keypad.state.api|dx.keypad.api',
     api: '',
     mode: 0,
-    //********************************************************** */
-    // display: 'dx2',
-    // mouse: 'normal',
-    // keypad: 'windows',
-    // api: '',
-    // mode: 0,
   };
 
   // 当前选中的任务句柄
@@ -184,96 +169,66 @@ export class DamoBindingManager {
     return Array.from(new Set(results));
   }
 
-  // 中文注释：绑定指定 PID 的所有候选窗口；为每个窗口单独实例化大漠对象
+  // 中文注释：绑定指定 PID 的所有候选窗口；采用单例探测，实际绑定交由 Worker 完成
   async bindWindowsForPid(pid: number, config?: BindConfig): Promise<number> {
-    const cfg = { ...this.defaultConfig, ...(config || {}) };
-    // 中文注释：使用探测实例进行枚举（与真正绑定实例分离，确保每个窗口独立实例）
-    let probe: AutoT | null = null;
-    try {
-      probe = new AutoT();
-    } catch (err) {
-      ffoEvents.emit('error', { pid, error: err } as ErrorPayload);
+    if (this.isBinding) {
+      logger.warn(`[插件识别] PID=${pid} 的绑定任务已在进行中，跳过重复触发`);
       return 0;
     }
-    // 中文注释：枚举窗口句柄
-    // const hwnds = this.enumerateWindowsByPid(probe.dm, pid);
-    // 天使
-    const hwnds = this.enumerateWindowsByPid(probe, pid);
-    let successCount = 0;
-    for (const hwnd of hwnds) {
-      // 中文注释：跳过已绑定的窗口，避免重复
-      if (this.isBound(hwnd)) continue;
-      let client: AutoT;
-      try {
-        client = new AutoT();
-      } catch (err) {
-        ffoEvents.emit('error', { pid, hwnd, error: err } as ErrorPayload);
-        continue;
-      }
+    this.isBinding = true;
 
-      try {
-        // const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
-        logger.info(`[插件绑定] 版本 ${client.dm.Ver()}`);
-        // const ret = 2;
-        const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
-        // client.dm.delay(200);
-        logger.info(`[插件绑定] BindWindow 结果: ret=${ret}, hwnd=${hwnd}, pid=${pid}`);
-        if (ret !== 1) {
-          // 中文注释：返回非 1 表示失败，抛错并通知事件
-          throw new Error(`BindWindowEx 失败，返回值=${ret}, hwnd=${hwnd}, pid=${pid}`);
-        }
-        // 中文注释：记录成功绑定的客户端
-        this.clientsByHwnd.set(hwnd, { pid, hwnd, ffoClient: client });
-        successCount++;
-        // 中文注释：通知订阅者该窗口绑定成功
-        ffoEvents.emit('bound', { pid, hwnd } as BoundPayload);
-      } catch (err) {
-        // 中文注释：发生错误，通知订阅者
-        logger.error(`[插件绑定] BindWindow 错误: hwnd=${hwnd}, pid=${pid}`, err);
-        ffoEvents.emit('error', { pid, hwnd, error: err } as ErrorPayload);
-        // 中文注释：务必释放可能的绑定（防止半绑定状态）
+    try {
+      // 中文注释：主进程使用单例 Damo 实例进行枚举，不再重复创建 COM 对象
+      const dm = ensureDamo();
+      const hwnds = this.enumerateWindowsByPid(dm, pid);
+
+      let successCount = 0;
+      for (const hwnd of hwnds) {
+        // 中文注释：跳过已绑定的窗口，避免重复
+        if (this.isBound(hwnd)) continue;
+
         try {
-          client.unbindWindow();
-        } catch {}
+          // 中文注释：主进程仅记录并触发识别事件，真正的 bindWindow 将在 Role 初始化的子线程中执行
+          logger.info(`[插件识别] 发现候选窗口: hwnd=${hwnd}, pid=${pid}`);
+
+          // 记录识别到的客户端，使用单例 dm 作为引用以满足接口
+          this.clientsByHwnd.set(hwnd, { pid, hwnd, ffoClient: dm as any });
+          successCount++;
+
+          // 中文注释：通知订阅者该窗口已就绪（触发 Role 注册并启动 Worker 绑定）
+          ffoEvents.emit('bound', { pid, hwnd } as BoundPayload);
+        } catch (err) {
+          logger.error(`[插件识别] 处理错误: hwnd=${hwnd}, pid=${pid}`, err);
+          ffoEvents.emit('error', { pid, hwnd, error: err } as ErrorPayload);
+        }
       }
+      logger.info('[插件识别] 枚举窗口 hwnds', hwnds);
+      return successCount;
+    } finally {
+      this.isBinding = false;
     }
-    logger.info('[插件绑定] 枚举窗口 hwnds', hwnds);
-    return successCount;
   }
 
-  // 中文注释：按句柄绑定单个窗口（与按 PID 枚举相比更精确）
+  // 中文注释：按句柄识别单个窗口
   async bindWindow(hwnd: number, config?: BindConfig): Promise<boolean> {
-    if (!hwnd || hwnd <= 0) return false; // 中文注释：非法句柄直接返回
-    if (this.isBound(hwnd)) return true; // 中文注释：已绑定则认为成功
-    const cfg = { ...this.defaultConfig, ...(config || {}) };
-    let client: AutoT;
-    try {
-      client = new AutoT();
-    } catch (err) {
-      ffoEvents.emit('error', { hwnd, error: err } as ErrorPayload);
-      return false;
-    }
-    // 中文注释：尝试获取 PID（用于事件负载与记录）
+    if (!hwnd || hwnd <= 0) return false;
+    if (this.isBound(hwnd)) return true;
+
+    const dm = ensureDamo();
     let pid = 0;
     try {
-      pid = Number(client.getWindowProcessId?.(hwnd) || 0);
+      pid = dm.getWindowProcessId(hwnd);
     } catch {
-      logger.error(`[插件绑定] 获取窗口 PID 失败，hwnd=${hwnd}`);
+      logger.error(`[插件识别] 获取窗口 PID 失败，hwnd=${hwnd}`);
       return false;
     }
+
     try {
-      const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
-      if (ret !== 1) {
-        throw new Error(`BindWindow 失败，返回值=${ret}, hwnd=${hwnd}`);
-      }
-      this.clientsByHwnd.set(hwnd, { pid, hwnd, ffoClient: client });
+      this.clientsByHwnd.set(hwnd, { pid, hwnd, ffoClient: dm as any });
       ffoEvents.emit('bound', { pid, hwnd } as BoundPayload);
       return true;
     } catch (err) {
       ffoEvents.emit('error', { pid, hwnd, error: err } as ErrorPayload);
-      try {
-        client.unbindWindow();
-      } catch {}
       return false;
     }
   }

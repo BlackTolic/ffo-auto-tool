@@ -213,24 +213,36 @@ export default class MingYuTask {
 
   // 注册角色分工任务
   public registerSoldierTask(selectHwnd?: number) {
-    const { role } = getBindWindowInfo(selectHwnd);
-    this.soldier.role = role;
-    this.soldier.moveActions = new MoveActions(role);
-    this.soldier.baseAction = new BaseAction(role);
-    this.soldier.attackActions = new AttackActions(role, { monsterFeature: OCR_MING_YU_BOSS, skillGroup });
-    logger.info('注册士兵任务');
+    try {
+      // const { role } = getBindWindowInfo(selectHwnd);
+      // this.soldier.role = role;
+      // this.soldier.moveActions = new MoveActions(role);
+      // this.soldier.baseAction = new BaseAction(role);
+      // this.soldier.attackActions = new AttackActions(role, { monsterFeature: OCR_MING_YU_BOSS, skillGroup });
+      logger.info('注册士兵任务');
+    } catch (e) {
+      logger.error('注册士兵任务失败', e);
+    }
   }
   registerAssistantTask(selectHwnd?: number) {
-    const { role } = getBindWindowInfo(selectHwnd);
-    this.assistant.role = role;
-    this.assistant.moveActions = new MoveActions(role);
-    this.assistant.baseAction = new BaseAction(role);
-    logger.info('注册辅助任务');
+    try {
+      const { role } = getBindWindowInfo(selectHwnd);
+      this.assistant.role = role;
+      this.assistant.moveActions = new MoveActions(role);
+      this.assistant.baseAction = new BaseAction(role);
+      logger.info('注册辅助任务');
+    } catch (e) {
+      logger.error('注册辅助任务失败', e);
+    }
   }
   registerCustomerTask(selectHwnd?: number) {
-    const { role } = getBindWindowInfo(selectHwnd);
-    this.customers.push({ role: role, moveActions: null, baseAction: null });
-    logger.info('注册客户任务');
+    try {
+      const { role } = getBindWindowInfo(selectHwnd);
+      this.customers.push({ role: role, moveActions: null, baseAction: null });
+      logger.info('注册客户任务');
+    } catch (e) {
+      logger.error('注册客户任务失败', e);
+    }
   }
 
   // 启动任务分工

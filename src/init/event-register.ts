@@ -1,7 +1,4 @@
 import { BrowserWindow, Notification } from 'electron';
-import fs from 'fs'; // 中文注释：读取字典文件
-import path from 'path'; // 中文注释：处理文件路径
-import { OCR_FONT_PATH } from '../constant/config';
 import { damoBindingManager, ffoEvents } from '../ffo/events';
 import { Role } from '../ffo/events/rolyer';
 import { stopKeyPress } from '../ffo/utils/key-press';
@@ -19,43 +16,21 @@ let lastBoundHwnd: number | null = null;
 export const registerBoundEventHandlers = () => {
   ffoEvents.on('bound', async ({ pid, hwnd }) => {
     new Notification({ title: '绑定成功', body: `PID=${pid} HWND=${hwnd}` }).show();
-    lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄（供其他逻辑参考，不参与快捷键切换）
-    const rec = damoBindingManager.get(hwnd);
+    lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄
+
+    // 中文注释：防止重复创建 Role 实例和子线程
+    if (damoBindingManager.getRole(hwnd)) {
+      logger.info(`[绑定事件] 窗口 ${hwnd} 已存在活跃角色实例，跳过重复注册`);
+      return;
+    }
+
     const role = new Role();
     // 中文注释：设置角色信息
     damoBindingManager.setRole(hwnd, role);
 
-    if (!rec) return;
     try {
-      const dm = rec?.ffoClient?.dm;
-      let dictLoaded = false;
-      if (fs.existsSync(OCR_FONT_PATH)) {
-        try {
-          // 加载ffo字库
-          const ret = await rec?.ffoClient?.loadDictFromFileAsync(0, OCR_FONT_PATH);
-          if (ret === 1) {
-            // 中文注释：加载字库成功后，启用索引 0（默认字库）
-            dm?.UseDict(0);
-            logger.info(`[OCR字典] 已加载 ${path.basename(OCR_FONT_PATH)} 并启用索引 0`);
-            dictLoaded = true;
-            const info = rec?.ffoClient?.getCurrentDictInfo?.();
-            // 中文注释：广播字库信息更新事件（供渲染进程监听）
-            broadcastDictInfoUpdated(hwnd, info);
-          } else {
-            logger.warn(`[OCR字典] SetDict 返回值=${ret} | 路径=${OCR_FONT_PATH}`);
-          }
-        } catch (err) {
-          logger.warn(`[OCR字典] 加载失败: ${OCR_FONT_PATH} | ${String((err as any)?.message || err)}`);
-        }
-      }
-      if (!dictLoaded) {
-        dm?.UseDict(0);
-        logger.info('[OCR字典] 使用默认字典索引 0（未找到或加载失败）');
-      }
-
-      // 注册角色信息 1280*800  1600*900
+      // 注册角色信息，并启动子线程执行实际绑定与 OCR
       role.registerRole('1600*900', hwnd);
-      // role.registerRole('1280*800', hwnd);
     } catch (err) {
       logger.warn(`[绑定事件] 处理失败: ${String((err as any)?.message || err)}`);
     }
