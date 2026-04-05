@@ -3,9 +3,7 @@ import { ensureDamo } from '../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
 import { AttackActions } from '../ffo/events/attack-action';
-import { toggleBiYiCityNorth } from '../ffo/events/game-actions/biyichengbei';
 import { mingYuTask } from '../ffo/events/game-actions/ming-yu';
-import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { logger } from '../utils/logger';
 // 中文注释：记录每个窗口当前是否开启了自动按键
@@ -95,13 +93,13 @@ export const toggleAutoKey = (
 // 通过依赖注入复用主进程已有方法，避免循环依赖
 export function registerGlobalHotkeys() {
   // Alt+Q绑定句柄
-  registerHotkey('Alt+Q', async (dm, pid) => {
-    if (!pid || pid <= 0) {
-      logger.info('[快捷键] Alt+Q 失败 | 无法获取 PID');
-      return;
-    }
-    return await damoBindingManager.bindWindowsForPid(pid);
-  });
+  // registerHotkey('Alt+Q', async (dm, pid) => {
+  //   if (!pid || pid <= 0) {
+  //     logger.info('[快捷键] Alt+Q 失败 | 无法获取 PID');
+  //     return;
+  //   }
+  //   return await damoBindingManager.bindWindowsForPid(pid);
+  // });
 
   // registerHotkey('Alt+1', async (dm, pid) => {
   //   if (!pid || pid <= 0) {
@@ -119,15 +117,15 @@ export function registerGlobalHotkeys() {
   // Alt+2 跑云荒1层
   registerHotkey('Alt+3', () => mingYuTask.startMingYuTask());
   // Alt+2 跑云荒1层
-  registerHotkey('Alt+4', () => toggleYunHuang1West());
+  // registerHotkey('Alt+4', () => toggleYunHuang1West());
   // Alt + S 云荒1层刷怪
-  registerHotkey('Alt+S', () => toggleYunHuang1West());
+  // registerHotkey('Alt+S', () => toggleYunHuang1West());
 
   // 幻幽平原刷怪
   // registerHotkey('Alt+2', () => toggleHuanYouPinYuan1());
 
   // 无泪南郊刷怪
-  registerHotkey('Alt+6', () => toggleBiYiCityNorth());
+  // registerHotkey('Alt+6', () => toggleBiYiCityNorth());
 }
 
 // 中文注释：记录每个窗口的自动打怪操作实例（用于 Alt+R 开/关切换）

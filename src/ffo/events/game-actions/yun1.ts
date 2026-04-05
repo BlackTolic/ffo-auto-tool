@@ -10,10 +10,10 @@ import { MoveActions } from '../move-action';
 import { AutoFarmingAction, AutoFarmingInstance } from './auto-farming';
 
 const validEquip: ValidEquip = [
-  { type: '戒指', attrName: '力量|智慧|体质|生命最大值|魔法攻击力|物理攻击力' },
+  { type: '戒指', attrName: '力量|智慧|体质|生命最大值|魔法攻击力|物理攻击力|敏捷' },
   { type: '项链', attrName: '力量|智慧|体质|魔抗|护甲值' },
-  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|智慧' },
-  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', level: '102', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害|力量|体质' },
+  // { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|智慧' },
+  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害|力量|体质' },
   { type: '头盔', attrName: '生命最大值|力量|魔抗|体质|伤害|智慧' },
   { type: '手套', attrName: '物理攻击力|魔法攻击力|力量|体质|智慧' },
   { type: '服装', attrName: '生命最大值|体质|护甲值|智慧' },
@@ -55,7 +55,7 @@ const CONSTANTS = {
   STATION_R: 6, // 半径
   CHECK_EQUIP_COUNT: 23, // 检查装备的数量
   DEAD_CALL_TIME: 28 * 60 * 1000, // 死亡后等待时间，之后重新启动
-  YUN_HUANG_CALL_STATIC_TIME: 20, // 云荒静止多少秒后开始回调移动（单位：分钟）
+  YUN_HUANG_CALL_STATIC_TIME: 15, // 云荒静止多少秒后开始回调移动（单位：分钟）
 };
 
 const MAP_NAME = {
