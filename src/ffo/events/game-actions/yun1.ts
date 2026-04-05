@@ -178,9 +178,6 @@ const loopCheckStatus = async () => {
   const moveActions = new MoveActions(role);
   const baseAction = new BaseAction(role);
 
-  // 前置检查
-  await baseAction.preMount();
-
   await new Promise(res => setTimeout(res, 5 * 1000));
   // 屏蔽所有人
   baseAction.blockAllPlayers();
@@ -304,6 +301,9 @@ export const toggleYunHuang1West = () => {
   const role = getBoundRole();
   let baseAction = new BaseAction(role);
   let attackActions = new AttackActions(role, { monsterFeature: OCR_YUN_HUAN_1_MONSTER });
+
+  // 前置检查
+  baseAction.preMount();
 
   // 死亡时回调
   const deadCall = () => {
