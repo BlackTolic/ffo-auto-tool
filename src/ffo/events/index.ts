@@ -144,11 +144,11 @@ export class DamoBindingManager {
     }
   }
 
-  // 中文注释：按 PID 枚举候选窗口句柄（优先可见顶级，回退顶级所有）
-  private enumerateWindowsByPid(dmRaw: any, pid: number): number[] {
+  // 根据进程ID获取当前的顶级窗口句柄，即选中窗口
+  private getTopWinHwndsByPid(dmRaw: AutoT, pid: number): number[] {
     const results: number[] = [];
     try {
-      // 8=顶级窗口，16=可见窗口；优先取可见顶级
+      // 8=顶级窗口，16=可见窗口；这里是匹配所有可见的父窗口
       const visTop = String(dmRaw.enumWindowByProcessId(pid, '', '', 8 + 16) || '')
         .split(',')
         .map(s => parseInt(s))
@@ -170,31 +170,28 @@ export class DamoBindingManager {
   }
 
   // 中文注释：绑定指定 PID 的所有候选窗口；采用单例探测，实际绑定交由 Worker 完成
-  async bindWindowsForPid(pid: number, config?: BindConfig): Promise<number> {
+  async bindWindowsByPid(pid: number, config?: BindConfig): Promise<number> {
     if (this.isBinding) {
       logger.warn(`[插件识别] PID=${pid} 的绑定任务已在进行中，跳过重复触发`);
       return 0;
     }
     this.isBinding = true;
-
     try {
       // 中文注释：主进程使用单例 Damo 实例进行枚举，不再重复创建 COM 对象
       const dm = ensureDamo();
-      const hwnds = this.enumerateWindowsByPid(dm, pid);
-
+      const hwnds = this.getTopWinHwndsByPid(dm, pid);
+      console.log(hwnds, '根据游戏名称获取的句柄');
       let successCount = 0;
       for (const hwnd of hwnds) {
         // 中文注释：跳过已绑定的窗口，避免重复
-        if (this.isBound(hwnd)) continue;
-
+        if (this.isBound(hwnd)) {
+          logger.info(`[插件识别] 当前窗口 ${hwnd} 已绑定，跳过`);
+          continue;
+        }
         try {
           // 中文注释：主进程仅记录并触发识别事件，真正的 bindWindow 将在 Role 初始化的子线程中执行
-          logger.info(`[插件识别] 发现候选窗口: hwnd=${hwnd}, pid=${pid}`);
-
-          // 记录识别到的客户端，使用单例 dm 作为引用以满足接口
           this.clientsByHwnd.set(hwnd, { pid, hwnd, ffoClient: dm as any });
           successCount++;
-
           // 中文注释：通知订阅者该窗口已就绪（触发 Role 注册并启动 Worker 绑定）
           ffoEvents.emit('bound', { pid, hwnd } as BoundPayload);
         } catch (err) {
@@ -213,7 +210,7 @@ export class DamoBindingManager {
   async bindWindow(hwnd: number, config?: BindConfig): Promise<boolean> {
     if (!hwnd || hwnd <= 0) return false;
     if (this.isBound(hwnd)) return true;
-
+    // 生成主线程的大漠对象
     const dm = ensureDamo();
     let pid = 0;
     try {
@@ -242,7 +239,7 @@ ffoEvents.on('bind:pid', async (payload: BindRequestPayload) => {
   logger.info('[绑定] 收到按 PID 绑定请求', payload);
   const { pid, config } = payload;
   try {
-    await damoBindingManager.bindWindowsForPid(pid, config);
+    await damoBindingManager.bindWindowsByPid(pid, config);
   } catch (err) {
     ffoEvents.emit('error', { pid, error: err } as ErrorPayload);
   }

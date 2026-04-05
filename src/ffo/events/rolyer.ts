@@ -87,38 +87,37 @@ export class Role {
     this.bindPlugin = bindDm;
     // 中文注释：不再在主进程获取角色名，避免未绑定导致的 OCR 崩溃，统一由子线程 INITIALIZED 消息返回
     this.name = 'Initializing...';
-
     // 初始化代理插件对象，将指令转发给子线程执行，避免主线程与子线程同时绑定同一个窗口句柄导致的冲突
     this.initProxyPlugin();
-
     // 初始化子线程
     this.initWorker();
   }
 
   private initProxyPlugin() {
-    // 中文注释：使用 Proxy 拦截主线程对大漠插件的所有调用，并转发给实际持有绑定的子线程
     const proxyHandler = {
-      get: (target: any, prop: string) => {
-        // 如果访问的是属性而非函数，或者 worker 还没准备好，直接返回（或按需处理）
+      get: (target: any, prop: string | symbol) => {
+        // 1. 放行 Symbol 和特殊调试属性，避免检查/打印对象时崩溃
+        if (typeof prop === 'symbol' || prop === 'inspect') {
+          return target[prop];
+        }
+
+        const original = target[prop];
+        // 2. 如果不是函数，直接返回原始值（例如获取 hwnd 属性）
+        if (typeof original !== 'function') {
+          return original;
+        }
+
+        // 3. 只有函数调用才进行转发
         return (...args: any[]) => {
           if (this.worker) {
-            this.worker.postMessage({
-              type: 'CALL_DM',
-              data: { method: prop, args },
-            });
+            this.worker.postMessage({ type: 'CALL_DM', data: { method: prop as string, args } });
           } else {
-            // 如果 worker 还没启动，先在主线程的原始对象上尝试调用（仅限初始化阶段）
-            if (typeof target[prop] === 'function') {
-              return target[prop](...args);
-            }
+            return original.apply(target, args);
           }
         };
       },
     };
-
-    // 重新包装 bindPlugin 和 bindDm
     this.bindPlugin = new Proxy(this.bindPlugin || {}, proxyHandler);
-    this.bindDm = this.bindPlugin;
   }
 
   private initWorker() {

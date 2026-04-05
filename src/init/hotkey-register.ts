@@ -11,33 +11,53 @@ import { logger } from '../utils/logger';
 // 中文注释：记录每个窗口当前是否开启了自动按键
 const autoKeyOnByHwnd = new Map<number, boolean>();
 
+// 中文注释：快捷键处理锁，防止并发操作大漠插件实例导致崩溃
+let isHotkeyProcessing = false;
+
 // 注册快捷键
 const registerHotkey = (keyName: string, callback: (dm?: any, pid?: number) => any) => {
   try {
     const ok = globalShortcut.register(keyName, async () => {
+      // 中文注释：如果当前正在处理其他快捷键，直接跳过，避免大漠插件并发调用冲突
+      if (isHotkeyProcessing) {
+        logger.warn(`[快捷键] ${keyName} 触发过快或正在处理中，已忽略`);
+        return;
+      }
+
+      isHotkeyProcessing = true;
       try {
         if (typeof callback !== 'function') {
           return;
         }
+
         const dm = ensureDamo();
         // 中文注释：获取当前前台窗口句柄
         const hwnd = dm.getForegroundWindow();
-        damoBindingManager.selectHwnd = hwnd;
+
         if (!hwnd || hwnd <= 0) {
-          logger.warn('[快捷键] 未检测到前台窗口');
+          logger.warn(`[快捷键] ${keyName} 失败：未检测到有效的前台窗口`);
           return;
         }
-        // 中文注释：获取窗口所属进程 ID
-        const pid = (dm as any).dm?.GetWindowProcessId?.(hwnd);
+
+        // 中文注释：使用封装好的方法获取 PID，增加健壮性
+        const pid = dm.getWindowProcessId(hwnd);
+
+        if (!pid || pid <= 0) {
+          logger.warn(`[快捷键] ${keyName} 失败：无法获取窗口 PID (hwnd=${hwnd})`);
+          return;
+        }
+
         const ret = await callback(dm, pid);
         if (ret) {
-          logger.info(`[快捷键] ${keyName} 触发`);
+          logger.info(`[快捷键] ${keyName} 执行成功`);
         }
       } catch (e) {
         logger.error(`[快捷键] ${keyName} 执行异常：`, (e as any)?.message || e);
+      } finally {
+        isHotkeyProcessing = false;
       }
     });
-    if (!ok) logger.warn(`[快捷键] ${keyName} 注册失败`, ok);
+    if (!ok) logger.warn(`[快捷键] ${keyName} 注册失败`);
   } catch (e) {
     logger.warn(`[快捷键] ${keyName} 注册异常：`, (e as any)?.message || e);
   }
@@ -106,7 +126,7 @@ export function registerGlobalHotkeys() {
       logger.info('[快捷键] Alt+Q 失败 | 无法获取 PID');
       return;
     }
-    return await damoBindingManager.bindWindowsForPid(pid);
+    return await damoBindingManager.bindWindowsByPid(pid);
   });
 
   // registerHotkey('Alt+1', async (dm, pid) => {

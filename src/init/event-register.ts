@@ -1,4 +1,4 @@
-import { BrowserWindow, Notification } from 'electron';
+import { BrowserWindow } from 'electron';
 import { damoBindingManager, ffoEvents } from '../ffo/events';
 import { Role } from '../ffo/events/rolyer';
 import { stopKeyPress } from '../ffo/utils/key-press';
@@ -14,21 +14,19 @@ let lastBoundHwnd: number | null = null;
 
 // 中文注释：为绑定成功事件注册处理逻辑（加载字库、调试输出、截图与 OCR 示例）
 export const registerBoundEventHandlers = () => {
+  // 监听到传来的绑定消息
   ffoEvents.on('bound', async ({ pid, hwnd }) => {
-    new Notification({ title: '绑定成功', body: `PID=${pid} HWND=${hwnd}` }).show();
-    lastBoundHwnd = hwnd; // 中文注释：记录最近绑定的窗口句柄
-
+    // 中文注释：记录最近绑定的窗口句柄
+    lastBoundHwnd = hwnd;
     // 中文注释：防止重复创建 Role 实例和子线程
     if (damoBindingManager.getRole(hwnd)) {
       logger.info(`[绑定事件] 窗口 ${hwnd} 已存在活跃角色实例，跳过重复注册`);
       return;
     }
-
-    const role = new Role();
-    // 中文注释：设置角色信息
-    damoBindingManager.setRole(hwnd, role);
-
     try {
+      const role = new Role();
+      // 中文注释：设置角色信息
+      damoBindingManager.setRole(hwnd, role);
       // 注册角色信息，并启动子线程执行实际绑定与 OCR
       role.registerRole('1600*900', hwnd);
     } catch (err) {

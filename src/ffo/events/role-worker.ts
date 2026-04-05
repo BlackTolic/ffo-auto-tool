@@ -38,7 +38,7 @@ const init = async () => {
     const keypad = 'dx.keypad.state.api|dx.keypad.api';
     const api = '';
     const mode = 0;
-
+    console.log(hwnd, 'hwnd');
     const ret = dm.bindWindow(hwnd, display, mouse, keypad, api, mode);
     if (ret !== 1) {
       throw new Error(`BindWindow 失败，返回值=${ret}, hwnd=${hwnd}`);
@@ -84,6 +84,7 @@ const loop = async () => {
 
     // 获取角色位置
     const position = getRolePosition(dm, bindWindowSize);
+    console.log(position, 'position');
 
     // 如果没有位置，通知主线程并阻塞
     if (!position) {

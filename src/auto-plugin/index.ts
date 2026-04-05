@@ -1,4 +1,5 @@
 import cp from 'child_process';
+import logger from '../utils/logger';
 import { Damo, describeReg } from './Damo/damo';
 
 // 中文注释：导出单例获取函数，集中管理 Damo 实例（懒加载）
@@ -10,12 +11,17 @@ let __damoRegisteredOnce: boolean = false;
 let __damoLastRegCode: number | undefined = undefined;
 
 export const ensureDamo = (): Damo => {
-  // 中文注释：仅在首次调用时创建实例，后续复用，避免重复 COM 初始化
-  if (!__damoSingleton) {
-    // __damoSingleton = new Damo();
-    __damoSingleton = new Damo();
+  try {
+    // 中文注释：仅在首次调用时创建实例，后续复用，避免重复 COM 初始化
+    if (!__damoSingleton) {
+      // __damoSingleton = new Damo();
+      __damoSingleton = new Damo();
+    }
+    return __damoSingleton;
+  } catch (err) {
+    logger.error('ensureDamo error:', err);
+    throw err;
   }
-  return __damoSingleton;
 };
 
 // 新增：判断当前进程是否以管理员运行（中文注释）
@@ -55,6 +61,7 @@ export const registerDamoOnce = (): DamoRegResult => {
       message: '已注册，无需重复执行',
     };
   }
+  // 首次注册大漠插件，仅一次；非安装阶段，普通运行时
   const dm = ensureDamo();
   const code = dm.reg();
   __damoLastRegCode = code;
