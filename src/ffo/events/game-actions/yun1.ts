@@ -178,6 +178,9 @@ const loopCheckStatus = async () => {
   const moveActions = new MoveActions(role);
   const baseAction = new BaseAction(role);
 
+  // 前置检查
+  await baseAction.preMount();
+
   await new Promise(res => setTimeout(res, 5 * 1000));
   // 屏蔽所有人
   baseAction.blockAllPlayers();
@@ -189,6 +192,8 @@ const loopCheckStatus = async () => {
   // 检查当前是否是坐骑状态
   const isMounted = checkMounted(dm, role.bindWindowSize);
   if (!isMounted) {
+    // 喂养宠物
+    await baseAction.openPetBoxAndFeed('F6', 'F7', 'F8');
     // 上马
     await baseAction.pressSecondSkillBarSkill('F10');
   }

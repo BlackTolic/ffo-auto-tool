@@ -93,13 +93,13 @@ export const toggleAutoKey = (
 // 通过依赖注入复用主进程已有方法，避免循环依赖
 export function registerGlobalHotkeys() {
   // Alt+Q绑定句柄
-  // registerHotkey('Alt+Q', async (dm, pid) => {
-  //   if (!pid || pid <= 0) {
-  //     logger.info('[快捷键] Alt+Q 失败 | 无法获取 PID');
-  //     return;
-  //   }
-  //   return await damoBindingManager.bindWindowsForPid(pid);
-  // });
+  registerHotkey('Alt+Q', async (dm, pid) => {
+    if (!pid || pid <= 0) {
+      logger.info('[快捷键] Alt+Q 失败 | 无法获取 PID');
+      return;
+    }
+    return await damoBindingManager.bindWindowsForPid(pid);
+  });
 
   // registerHotkey('Alt+1', async (dm, pid) => {
   //   if (!pid || pid <= 0) {
