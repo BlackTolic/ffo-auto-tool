@@ -1,5 +1,3 @@
-import path from 'path';
-import { Worker } from 'worker_threads';
 import { damoBindingManager } from '.';
 import { AutoT, ensureDamo } from '../../auto-plugin/index';
 import { ROLE_IS_DEAD_PATH } from '../../constant/config';
@@ -66,9 +64,68 @@ export class Role {
   private deadCall: (() => void) | null = null; // 死亡回调
   private teamApplyCall: ((rejectPos?: Pos, agreePos?: Pos) => void) | null = null; // 组队申请回调
   private globalStrategyTask: GlobalStrategyTask[] | null = null; // 全局策略任务队列
-  private worker: Worker | null = null; // 工作线程
 
   constructor() {}
+
+  // 初始化角色信息，项目初始化执行
+  childProcessInitRoleInfo(name: string) {
+    this.name = name;
+  }
+  // 更新角色信息
+  childProcessUpdateRoleInfo(position: Pos, map: string, selectedMonster: string, health: string) {
+    this.position = position;
+    this.map = map;
+    this.selectMonster = selectedMonster;
+    this.bloodStatus = health;
+  }
+
+  // 更新团队邀请信息
+  childProcessUpdateTeamInviteInfo(data: any) {
+    this.teamApplyCall?.(data.rejectPos, data.agreePos);
+  }
+
+  // 处理验证码识别结果
+  childProcessUpdateVerifyCodeResult(data: any) {
+    const { Ali, TuJian, verifyCodeTextPos, checkPos } = data;
+    logger.info('验证码识别结果 Ali', Ali);
+    logger.info('验证码识别结果 TuJian', TuJian);
+    const I = { x: verifyCodeTextPos.x + checkPos.I.x, y: verifyCodeTextPos.y + checkPos.I.y };
+    const II = { x: verifyCodeTextPos.x + checkPos.II.x, y: verifyCodeTextPos.y + checkPos.II.y };
+    const III = { x: verifyCodeTextPos.x + checkPos.III.x, y: verifyCodeTextPos.y + checkPos.III.y };
+    const map = { I, II, III };
+    const result = selectRightAnwser(Ali, TuJian);
+    const answerPos = (map as any)[result as string] || map['I'];
+    this.bindDm.moveTo(answerPos.x, answerPos.y);
+    this.bindDm.leftClick();
+    logger.info('当前时间:', new Date().toLocaleString());
+  }
+
+  // 角色死亡后的操作
+  childProcessUpdateDeathInfo() {
+    const { name } = this;
+    const delayFun = () => {
+      this.bindPlugin.captureFullScreen(ROLE_IS_DEAD_PATH);
+      this.bindPlugin.delay(300);
+      emailStrategy.sendMessage({
+        to: '1031690983@qq.com',
+        subject: '角色死亡',
+        text: `角色 ${name} 已死亡`,
+        attachments: [{ filename: '阵亡截图.png', path: ROLE_IS_DEAD_PATH, cid: 'logoImg' }],
+      });
+    };
+    delay20S(delayFun);
+    this.deadCall?.();
+    this.clearAllActionTimer();
+    this.bindPlugin.moveToClick(894, 490);
+    this.bindPlugin.delay(1000);
+    this.bindPlugin.moveToClick(799, 418);
+  }
+
+  // 更新离线信息
+  childProcessUpdateOfflineInfo() {
+    emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色离线', text: `角色 ${this.name} 已掉线` });
+    this.unregisterRole();
+  }
 
   // 需要先绑定之后再注册角色信息
   public registerRole(bindWindowSize: '1600*900' | '1280*800', hwndId?: number) {
@@ -88,98 +145,9 @@ export class Role {
     // 中文注释：不再在主进程获取角色名，避免未绑定导致的 OCR 崩溃，统一由子线程 INITIALIZED 消息返回
     this.name = 'Initializing...';
     // 初始化代理插件对象，将指令转发给子线程执行，避免主线程与子线程同时绑定同一个窗口句柄导致的冲突
-    this.initProxyPlugin();
+    // this.initProxyPlugin();
     // 初始化子线程
-    this.initWorker();
-  }
-
-  private initProxyPlugin() {
-    const proxyHandler = {
-      get: (target: any, prop: string | symbol) => {
-        // 1. 放行 Symbol 和特殊调试属性，避免检查/打印对象时崩溃
-        if (typeof prop === 'symbol' || prop === 'inspect') {
-          return target[prop];
-        }
-
-        const original = target[prop];
-        // 2. 如果不是函数，直接返回原始值（例如获取 hwnd 属性）
-        if (typeof original !== 'function') {
-          return original;
-        }
-
-        // 3. 只有函数调用才进行转发
-        return (...args: any[]) => {
-          if (this.worker) {
-            this.worker.postMessage({ type: 'CALL_DM', data: { method: prop as string, args } });
-          } else {
-            return original.apply(target, args);
-          }
-        };
-      },
-    };
-    this.bindPlugin = new Proxy(this.bindPlugin || {}, proxyHandler);
-  }
-
-  private initWorker() {
-    // 中文注释：启动子线程负责高频 OCR 识别与状态监控，避免阻塞主线程
-    // 注意：在 Electron 环境下，需要确保 role-worker.js 路径正确
-    const workerPath = path.join(__dirname, 'role-worker.js');
-    this.worker = new Worker(workerPath, {
-      workerData: {
-        hwnd: this.hwnd,
-        bindWindowSize: this.bindWindowSize,
-        name: this.name,
-        job: this.job,
-        needCheckDead: this.needCheckDead,
-      },
-    });
-
-    this.worker.on('message', msg => {
-      switch (msg.type) {
-        case 'INITIALIZED':
-          this.name = msg.data.name;
-          this.position = msg.data.position;
-          this.job = this.name.includes('花开无须折') ? 'SS' : 'JK';
-          logger.info(`[角色信息] 子线程初始化完成，角色名: ${this.name}`);
-          break;
-        case 'STATUS_UPDATE':
-          this.position = msg.data.position;
-          this.map = msg.data.map;
-          this.selectMonster = msg.data.selectMonster;
-          this.bloodStatus = msg.data.bloodStatus;
-          this.handleRoleLoop(); // 主线程处理任务逻辑与全局策略
-          break;
-        case 'TEAM_INVITE':
-          if (typeof this.teamApplyCall === 'function') {
-            this.teamApplyCall(msg.data.rejectPos, msg.data.agreePos);
-          }
-          break;
-        case 'VERIFY_CODE_RESULT':
-          this.handleVerifyCode(msg.data);
-          break;
-        case 'DEATH_DETECTED':
-          this.handleDeath();
-          break;
-        case 'OFFLINE':
-          logger.warn('[角色信息] 角色已掉线');
-          emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色离线', text: `角色 ${this.name} 已掉线` });
-          this.unregisterRole();
-          break;
-        case 'LOG':
-          (logger as any)[msg.level || 'info']?.(msg.message);
-          break;
-      }
-    });
-
-    this.worker.on('error', err => {
-      logger.error(`[角色工作线程] 发生错误: ${err.message}`);
-    });
-
-    this.worker.on('exit', code => {
-      if (code !== 0) {
-        logger.error(`[角色工作线程] 异常退出，退出码: ${code}`);
-      }
-    });
+    // this.initWorker();
   }
 
   // 主线程处理逻辑：全局策略与任务队列
@@ -219,25 +187,6 @@ export class Role {
     }
   }
 
-  // 处理验证码识别结果
-  private handleVerifyCode(data: any) {
-    const { Ali, TuJian, verifyCodeTextPos, checkPos } = data;
-    logger.info('验证码识别结果 Ali', Ali);
-    logger.info('验证码识别结果 TuJian', TuJian);
-
-    const I = { x: verifyCodeTextPos.x + checkPos.I.x, y: verifyCodeTextPos.y + checkPos.I.y };
-    const II = { x: verifyCodeTextPos.x + checkPos.II.x, y: verifyCodeTextPos.y + checkPos.II.y };
-    const III = { x: verifyCodeTextPos.x + checkPos.III.x, y: verifyCodeTextPos.y + checkPos.III.y };
-    const map = { I, II, III };
-
-    const result = selectRightAnwser(Ali, TuJian);
-
-    const answerPos = (map as any)[result as string] || map['I'];
-    this.bindDm.moveTo(answerPos.x, answerPos.y);
-    this.bindDm.leftClick();
-    logger.info('当前时间:', new Date().toLocaleString());
-  }
-
   // 处理死亡逻辑
   private handleDeath() {
     const { name } = this;
@@ -270,12 +219,12 @@ export class Role {
   }
 
   unregisterRole() {
-    if (this.worker) {
-      this.worker.postMessage({ type: 'STOP_LOOP' });
-      this.worker.terminate();
-      this.worker = null;
-      logger.info('[角色信息] 已解除角色轮询子线程');
-    }
+    // if (this.worker) {
+    //   this.worker.postMessage({ type: 'STOP_LOOP' });
+    //   this.worker.terminate();
+    //   this.worker = null;
+    //   logger.info('[角色信息] 已解除角色轮询子线程');
+    // }
     this.task = null;
     this.lastTaskActionTs = 0;
     this.isPauseCurActive = false;

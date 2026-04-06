@@ -3,7 +3,6 @@ import { ensureDamo } from '../auto-plugin/index';
 import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
 import { AttackActions } from '../ffo/events/attack-action';
-import { toggleBiYiCityNorth } from '../ffo/events/game-actions/biyichengbei';
 import { mingYuTask } from '../ffo/events/game-actions/ming-yu';
 import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
@@ -129,14 +128,6 @@ export function registerGlobalHotkeys() {
     return await damoBindingManager.bindWindowsByPid(pid);
   });
 
-  // registerHotkey('Alt+1', async (dm, pid) => {
-  //   if (!pid || pid <= 0) {
-  //     logger.info('[快捷键] Alt+1 失败 | 无法获取 PID');
-  //     return;
-  //   }
-  //   return await damoBindingManager.bindWindowsForPid(pid);
-  // });
-
   // 中文注释：Alt+W 切换自动按键
   // registerHotkey('Alt+W', () => toggleAutoKey('F1', 90));
 
@@ -157,7 +148,7 @@ export function registerGlobalHotkeys() {
   // registerHotkey('Alt+2', () => toggleHuanYouPinYuan1());
 
   // 无泪南郊刷怪
-  registerHotkey('Alt+6', () => toggleBiYiCityNorth());
+  // registerHotkey('Alt+6', () => toggleBiYiCityNorth());
 }
 
 // 中文注释：记录每个窗口的自动打怪操作实例（用于 Alt+R 开/关切换）

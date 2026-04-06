@@ -1,19 +1,19 @@
 import fs from 'fs';
 import { parentPort, workerData } from 'worker_threads';
-import { getVerifyCodeByAliQW } from '../../AI/ali-qianwen';
-import { getVerifyCodeByTuJian } from '../../AI/tu-jian';
-import { ensureDamo } from '../../auto-plugin/index';
-import { OCR_FONT_PATH, VERIFY_CODE_OPTIONS_PATH, VERIFY_CODE_QUESTION_PATH } from '../../constant/config';
-import { DEFAULT_VERIFY_CODE_TEXT } from '../constant/OCR-pos';
-import { readVerifyCodeImage } from '../utils/common/read-file';
-import { checkInviteTeam, getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getVerifyCodePos, isDeadCYPos, isOffline } from '../utils/ocr-check/base';
+import { getVerifyCodeByAliQW } from '../AI/ali-qianwen';
+import { getVerifyCodeByTuJian } from '../AI/tu-jian';
+import { ensureDamo } from '../auto-plugin/index';
+import { OCR_FONT_PATH, VERIFY_CODE_OPTIONS_PATH, VERIFY_CODE_QUESTION_PATH } from '../constant/config';
+import { DEFAULT_VERIFY_CODE_TEXT } from '../ffo/constant/OCR-pos';
+import { readVerifyCodeImage } from '../ffo/utils/common/read-file';
+import { checkInviteTeam, getBloodStatus, getMapName, getMonsterName, getRoleName, getRolePosition, getVerifyCodePos, isDeadCYPos, isOffline } from '../ffo/utils/ocr-check/base';
 
 /**
  * 子线程任务逻辑
  * 负责高频的 OCR 识别、状态监控
  */
 
-const { hwnd, bindWindowSize, name: initialName, job, needCheckDead } = workerData;
+const { hwnd, bindWindowSize, enableUpdateUpdate, needCheckDead } = workerData;
 
 // 子线程内初始化自己的插件实例
 const dm = ensureDamo();
@@ -22,58 +22,72 @@ let loopIsRuning = true;
 let lastVerifyCaptureTs = 0;
 let openCapture = true;
 
-// 初始化：注册、绑定窗口和加载字库
-const init = async () => {
+// 绑定窗口
+const bindWindow = async () => {
   try {
     if (!hwnd || hwnd <= 0) {
       throw new Error(`非法句柄: ${hwnd}`);
     }
-
-    // 1. 注册大漠 (如果需要收费功能)
-    dm.reg();
-
     // 2. 绑定窗口 - 使用项目统一的配置 (参考 DamoBindingManager 的 defaultConfig)
     const display = 'dx.graphic.2d';
     const mouse = 'dx.mouse.position.lock.api|dx.mouse.position.lock.message';
     const keypad = 'dx.keypad.state.api|dx.keypad.api';
     const api = '';
     const mode = 0;
-    console.log(hwnd, 'hwnd');
     const ret = dm.bindWindow(hwnd, display, mouse, keypad, api, mode);
     if (ret !== 1) {
       throw new Error(`BindWindow 失败，返回值=${ret}, hwnd=${hwnd}`);
     }
+  } catch (err) {
+    parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 绑定窗口失败: ${String(err)}` } });
+    return false;
+  }
+};
 
-    // 3. 加载字库
-    if (fs.existsSync(OCR_FONT_PATH)) {
-      try {
-        // 中文注释：改用异步方法加载（内部传递路径），避免同步加载读取大文件内容导致的 COM 缓冲区溢出错误（数据区域太小）
-        const ret = await dm.loadDictFromFileAsync(0, OCR_FONT_PATH);
-        if (ret === 1) {
-          dm.useDict(0);
-
-          // 4. 初始化角色信息并通知主线程
-          const currentName = getRoleName(dm, bindWindowSize);
-          const currentPos = getRolePosition(dm, bindWindowSize);
-          parentPort?.postMessage({
-            type: 'INITIALIZED',
-            data: { name: currentName, position: currentPos },
-          });
-
-          parentPort?.postMessage({ type: 'LOG', level: 'info', message: `[角色工作线程] 子线程初始化成功，角色名: ${currentName}` });
-        } else {
-          parentPort?.postMessage({ type: 'LOG', level: 'error', message: `[角色工作线程] 加载字库失败，返回值: ${ret}` });
-        }
-      } catch (err) {
-        parentPort?.postMessage({ type: 'LOG', level: 'error', message: `[角色工作线程] 加载字库异常: ${String(err)}` });
+// 加载字库
+const loadDictionary = async () => {
+  if (fs.existsSync(OCR_FONT_PATH)) {
+    try {
+      // 中文注释：改用异步方法加载（内部传递路径），避免同步加载读取大文件内容导致的 COM 缓冲区溢出错误（数据区域太小）
+      const ret = await dm.loadDictFromFileAsync(0, OCR_FONT_PATH);
+      if (ret === 1) {
+        dm.useDict(0);
+        // 4. 初始化角色信息并通知主线程
+        const currentName = getRoleName(dm, bindWindowSize);
+        parentPort?.postMessage({
+          type: 'INITIALIZED',
+          data: { name: currentName },
+        });
+        parentPort?.postMessage({ type: 'LOG', data: { level: 'info', message: `[角色工作线程] 子线程初始化成功，角色名: ${currentName}` } });
+      } else {
+        parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 加载字库失败，返回值: ${ret}` } });
       }
-    } else {
-      parentPort?.postMessage({ type: 'LOG', level: 'warn', message: `[角色工作线程] 未找到字库文件: ${OCR_FONT_PATH}` });
+    } catch (err) {
+      parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 加载字库异常: ${String(err)}` } });
     }
+  } else {
+    parentPort?.postMessage({ type: 'LOG', data: { level: 'warn', message: `[角色工作线程] 未找到字库文件: ${OCR_FONT_PATH}` } });
+  }
+};
+
+// 初始化：注册、绑定窗口和加载字库
+const init = async () => {
+  try {
+    if (!hwnd || hwnd <= 0) {
+      throw new Error(`非法句柄: ${hwnd}`);
+    }
+    // 1. 注册大漠 (如果需要收费功能)
+    dm.reg();
+    // 2. 绑定窗口 - 使用项目统一的配置 (参考 DamoBindingManager 的 defaultConfig)
+    await bindWindow();
+    // 3. 加载字库
+    await loadDictionary();
+    // 发送句柄信息给主线程
+    parentPort?.postMessage({ type: 'HWND', data: { hwnd } });
 
     return true;
   } catch (err) {
-    parentPort?.postMessage({ type: 'LOG', level: 'error', message: `[角色工作线程] 初始化失败: ${String(err)}` });
+    parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 初始化失败: ${String(err)}` } });
     return false;
   }
 };
@@ -81,18 +95,14 @@ const init = async () => {
 const loop = async () => {
   try {
     if (!loopIsRuning) return;
-
     // 获取角色位置
     const position = getRolePosition(dm, bindWindowSize);
-    console.log(position, 'position');
-
     // 如果没有位置，通知主线程并阻塞
     if (!position) {
-      parentPort?.postMessage({ type: 'LOG', level: 'warn', message: '[角色工作线程] 未获取到角色位置，阻塞两秒' });
+      parentPort?.postMessage({ type: 'LOG', data: { level: 'warn', message: '[角色工作线程] 未获取到角色位置，阻塞两秒' } });
       // 在子线程中使用同步 delay 是可以的，因为它不阻塞主线程
       dm.delay(2000);
     }
-
     const map = getMapName(dm, bindWindowSize);
     const selectMonster = getMonsterName(dm, bindWindowSize);
     const bloodStatus = getBloodStatus(dm, bindWindowSize);
@@ -136,7 +146,7 @@ const loop = async () => {
               const [Ali = '', TuJian = ''] = await Promise.all([getVerifyCodeByAliQW(optionsUrl), getVerifyCodeByTuJian(questionUrl)]);
               parentPort?.postMessage({ type: 'VERIFY_CODE_RESULT', data: { Ali, TuJian, verifyCodeTextPos, checkPos } });
             } catch (err) {
-              parentPort?.postMessage({ type: 'LOG', level: 'error', message: `[角色工作线程] 验证码识别失败: ${String(err)}` });
+              parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 验证码识别失败: ${String(err)}` } });
             }
           }
         }
@@ -150,7 +160,7 @@ const loop = async () => {
       parentPort?.postMessage({ type: 'DEATH_DETECTED' });
     }
   } catch (err) {
-    parentPort?.postMessage({ type: 'LOG', level: 'error', message: `[角色工作线程] 轮询失败: ${String((err as any)?.message || err)}` });
+    parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 轮询失败: ${String((err as any)?.message || err)}` } });
   } finally {
     if (loopIsRuning) {
       setTimeout(loop, 250);
@@ -183,7 +193,7 @@ parentPort?.on('message', msg => {
         target[method](...args);
       }
     } catch (err) {
-      parentPort?.postMessage({ type: 'LOG', level: 'error', message: `[角色工作线程] 执行远程指令失败 (${String(method)}): ${String(err)}` });
+      parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 执行远程指令失败 (${String(method)}): ${String(err)}` } });
     }
   }
 });
