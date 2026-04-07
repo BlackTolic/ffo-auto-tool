@@ -65,6 +65,9 @@ export class Role {
   private teamApplyCall: ((rejectPos?: Pos, agreePos?: Pos) => void) | null = null; // 组队申请回调
   private globalStrategyTask: GlobalStrategyTask[] | null = null; // 全局策略任务队列
   private workerManager: WorkerManager | null = null; // 工作线程管理器
+  private immediateId: NodeJS.Immediate | null = null; // 立即执行任务ID
+  private loopIsRuning: boolean = true; // 循环任务是否运行中
+  public emailMessage: string = ''; // 邮件消息
 
   constructor() {}
 
@@ -332,5 +335,10 @@ export class Role {
   // 清除全局策略任务
   clearGlobalStrategyTask() {
     this.globalStrategyTask = null;
+  }
+
+  // 手动更新角色信息
+  updateRoleInfo(roleInfo: { emailMessage: string }) {
+    this.emailMessage = roleInfo.emailMessage;
   }
 }

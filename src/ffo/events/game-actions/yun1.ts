@@ -2,7 +2,6 @@ import { damoBindingManager } from '..';
 import logger from '../../../utils/logger';
 import { debounce } from '../../../utils/tool';
 import { OCR_YUN_HUAN_1_MONSTER } from '../../constant/monster-feature';
-import { isArriveAimNear } from '../../utils/common';
 import { checkEquipBroken, checkEquipCount, checkExpBar, checkItemBoxItemCount, checkMounted, checkPetActive, getCurrentGold } from '../../utils/ocr-check/base';
 import { AttackActions } from '../attack-action';
 import { BaseAction, ValidEquip } from '../base-action';
@@ -11,18 +10,23 @@ import { MoveActions } from '../move-action';
 import { AutoFarmingAction, AutoFarmingInstance } from './auto-farming';
 
 const validEquip: ValidEquip = [
-  { type: '戒指', attrName: '力量|智慧|体质|生命最大值|魔法攻击力|物理攻击力' },
+  { type: '戒指', attrName: '力量|智慧|体质|生命最大值|魔法攻击力|物理攻击力|敏捷' },
   { type: '项链', attrName: '力量|智慧|体质|魔抗|护甲值' },
-  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力' },
-  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', level: '102', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害|力量|体质' },
+  // { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|智慧' },
+  { type: '法杖|双手剑|长剑|双刃|暗器|长枪', attrName: '风象伤害(概率石化)|雷象伤害(概率定身)|物理攻击力|魔法攻击力|智慧|伤害|力量|体质' },
   { type: '头盔', attrName: '生命最大值|力量|魔抗|体质|伤害|智慧' },
   { type: '手套', attrName: '物理攻击力|魔法攻击力|力量|体质|智慧' },
   { type: '服装', attrName: '生命最大值|体质|护甲值|智慧' },
   { type: '鞋子', attrName: '力量|智慧|体质|体质|敏捷' },
   { type: '面饰', attrName: '力量|智慧|体质|体质|敏捷' },
-  { type: '背包', attrName: '力量|智慧|体质|体质|敏捷|最大负重' },
+  { type: '背包', attrName: '力量|智慧|体质|体质|敏捷' },
   { type: '盾牌', attrName: '力量|体质|魔抗|护甲值' },
 ];
+
+// 项目启动日期和时间
+const currentDate = new Date().toLocaleString();
+
+let spendMoney = 0;
 
 const TASK_NAME = '云荒打怪捡装备';
 
@@ -51,7 +55,7 @@ const CONSTANTS = {
   STATION_R: 6, // 半径
   CHECK_EQUIP_COUNT: 23, // 检查装备的数量
   DEAD_CALL_TIME: 28 * 60 * 1000, // 死亡后等待时间，之后重新启动
-  YUN_HUANG_CALL_STATIC_TIME: 20, // 云荒静止多少秒后开始回调移动（单位：分钟）
+  YUN_HUANG_CALL_STATIC_TIME: 15, // 云荒静止多少秒后开始回调移动（单位：分钟）
 };
 
 const MAP_NAME = {
@@ -185,6 +189,8 @@ const loopCheckStatus = async () => {
   // 检查当前是否是坐骑状态
   const isMounted = checkMounted(dm, role.bindWindowSize);
   if (!isMounted) {
+    // 喂养宠物
+    await baseAction.openPetBoxAndFeed('F6', 'F7', 'F8');
     // 上马
     await baseAction.pressSecondSkillBarSkill('F10');
   }
@@ -249,7 +255,11 @@ const loopCheckStatus = async () => {
 
   // 存钱
   const gold = getCurrentGold(role.bindDm, role.bindWindowSize);
-  logger.info(`[云荒检查] 当前金币数量`, gold);
+  spendMoney = gold ? 5 - Number(gold) + spendMoney : spendMoney;
+  logger.info(`[云荒检查] 当前金币数量${gold}`);
+  logger.info(`[云荒检查] 当前从${currentDate}到${new Date().toLocaleString()}，消费了${spendMoney}`);
+  // 手动更新角色信息
+  role.updateRoleInfo({ emailMessage: `[云荒检查] 当前从${currentDate}到${new Date().toLocaleString()}，消费了${spendMoney}` });
   if (Number(gold) > 0) {
     // 去仓库管理员取钱
     await moveActions.startAutoFindPath({ toPos: COORDS.STORE_NPC, stationR: CONSTANTS.STATION_R, delay: 2000 });
@@ -292,6 +302,9 @@ export const toggleYunHuang1West = () => {
   let baseAction = new BaseAction(role);
   let attackActions = new AttackActions(role, { monsterFeature: OCR_YUN_HUAN_1_MONSTER });
 
+  // 前置检查
+  baseAction.preMount();
+
   // 死亡时回调
   const deadCall = () => {
     logger.info(`[云荒检查] 云荒打怪死亡开始进行死亡回调 ${CONSTANTS.DEAD_CALL_TIME / 1000} 秒后执行`);
@@ -319,7 +332,7 @@ export const toggleYunHuang1West = () => {
 
   autoFarmingAction = AutoFarmingAction.getInstance(instance);
   // 注册死亡回调
-  role.addDeadCall(deadCall);
+  // role.addDeadCall(deadCall);
   // 添加组队拒绝
   role.updateTeamApplyCall(closePos => {
     // 拒绝组队
@@ -401,7 +414,7 @@ export const toggleYunHuang1West = () => {
     },
     {
       name: '云荒卡住检查重置回城',
-      condition: () => checkYunHuangStuck(CONSTANTS.YUN_HUANG_CALL_STATIC_TIME, MAP_NAME.YUN_HUANG) && !isArriveAimNear(role.position, COORDS.INIT_POS_ROUTE, CONSTANTS.STATION_R),
+      condition: () => checkYunHuangStuck(CONSTANTS.YUN_HUANG_CALL_STATIC_TIME, MAP_NAME.YUN_HUANG),
       callback: () => delay10S(goBackCityAndResetTask),
     },
   ]);

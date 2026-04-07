@@ -14,7 +14,6 @@ export const fromChengJiaoToMingYuNPC = (moveActions: MoveActions) => {
       { x: 158, y: 25 },
     ],
     blockAllBeforeMove: true,
-    taskMap: '楼兰城郊',
   });
 };
 
