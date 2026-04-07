@@ -32,7 +32,7 @@ export class AutoFarmingAction {
 
   constructor(initPos: Pos, pathPos: Pos[], ocrMonster: MonsterFeature, taskName: string) {
     const hwnd = damoBindingManager.selectHwnd;
-    if (!hwnd || !damoBindingManager.isBound(hwnd)) {
+    if (!hwnd) {
       logger.warn('未选择已绑定的窗口', hwnd);
       throw new Error('未选择已绑定的窗口');
     }

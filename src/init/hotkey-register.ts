@@ -7,6 +7,7 @@ import { mingYuTask } from '../ffo/events/game-actions/ming-yu';
 import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { logger } from '../utils/logger';
+import { workerManager } from '../worker/worker-manager';
 // 中文注释：记录每个窗口当前是否开启了自动按键
 const autoKeyOnByHwnd = new Map<number, boolean>();
 
@@ -14,7 +15,7 @@ const autoKeyOnByHwnd = new Map<number, boolean>();
 let isHotkeyProcessing = false;
 
 // 注册快捷键
-const registerHotkey = (keyName: string, callback: (dm?: any, pid?: number) => any) => {
+const registerHotkey = (keyName: string, callback: () => any) => {
   try {
     const ok = globalShortcut.register(keyName, async () => {
       // 中文注释：如果当前正在处理其他快捷键，直接跳过，避免大漠插件并发调用冲突
@@ -29,24 +30,7 @@ const registerHotkey = (keyName: string, callback: (dm?: any, pid?: number) => a
           return;
         }
 
-        const dm = ensureDamo();
-        // 中文注释：获取当前前台窗口句柄
-        const hwnd = dm.getForegroundWindow();
-
-        if (!hwnd || hwnd <= 0) {
-          logger.warn(`[快捷键] ${keyName} 失败：未检测到有效的前台窗口`);
-          return;
-        }
-
-        // 中文注释：使用封装好的方法获取 PID，增加健壮性
-        const pid = dm.getWindowProcessId(hwnd);
-
-        if (!pid || pid <= 0) {
-          logger.warn(`[快捷键] ${keyName} 失败：无法获取窗口 PID (hwnd=${hwnd})`);
-          return;
-        }
-
-        const ret = await callback(dm, pid);
+        const ret = await callback();
         if (ret) {
           logger.info(`[快捷键] ${keyName} 执行成功`);
         }
@@ -120,12 +104,9 @@ export const toggleAutoKey = (
 // 通过依赖注入复用主进程已有方法，避免循环依赖
 export function registerGlobalHotkeys() {
   // Alt+Q 绑定句柄
-  registerHotkey('Alt+Q', async (dm, pid) => {
-    if (!pid || pid <= 0) {
-      logger.info('[快捷键] Alt+Q 失败 | 无法获取 PID');
-      return;
-    }
-    return await damoBindingManager.bindWindowsByPid(pid);
+  registerHotkey('Alt+Q', async () => {
+    const hwnd = await workerManager.getChildProcessHwnd();
+    return await damoBindingManager.bindWindowsByHwnd(hwnd);
   });
 
   // 中文注释：Alt+W 切换自动按键
@@ -134,7 +115,7 @@ export function registerGlobalHotkeys() {
   // Alt+2 注册士兵任务
   registerHotkey('Alt+2', () => {
     console.log('注册士兵任务xxx');
-    // mingYuTask.registerSoldierTask();
+    mingYuTask.registerSoldierTask();
     return true;
   });
   // Alt+3 跑名誉

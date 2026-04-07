@@ -13,8 +13,7 @@ import { checkInviteTeam, getBloodStatus, getMapName, getMonsterName, getRoleNam
  * 负责高频的 OCR 识别、状态监控
  */
 
-const { hwnd, bindWindowSize, enableUpdateUpdate, needCheckDead } = workerData;
-
+const { bindWindowSize, needCheckDead } = workerData;
 // 子线程内初始化自己的插件实例
 const dm = ensureDamo();
 
@@ -23,7 +22,7 @@ let lastVerifyCaptureTs = 0;
 let openCapture = true;
 
 // 绑定窗口
-const bindWindow = async () => {
+const bindWindow = async (hwnd: number) => {
   try {
     if (!hwnd || hwnd <= 0) {
       throw new Error(`非法句柄: ${hwnd}`);
@@ -73,17 +72,14 @@ const loadDictionary = async () => {
 // 初始化：注册、绑定窗口和加载字库
 const init = async () => {
   try {
-    if (!hwnd || hwnd <= 0) {
-      throw new Error(`非法句柄: ${hwnd}`);
-    }
     // 1. 注册大漠 (如果需要收费功能)
     dm.reg();
     // 2. 绑定窗口 - 使用项目统一的配置 (参考 DamoBindingManager 的 defaultConfig)
-    await bindWindow();
-    // 3. 加载字库
-    await loadDictionary();
-    // 发送句柄信息给主线程
-    parentPort?.postMessage({ type: 'HWND', data: { hwnd } });
+    // await bindWindow();
+    // // 3. 加载字库
+    // await loadDictionary();
+    // // 发送句柄信息给主线程
+    // parentPort?.postMessage({ type: 'HWND', data: { hwnd } });
 
     return true;
   } catch (err) {
@@ -94,7 +90,10 @@ const init = async () => {
 
 const loop = async () => {
   try {
-    if (!loopIsRuning) return;
+    if (!loopIsRuning || !bindWindowSize) {
+      parentPort?.postMessage({ type: 'LOG', data: { level: 'warn', message: '[角色工作线程] 循环已停止或未绑定窗口大小' } });
+      return;
+    }
     // 获取角色位置
     const position = getRolePosition(dm, bindWindowSize);
     // 如果没有位置，通知主线程并阻塞
@@ -159,6 +158,9 @@ const loop = async () => {
     if (needCheckDead && isDeadCYPos(dm, bindWindowSize)) {
       parentPort?.postMessage({ type: 'DEATH_DETECTED' });
     }
+
+    // 执行全局队列任务
+    parentPort?.postMessage({ type: 'GLOBAL_TASK' });
   } catch (err) {
     parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 轮询失败: ${String((err as any)?.message || err)}` } });
   } finally {
@@ -169,11 +171,42 @@ const loop = async () => {
 };
 
 // 执行初始化并启动循环
-init().then(success => {
-  if (success) {
-    loop();
+init();
+
+// .then(success => {
+//   if (success) {
+//     loop();
+//   }
+// });
+
+// 更新配置
+const updateConfig = (config: any) => {
+  Object.assign(workerData, config);
+};
+
+// 执行远程指令
+const callDm = (data: any) => {
+  const { method, args, requestId } = data;
+  try {
+    const target = typeof (dm as any)[method] === 'function' ? dm : dm.dm;
+    if (target && typeof target[method] === 'function') {
+      const result = target[method](...args);
+      // 将执行结果发回主线程
+      parentPort?.postMessage({
+        type: 'CALL_DM_DONE',
+        data: { requestId, result },
+      });
+    }
+  } catch (err) {
+    parentPort?.postMessage({
+      type: 'CALL_DM_DONE',
+      data: { requestId, error: String(err) },
+    });
+    parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 执行远程指令失败 (${String(method)}): ${String(err)}` } });
   }
-});
+};
+
+// 绑定窗口句柄和大小
 
 // 监听主线程消息
 parentPort?.on('message', msg => {
@@ -182,18 +215,43 @@ parentPort?.on('message', msg => {
     try {
       dm.unbindWindow();
     } catch {}
-  } else if (msg.type === 'UPDATE_CONFIG') {
-    Object.assign(workerData, msg.data);
-  } else if (msg.type === 'CALL_DM') {
-    const { method, args } = msg.data;
+  }
+
+  if (msg.type === 'UPDATE_CONFIG') {
+    updateConfig(msg.data);
+  }
+
+  if (msg.type === 'CALL_DM') {
+    callDm(msg.data);
+  }
+
+  // 开启loop
+  if (msg.type === 'START_LOOP') {
+    loopIsRuning = true;
+    loop();
+  }
+
+  // 绑定窗口句柄和大小
+  if (msg.type === 'BIND_WINDOW') {
     try {
-      // 优先调用 Damo 类封装的方法，如果没有则调用原始 dm 对象的方法
-      const target = typeof (dm as any)[method] === 'function' ? dm : dm.dm;
-      if (target && typeof target[method] === 'function') {
-        target[method](...args);
-      }
+      bindWindow(msg.data.hwnd);
+      loadDictionary();
     } catch (err) {
-      parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 执行远程指令失败 (${String(method)}): ${String(err)}` } });
+      parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 绑定窗口失败: ${String((err as any)?.message || err)}` } });
     }
+  }
+
+  // 获取窗口句柄
+  if (msg.type === 'GET_WINDOW_HWND') {
+    // 中文注释：获取当前前台窗口句柄
+    const hwnd = dm.getForegroundWindow();
+    parentPort?.postMessage({ type: 'GET_WINDOW_HWND', data: { hwnd } });
+  }
+
+  // 解绑窗口句柄
+  if (msg.type === 'BIND_UNBIND') {
+    try {
+      dm.unbindWindow();
+    } catch {}
   }
 });

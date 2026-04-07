@@ -1,9 +1,9 @@
-import { damoBindingManager } from '.';
-import { AutoT, ensureDamo } from '../../auto-plugin/index';
+import { AutoT } from '../../auto-plugin';
 import { ROLE_IS_DEAD_PATH } from '../../constant/config';
 import { emailStrategy } from '../../utils/email';
 import { logger } from '../../utils/logger';
 import { debounce } from '../../utils/tool';
+import { WorkerManager } from '../../worker/worker-manager';
 import { DEFAULT_MENUS_POS } from '../constant/OCR-pos';
 import { isArriveAimNear, selectRightAnwser } from '../utils/common';
 import { AttackActions } from './attack-action';
@@ -64,6 +64,7 @@ export class Role {
   private deadCall: (() => void) | null = null; // 死亡回调
   private teamApplyCall: ((rejectPos?: Pos, agreePos?: Pos) => void) | null = null; // 组队申请回调
   private globalStrategyTask: GlobalStrategyTask[] | null = null; // 全局策略任务队列
+  private workerManager: WorkerManager | null = null; // 工作线程管理器
 
   constructor() {}
 
@@ -77,6 +78,7 @@ export class Role {
     this.map = map;
     this.selectMonster = selectedMonster;
     this.bloodStatus = health;
+    // console.log('更新角色信息', position, map, selectedMonster, health);
   }
 
   // 更新团队邀请信息
@@ -131,17 +133,17 @@ export class Role {
   public registerRole(bindWindowSize: '1600*900' | '1280*800', hwndId?: number) {
     this.bindWindowSize = bindWindowSize;
     this.menusPos = DEFAULT_MENUS_POS[bindWindowSize as keyof typeof DEFAULT_MENUS_POS];
-    const dm = ensureDamo();
-    // 中文注释：获取当前前台窗口句柄
-    const hwnd = hwndId ? hwndId : dm.getForegroundWindow();
-    this.hwnd = hwnd;
-    const rec = damoBindingManager.get(hwnd);
-    if (!hwnd || !dm) {
-      throw new Error('[角色信息] 未提供有效的句柄或 dm 实例');
-    }
-    const bindDm = rec?.ffoClient as AutoT;
-    this.bindDm = bindDm;
-    this.bindPlugin = bindDm;
+    // const dm = ensureDamo();
+    // // 中文注释：获取当前前台窗口句柄
+    // const hwnd = hwndId ? hwndId : dm.getForegroundWindow();
+    // this.hwnd = hwnd;
+    // const rec = damoBindingManager.get(hwnd);
+    // if (!hwnd || !dm) {
+    //   throw new Error('[角色信息] 未提供有效的句柄或 dm 实例');
+    // }
+    // const bindDm = rec?.ffoClient as AutoT;
+    // this.bindDm = bindDm;
+    // this.bindPlugin = bindDm;
     // 中文注释：不再在主进程获取角色名，避免未绑定导致的 OCR 崩溃，统一由子线程 INITIALIZED 消息返回
     this.name = 'Initializing...';
     // 初始化代理插件对象，将指令转发给子线程执行，避免主线程与子线程同时绑定同一个窗口句柄导致的冲突
@@ -150,8 +152,18 @@ export class Role {
     // this.initWorker();
   }
 
+  updateInfoFromWorkerManager(dm: AutoT) {
+    const { bindWindowSize } = this;
+    this.bindWindowSize = bindWindowSize;
+    this.menusPos = DEFAULT_MENUS_POS[bindWindowSize as keyof typeof DEFAULT_MENUS_POS];
+    this.bindDm = dm;
+    this.bindPlugin = dm;
+    this.name = 'Initializing...';
+  }
+
+  // 执行全局队列任务
   // 主线程处理逻辑：全局策略与任务队列
-  private handleRoleLoop() {
+  childProcessExecuteGlobalTask() {
     try {
       if (!this.position) return;
 

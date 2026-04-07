@@ -214,11 +214,11 @@ export default class MingYuTask {
   // 注册角色分工任务
   public registerSoldierTask(selectHwnd?: number) {
     try {
-      // const { role } = getBindWindowInfo(selectHwnd);
-      // this.soldier.role = role;
-      // this.soldier.moveActions = new MoveActions(role);
-      // this.soldier.baseAction = new BaseAction(role);
-      // this.soldier.attackActions = new AttackActions(role, { monsterFeature: OCR_MING_YU_BOSS, skillGroup });
+      const { role } = getBindWindowInfo(selectHwnd);
+      this.soldier.role = role;
+      this.soldier.moveActions = new MoveActions(role);
+      this.soldier.baseAction = new BaseAction(role);
+      this.soldier.attackActions = new AttackActions(role, { monsterFeature: OCR_MING_YU_BOSS, skillGroup });
       logger.info('注册士兵任务');
     } catch (e) {
       logger.error('注册士兵任务失败', e);

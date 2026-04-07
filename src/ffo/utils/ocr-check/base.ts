@@ -182,7 +182,7 @@ export const checkPetInfo = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*8
   const petInfoPos = DEFAULT_PET_INFO[bindWindowSize];
   const petInfoText = bindDm.ocr(petInfoPos.x1, petInfoPos.y1, petInfoPos.x2, petInfoPos.y2, petInfoPos.color, petInfoPos.sim) as string;
   // console.log(petInfoText, 'petInfoText');
-  if (!petInfoText) {
+  if (typeof petInfoText !== 'string') {
     return null;
   }
   // 1. 匹配 字母/汉字 + 数字 + 汉字

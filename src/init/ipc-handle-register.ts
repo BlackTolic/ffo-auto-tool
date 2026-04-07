@@ -3,8 +3,9 @@ import { BrowserWindow, ipcMain, screen } from 'electron';
 // 中文注释：使用大漠插件进行枚举（不再依赖天使插件）
 import { validateEnvironment } from '../envCheck';
 import { pauseCurActive as pauseWuLeiNanJiao, stopCurActive as stopWuLeiNanJiao, toggleWuLeiNanJiao } from '../ffo/events/game-actions/wu-lei-nan-jiao'; // 中文注释：引入无泪南郊切换/暂停/停止逻辑供 IPC 调用
-import { toggleYunHuang1West, stopCurActive as stopYunHuang1West, pauseCurActive as pauseYunHuang1West } from '../ffo/events/game-actions/yun1'; // 中文注释：引入云荒一层西南角切换/暂停/停止逻辑供 IPC 调用
+import { pauseCurActive as pauseYunHuang1West, stopCurActive as stopYunHuang1West, toggleYunHuang1West } from '../ffo/events/game-actions/yun1'; // 中文注释：引入云荒一层西南角切换/暂停/停止逻辑供 IPC 调用
 import type { RoleTaskSnapshot } from '../ffo/events/rolyer';
+import { WorkerManager } from '../worker/worker-manager';
 
 // 中文注释：可绑定窗口的信息接口（在主进程内部使用）
 interface BindableWindowInfo {
@@ -21,46 +22,46 @@ interface BindableWindowInfo {
 // 中文注释：集中注册主进程的所有 IPC 通道，避免分散在各处导致结构混乱
 export function registerIpcHandlers(deps: {
   // 中文注释：获取（或懒加载）单例大漠实例的方法
-  ensureDamo: () => any;
+  workerManager: WorkerManager;
   // 中文注释：大漠绑定管理器（用于按 PID 绑定多个窗口等）
   damoBindingManager: any;
   // 中文注释：自动按键切换函数（用于 Alt+W 逻辑的渲染层 IPC）
   // toggleAutoKey: (keyName?: 'F1' | 'F2' | 'F3' | 'F4' | 'F5' | 'F6' | 'F7' | 'F8' | 'F9' | 'F10', intervalMs?: number) => any;
 }) {
-  const { ensureDamo, damoBindingManager } = deps;
+  const { workerManager, damoBindingManager } = deps;
 
   // 环境校验
   ipcMain.handle('env:check', () => validateEnvironment());
 
   // 大漠版本
-  ipcMain.handle('damo:ver', () => ensureDamo().ver());
+  ipcMain.handle('damo:ver', () => workerManager.dm.ver());
 
   // 获取前台窗口句柄
-  ipcMain.handle('damo:getForegroundWindow', () => ensureDamo().getForegroundWindow());
+  ipcMain.handle('damo:getForegroundWindow', () => workerManager.dm.getForegroundWindow());
 
   // 绑定窗口
   ipcMain.handle('damo:bindWindow', (_event, hwnd: number, display: string, mouse: string, keypad: string, mode: number) => {
-    return ensureDamo().bindWindow(hwnd, display, mouse, keypad, mode);
+    return workerManager.dm.bindWindow(hwnd, display, mouse, keypad, mode);
   });
 
   // 解绑窗口
-  ipcMain.handle('damo:unbindWindow', () => ensureDamo().unbindWindow());
+  ipcMain.handle('damo:unbindWindow', () => workerManager.dm.unbindWindow());
 
   // 获取客户区矩形
-  ipcMain.handle('damo:getClientRect', (_event, hwnd: number) => ensureDamo().getClientRect(hwnd));
+  ipcMain.handle('damo:getClientRect', (_event, hwnd: number) => workerManager.dm.getClientRect(hwnd));
 
   // 客户区坐标转换为屏幕坐标
-  ipcMain.handle('damo:clientToScreen', (_event, hwnd: number, x: number, y: number) => ensureDamo().clientToScreen(hwnd, x, y));
+  ipcMain.handle('damo:clientToScreen', (_event, hwnd: number, x: number, y: number) => workerManager.dm.clientToScreen(hwnd, x, y));
 
   // 屏幕坐标转换为客户区坐标
-  ipcMain.handle('damo:screenToClient', (_event, hwnd: number, x: number, y: number) => ensureDamo().screenToClient(hwnd, x, y));
+  ipcMain.handle('damo:screenToClient', (_event, hwnd: number, x: number, y: number) => workerManager.dm.screenToClient(hwnd, x, y));
 
   // 获取窗口矩形（含边框）
-  ipcMain.handle('damo:getWindowRect', (_event, hwnd: number) => ensureDamo().getWindowRect(hwnd));
+  ipcMain.handle('damo:getWindowRect', (_event, hwnd: number) => workerManager.dm.getWindowRect(hwnd));
 
   // 获取窗口信息（窗口矩形、客户矩形、缩放因子）
   ipcMain.handle('damo:getWindowInfo', async (_event, hwnd: number) => {
-    const dm = ensureDamo();
+    const dm = workerManager.dm;
     const windowRect = await dm.getWindowRect(hwnd);
     const clientRect = await dm.getClientRect(hwnd);
     const displayInfo = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
@@ -70,7 +71,7 @@ export function registerIpcHandlers(deps: {
 
   // CSS 像素坐标（客户端）转屏幕像素坐标
   ipcMain.handle('damo:clientCssToScreenPx', async (_event, hwnd: number, xCss: number, yCss: number) => {
-    const dm = ensureDamo();
+    const dm = workerManager.dm;
     const windowRect = await dm.getWindowRect(hwnd);
     const displayInfo = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
     const sf = displayInfo.scaleFactor;
@@ -81,7 +82,7 @@ export function registerIpcHandlers(deps: {
 
   // 屏幕像素坐标转 CSS 像素坐标（客户端）
   ipcMain.handle('damo:screenPxToClientCss', async (_event, hwnd: number, x: number, y: number) => {
-    const dm = ensureDamo();
+    const dm = workerManager.dm;
     const windowRect = await dm.getWindowRect(hwnd);
     const displayInfo = screen.getDisplayNearestPoint({ x: windowRect.x, y: windowRect.y });
     const sf = displayInfo.scaleFactor;
@@ -98,11 +99,8 @@ export function registerIpcHandlers(deps: {
       }
       return { activeIndex: null, source: { type: 'unknown' } };
     }
-    const dm = ensureDamo();
-    if (typeof (dm as any).getCurrentDictInfo === 'function') {
-      return (dm as any).getCurrentDictInfo();
-    }
-    return { activeIndex: null, source: { type: 'unknown' } };
+    const dm = workerManager.dm;
+    return dm.getCurrentDictInfo();
   });
 
   // 自动按键切换（渲染层调用）
@@ -111,12 +109,12 @@ export function registerIpcHandlers(deps: {
   // 绑定前台窗口所属进程的所有子窗口（通过绑定管理器）
   ipcMain.handle('ffo:bindForeground', async () => {
     try {
-      const dm = ensureDamo();
-      const hwnd = dm.getForegroundWindow();
+      const dm = workerManager.dm;
+      const hwnd = await dm.getForegroundWindow();
       if (!hwnd || hwnd <= 0) {
         return { ok: false, message: '未检测到前台窗口' };
       }
-      const pid = dm.getWindowProcessId?.(hwnd) ?? (dm as any).dm?.GetWindowProcessId?.(hwnd);
+      const pid = await dm.getWindowProcessId(hwnd);
       if (!pid || pid <= 0) {
         return { ok: false, hwnd, message: '无法获取前台窗口 PID' };
       }
@@ -130,9 +128,9 @@ export function registerIpcHandlers(deps: {
   // 新增：列出“当前可绑定”的窗口信息（全局顶层可见窗口）
   ipcMain.handle('ffo:listBindableWindows', async (): Promise<BindableWindowInfo[]> => {
     try {
-      const dm = ensureDamo();
+      const dm = workerManager.dm;
       // 中文注释：使用大漠插件枚举所有顶层且可见的窗口
-      const raw = String(dm.enumWindow?.(0, '', '', 8 + 16) || '');
+      const raw = String((await dm.enumWindow(0, '', '', 8 + 16)) || '');
       const hwnds = raw
         .split(',')
         .map(s => parseInt(s))
@@ -156,8 +154,8 @@ export function registerIpcHandlers(deps: {
 
       const items: BindableWindowInfo[] = [];
       for (const h of hwnds) {
-        const pid = dm.getWindowProcessId?.(h) ?? (dm as any).dm?.GetWindowProcessId?.(h) ?? 0;
-        const processPath: string = String((dm as any).dm?.GetWindowProcessPath?.(h) || '');
+        const pid = (await dm.getWindowProcessId(h)) || 0;
+        const processPath: string = String((await dm.getWindowProcessPath(h)) || '');
         let exeName: string = processPath ? require('path').basename(processPath) : '';
         if (!exeName && pid) {
           const resolved = resolveExeByPid(pid);
@@ -177,8 +175,8 @@ export function registerIpcHandlers(deps: {
         items.push({
           hwnd: h,
           pid,
-          title: String(dm.getWindowTitle?.(h) || ''),
-          className: String(dm.getWindowClass?.(h) || ''),
+          title: String((await dm.getWindowTitle(h)) || ''),
+          className: String((await dm.getWindowClass(h)) || ''),
           processPath: processPath || undefined,
           exeName: exeName || undefined,
           name,
@@ -207,7 +205,7 @@ export function registerIpcHandlers(deps: {
       // 中文注释：从绑定管理器获取已绑定记录，并补充标题/类名
       const list = damoBindingManager.list();
       const items: BindableWindowInfo[] = [];
-      const dm = ensureDamo();
+      const dm = workerManager.dm;
       const resolveExeByPid = (pid: number): { exeName?: string } => {
         try {
           const out = execSync(`tasklist /FI "PID eq ${pid}" /FO CSV`, { encoding: 'utf8' });
@@ -225,9 +223,9 @@ export function registerIpcHandlers(deps: {
         const hwnd = rec.hwnd;
         const pid = rec.pid;
         const client = rec.ffoClient;
-        const title = String(client.getWindowTitle?.(hwnd) || '');
-        const className = String(client.getWindowClass?.(hwnd) || '');
-        const processPath: string = String((dm as any).dm?.GetWindowProcessPath?.(hwnd) || '');
+        const title = String((await client.getWindowTitle(hwnd)) || '');
+        const className = String((await client.getWindowClass(hwnd)) || '');
+        const processPath: string = String((await dm.getWindowProcessPath(hwnd)) || '');
         let exeName: string = processPath ? require('path').basename(processPath) : '';
         if (!exeName && pid) {
           exeName = resolveExeByPid(pid).exeName || '';

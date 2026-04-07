@@ -1,13 +1,13 @@
 import cp from 'child_process';
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu } from 'electron';
 import path from 'path';
-import { ensureDamo, registerDamoOnce } from './auto-plugin/index';
 import { damoBindingManager, ffoEvents } from './ffo/events'; // 中文注释：引入事件总线与大漠绑定管理器
 import { promptIfNotAdmin } from './init/admin-check'; // 中文注释：引入管理员权限检测与提示
 import { registerBoundEventHandlers } from './init/event-register';
 import { registerGlobalHotkeys } from './init/hotkey-register';
 import { registerIpcHandlers } from './init/ipc-handle-register'; // 中文注释：集中管理 IPC 注册的模块
 import logger from './utils/logger';
+import { workerManager } from './worker/worker-manager';
 
 // 中文注释：运行时 COM 注册尝试结果接口（用于日志与排查）
 // interface DmRegRuntimeAttempt {
@@ -104,7 +104,7 @@ function setupAppLifecycle() {
     createWindow();
     logger.info('[应用生命周期] 窗口创建完成');
     // 中文注释：IPC 注册已集中到 ipc-handle.ts，这里仅委托调用，避免重复注册与代码分散
-    registerIpcHandlers({ ensureDamo, damoBindingManager });
+    registerIpcHandlers({ workerManager, damoBindingManager });
     logger.info('[应用生命周期] IPC 处理程序注册完成');
     registerBoundEventHandlers();
     logger.info('[应用生命周期] 绑定事件处理程序注册完成');
@@ -346,7 +346,7 @@ if (squirrel.handled) {
   app.quit();
 } else {
   // 中文注释：手动注册大漠插件（仅一次；非安装阶段，普通运行时）
-  registerDamoOnce();
+  // registerDamoOnce();
   // 中文注释：应用入口
   setupAppLifecycle();
 }

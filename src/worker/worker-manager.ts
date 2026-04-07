@@ -8,98 +8,112 @@ export class WorkerManager {
   private static readonly workerMap = new Map<number, Worker>();
   private worker: Worker | null = null; // 工作线程
   private hwnd: number | null = null; // 窗口句柄
-  private bindWindowSize: number | null = null; // 绑定窗口大小
+  private bindWindowSize: string | null = '1600*900'; // 绑定窗口大小
   private role: Role | null = null; // 角色信息
+  private bindPlugin: AutoT | null = null; // 绑定插件实例
+
+  // 消息处理器映射表
+  private messageHandlers: Map<string, Set<Function>> = new Map();
+
+  // 新增：用于处理子线程请求回调
+  private requestIdCounter = 0;
+  private pendingRequests = new Map<number, { resolve: (val: any) => void; reject: (err: any) => void }>();
+
+  // 公开代理对象
+  public dm: any;
 
   constructor() {
     this.initWorker();
+    this.dm = this.getProxyPlugin();
+    this.registerEvent();
   }
 
   private initWorker() {
-    // 中文注释：启动子线程负责高频 OCR 识别与状态监控，避免阻塞主线程
-    // 注意：在 Electron 环境下，需要确保 role-worker.js 路径正确
-    const workerPath = path.join(__dirname, 'role-worker.js');
-    this.worker = new Worker(workerPath, {
-      workerData: {
-        // 开启数据更新
-        enableUpdateUpdate: true,
-        // 句柄
-        hwnd: this.hwnd,
-        // 窗口大小
-        bindWindowSize: this.bindWindowSize,
-      },
-    });
+    try {
+      // 中文注释：启动子线程负责高频 OCR 识别与状态监控，避免阻塞主线程
+      // 注意：在 Electron 环境下，需要确保 role-worker.js 路径正确
+      const workerPath = path.join(__dirname, 'role-worker.js');
+      this.worker = new Worker(workerPath, {
+        workerData: {
+          // 开启数据更新
+          enableUpdateUpdate: true,
+          // 句柄
+          hwnd: this.hwnd,
+          // 窗口大小
+          bindWindowSize: this.bindWindowSize,
+        },
+      });
 
-    // this.worker.on('message', msg => {
-    //   switch (msg.type) {
-    //     case 'INITIALIZED':
-    //       this.name = msg.data.name;
-    //       this.position = msg.data.position;
-    //       this.job = this.name.includes('花开无须折') ? 'SS' : 'JK';
-    //       logger.info(`[角色信息] 子线程初始化完成，角色名: ${this.name}`);
-    //       break;
-    //     case 'STATUS_UPDATE':
-    //       this.position = msg.data.position;
-    //       this.map = msg.data.map;
-    //       this.selectMonster = msg.data.selectMonster;
-    //       this.bloodStatus = msg.data.bloodStatus;
-    //       this.handleRoleLoop(); // 主线程处理任务逻辑与全局策略
-    //       break;
-    //     case 'TEAM_INVITE':
-    //       if (typeof this.teamApplyCall === 'function') {
-    //         this.teamApplyCall(msg.data.rejectPos, msg.data.agreePos);
-    //       }
-    //       break;
-    //     case 'VERIFY_CODE_RESULT':
-    //       this.handleVerifyCode(msg.data);
-    //       break;
-    //     case 'DEATH_DETECTED':
-    //       this.handleDeath();
-    //       break;
-    //     case 'OFFLINE':
-    //       logger.warn('[角色信息] 角色已掉线');
-    //       emailStrategy.sendMessage({ to: '1031690983@qq.com', subject: '角色离线', text: `角色 ${this.name} 已掉线` });
-    //       this.unregisterRole();
-    //       break;
-    //     case 'LOG':
-    //       (logger as any)[msg.level || 'info']?.(msg.message);
-    //       break;
-    //   }
-    // });
+      // 1. 唯一的子线程消息分发入口
+      this.worker.on('message', ({ type, data }) => {
+        const handlers = this.messageHandlers.get(type);
+        if (handlers) {
+          handlers.forEach(handler => handler(data));
+        }
+      });
 
-    // this.worker.on('error', err => {
-    //   logger.error(`[角色工作线程] 发生错误: ${err.message}`);
-    // });
+      // 监听启动错误
+      this.worker.on('error', err => {
+        logger.error(`[角色工作线程] 启动/运行错误: ${err.message}`);
+        console.error('Worker Error:', err);
+      });
 
-    // this.worker.on('exit', code => {
-    //   if (code !== 0) {
-    //     logger.error(`[角色工作线程] 异常退出，退出码: ${code}`);
-    //   }
-    // });
+      // 监听异常退出
+      this.worker.on('exit', code => {
+        logger.error(`[角色工作线程] 异常退出，退出码: ${code}`);
+        this.worker = null;
+      });
+
+      // 监听是否成功在线
+      this.worker.on('online', () => {
+        console.log('[WorkerManager] 子线程已在线');
+      });
+    } catch (error: any) {
+      logger.error(`[角色工作线程] 初始化失败: ${error.message}`);
+    }
   }
 
   // 注册角色
   registerRole(role: Role) {
     this.role = role;
+    this.role.updateInfoFromWorkerManager(this.dm);
+    this.startLoop();
   }
 
   // 向工作线程发送消息
-  postMessage(msg: any) {
+  postMessage({ type, data }: { type: string; data?: any }) {
     if (this.worker) {
-      this.worker.postMessage(msg);
+      this.worker.postMessage({ type, data });
     }
   }
 
-  // 监听工作线程发送的消息，根据类型处理消息
-  private onMessage(message: string, callback: (msg: any) => void) {
-    if (!this.worker) {
-      return;
+  // 1. 注册消息监听器（支持多监听器共存，且不重复绑定到底层 worker）
+  private onMessage(message: string, callback: (data?: any) => void) {
+    if (!this.messageHandlers.has(message)) {
+      this.messageHandlers.set(message, new Set());
     }
-    this.worker.on('message', ({ type, data }) => {
-      if (type === message && typeof callback === 'function') {
-        callback(data);
+    this.messageHandlers.get(message)!.add(callback);
+    return () => this.offMessage(message, callback);
+  }
+
+  // 2. 注册单次监听器
+  private onceMessage(message: string, callback: (data?: any) => void) {
+    const wrapper = (data: any) => {
+      this.offMessage(message, wrapper);
+      callback(data);
+    };
+    this.onMessage(message, wrapper);
+  }
+
+  // 3. 取消消息监听器
+  private offMessage(message: string, callback: Function) {
+    const handlers = this.messageHandlers.get(message);
+    if (handlers) {
+      handlers.delete(callback);
+      if (handlers.size === 0) {
+        this.messageHandlers.delete(message);
       }
-    });
+    }
   }
 
   // 销毁工作线程
@@ -107,6 +121,7 @@ export class WorkerManager {
     if (this.worker) {
       this.worker.terminate();
       this.worker = null;
+      this.messageHandlers.clear(); // 清理所有处理器
     }
   }
 
@@ -132,13 +147,29 @@ export class WorkerManager {
     this.onMessage('DEATH_DETECTED', () => {
       this.role?.childProcessUpdateDeathInfo();
     });
+    // 执行全局队列任务
+    this.onMessage('GLOBAL_TASK', () => {
+      this.role?.childProcessExecuteGlobalTask();
+    });
     // 更新离线信息
     this.onMessage('OFFLINE', data => {
       this.role?.childProcessUpdateOfflineInfo();
     });
     // 日志处理
-    this.onMessage('LOG', ({ level, message }) => {
-      (logger as any)[level || 'info']?.(message);
+    this.onMessage('LOG', data => {
+      (logger as any)?.[data?.level || 'info']?.(data?.message);
+    });
+    // 大漠指令执行完成
+    this.onMessage('CALL_DM_DONE', ({ requestId, result, error }) => {
+      const pending = this.pendingRequests.get(requestId);
+      if (pending) {
+        if (error) {
+          pending.reject(new Error(error));
+        } else {
+          pending.resolve(result);
+        }
+        this.pendingRequests.delete(requestId);
+      }
     });
   }
 
@@ -147,13 +178,33 @@ export class WorkerManager {
     this.postMessage({ type: 'UPDATE_CONFIG', data: { hwnd: this.hwnd, bindWindowSize: this.bindWindowSize } });
   }
 
+  // 通过封装promisew获取子线程中大漠相关信息
+  getChildProcessInfo(message: string) {
+    return new Promise((resolve, reject) => {
+      this.onceMessage(message, data => {
+        resolve(data?.hwnd);
+      });
+      this.postMessage({ type: message });
+    });
+  }
+
   // 获取工作线程的句柄
-  getChildProcessHwnd() {
-    return this.hwnd;
+  getChildProcessHwnd(): Promise<number> {
+    return this.getChildProcessInfo('GET_WINDOW_HWND') as Promise<number>;
+  }
+
+  // 绑定窗口
+  bindChildProcessWindow(hwnd: number) {
+    this.postMessage({ type: 'BIND_WINDOW', data: { hwnd } });
+  }
+
+  // 开启loop
+  startLoop() {
+    this.postMessage({ type: 'START_LOOP' });
   }
 
   // 代理插件
-  private getProxyPlugin(bindPlugin: AutoT) {
+  private getProxyPlugin() {
     const proxyHandler = {
       get: (target: any, prop: string | symbol) => {
         // 1. 放行 Symbol 和特殊调试属性，避免检查/打印对象时崩溃
@@ -161,22 +212,34 @@ export class WorkerManager {
           return target[prop];
         }
 
-        const original = target[prop];
-        // 2. 如果不是函数，直接返回原始值（例如获取 hwnd 属性）
-        if (typeof original !== 'function') {
-          return original;
-        }
-
-        // 3. 只有函数调用才进行转发
+        // 2. 统一拦截所有方法调用，将其转发给子线程
         return (...args: any[]) => {
-          if (this.worker) {
-            this.worker.postMessage({ type: 'CALL_DM', data: { method: prop as string, args } });
-          } else {
-            return original.apply(target, args);
+          if (!this.worker) {
+            return Promise.reject(new Error('Worker 未初始化'));
           }
+
+          const requestId = ++this.requestIdCounter;
+          return new Promise((resolve, reject) => {
+            this.pendingRequests.set(requestId, { resolve, reject });
+            console.log('postMessage CALL_DM ');
+            this.postMessage({
+              type: 'CALL_DM',
+              data: { method: prop as string, args, requestId },
+            });
+
+            // 设置超时，防止死锁
+            setTimeout(() => {
+              if (this.pendingRequests.has(requestId)) {
+                reject(new Error(`指令调用超时: ${String(prop)}`));
+                this.pendingRequests.delete(requestId);
+              }
+            }, 10000);
+          });
         };
       },
     };
-    return new Proxy(bindPlugin || {}, proxyHandler);
+    return new Proxy({}, proxyHandler);
   }
 }
+
+export const workerManager = new WorkerManager();

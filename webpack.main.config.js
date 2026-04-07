@@ -5,7 +5,7 @@ module.exports = {
    */
   entry: {
     index: './src/main.ts',
-    'role-worker': './src/ffo/events/role-worker.ts',
+    'role-worker': './src/worker/role-worker.ts',
   },
   output: {
     filename: '[name].js',

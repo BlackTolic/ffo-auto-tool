@@ -5,7 +5,7 @@ import { Role } from '../../events/rolyer';
 // 获取绑定窗口信息、pid
 export const getBindWindowInfo = (selectHwnd?: number) => {
   const hwnd = selectHwnd ? selectHwnd : damoBindingManager.selectHwnd;
-  if (!hwnd || !damoBindingManager.isBound(hwnd)) {
+  if (!hwnd) {
     logger.error('未选择已绑定的窗口', hwnd);
     throw new Error('未选择已绑定的窗口');
   }

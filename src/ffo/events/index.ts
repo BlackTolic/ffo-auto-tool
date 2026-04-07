@@ -20,7 +20,7 @@ export interface BindConfig {
 
 // 中文注释：绑定请求事件的负载
 export interface BindRequestPayload {
-  pid: number; // 目标进程 PID
+  hwnd: number; // 目标窗口句柄
   config?: BindConfig; // 可选的绑定配置覆盖
 }
 
@@ -170,40 +170,42 @@ export class DamoBindingManager {
   }
 
   // 中文注释：绑定指定 PID 的所有候选窗口；采用单例探测，实际绑定交由 Worker 完成
-  async bindWindowsByPid(pid: number, config?: BindConfig): Promise<number> {
+  async bindWindowsByHwnd(hwnd: number, config?: BindConfig) {
     if (this.isBinding) {
-      logger.warn(`[插件识别] PID=${pid} 的绑定任务已在进行中，跳过重复触发`);
+      logger.warn(`[插件识别] hwnds=${hwnd} 的绑定任务已在进行中，跳过重复触发`);
       return 0;
     }
-    this.isBinding = true;
-    try {
-      // 中文注释：主进程使用单例 Damo 实例进行枚举，不再重复创建 COM 对象
-      const dm = ensureDamo();
-      const hwnds = this.getTopWinHwndsByPid(dm, pid);
-      console.log(hwnds, '根据游戏名称获取的句柄');
-      let successCount = 0;
-      for (const hwnd of hwnds) {
-        // 中文注释：跳过已绑定的窗口，避免重复
-        if (this.isBound(hwnd)) {
-          logger.info(`[插件识别] 当前窗口 ${hwnd} 已绑定，跳过`);
-          continue;
-        }
-        try {
-          // 中文注释：主进程仅记录并触发识别事件，真正的 bindWindow 将在 Role 初始化的子线程中执行
-          this.clientsByHwnd.set(hwnd, { pid, hwnd, ffoClient: dm as any });
-          successCount++;
-          // 中文注释：通知订阅者该窗口已就绪（触发 Role 注册并启动 Worker 绑定）
-          ffoEvents.emit('bound', { pid, hwnd } as BoundPayload);
-        } catch (err) {
-          logger.error(`[插件识别] 处理错误: hwnd=${hwnd}, pid=${pid}`, err);
-          ffoEvents.emit('error', { pid, hwnd, error: err } as ErrorPayload);
-        }
-      }
-      logger.info('[插件识别] 枚举窗口 hwnds', hwnds);
-      return successCount;
-    } finally {
-      this.isBinding = false;
-    }
+    this.selectHwnd = hwnd;
+    ffoEvents.emit('bound', { hwnd });
+    this.clientsByHwnd.set(hwnd, { hwnd });
+    // this.isBinding = true;
+    // try {
+    //   // 中文注释：主进程使用单例 Damo 实例进行枚举，不再重复创建 COM 对象
+    //   // const dm = ensureDamo();
+    //   // const hwnds = this.getTopWinHwndsByPid(dm, pid);
+    //   console.log(hwnd, '根据游戏名称获取的句柄');
+    //   let successCount = 0;
+    //   for (const hwnd of hwnds) {
+    //     // 中文注释：跳过已绑定的窗口，避免重复
+    //     if (this.isBound(hwnd)) {
+    //       logger.info(`[插件识别] 当前窗口 ${hwnd} 已绑定，跳过`);
+    //       continue;
+    //     }
+    //     try {
+    //       // 中文注释：主进程仅记录并触发识别事件，真正的 bindWindow 将在 Role 初始化的子线程中执行
+    //       // this.clientsByHwnd.set(hwnd, { hwnd, ffoClient: dm as any });
+    //       // successCount++;
+    //       // 中文注释：通知订阅者该窗口已就绪（触发 Role 注册并启动 Worker 绑定）
+    //       ffoEvents.emit('bound', { hwnd } as BoundPayload);
+    //     } catch (err) {
+    //       logger.error(`[插件识别] 处理错误: hwnd=${hwnd}`, err);
+    //       ffoEvents.emit('error', { hwnd, error: err } as ErrorPayload);
+    //     }
+    //   }
+    //   return successCount;
+    // } finally {
+    //   this.isBinding = false;
+    // }
   }
 
   // 中文注释：按句柄识别单个窗口
@@ -236,11 +238,11 @@ export const damoBindingManager = new DamoBindingManager();
 
 // 中文注释：默认订阅：当收到按 PID 绑定请求时，执行绑定逻辑
 ffoEvents.on('bind:pid', async (payload: BindRequestPayload) => {
-  logger.info('[绑定] 收到按 PID 绑定请求', payload);
-  const { pid, config } = payload;
+  logger.info('[绑定] 收到按 hwnds 绑定请求', payload);
+  const { hwnd } = payload;
   try {
-    await damoBindingManager.bindWindowsByPid(pid, config);
+    await damoBindingManager.bindWindowsByHwnd(hwnd);
   } catch (err) {
-    ffoEvents.emit('error', { pid, error: err } as ErrorPayload);
+    ffoEvents.emit('error', { hwnd, error: err } as ErrorPayload);
   }
 });
