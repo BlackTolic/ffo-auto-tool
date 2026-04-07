@@ -47,7 +47,6 @@ export class Role {
   public map: string = ''; // 当前所在地图名称
   public bloodStatus: string = ''; // 血量状态
   public statusBloodIcon: Pos | null = null;
-  // private isDead: boolean = false; // 是否死亡
   public bindWindowSize: '1600*900' | '1280*800' = '1600*900'; // 绑定窗口的尺寸
   public selectMonster = ''; // 已选中怪物
   public menusPos = DEFAULT_MENUS_POS['1600*900'];
@@ -65,9 +64,8 @@ export class Role {
   private teamApplyCall: ((rejectPos?: Pos, agreePos?: Pos) => void) | null = null; // 组队申请回调
   private globalStrategyTask: GlobalStrategyTask[] | null = null; // 全局策略任务队列
   private workerManager: WorkerManager | null = null; // 工作线程管理器
-  private immediateId: NodeJS.Immediate | null = null; // 立即执行任务ID
-  private loopIsRuning: boolean = true; // 循环任务是否运行中
   public emailMessage: string = ''; // 邮件消息
+  public closeWorkerLoop: () => void = () => {};
 
   constructor() {}
 
@@ -343,5 +341,10 @@ export class Role {
   // 手动更新角色信息
   updateRoleInfo(roleInfo: { emailMessage: string }) {
     this.emailMessage = roleInfo.emailMessage;
+  }
+
+  // 关闭worker中的loop
+  updateCbFromWorkerManager(cb: () => void) {
+    this.closeWorkerLoop = cb;
   }
 }

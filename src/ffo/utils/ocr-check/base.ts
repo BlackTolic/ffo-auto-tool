@@ -28,28 +28,29 @@ import {
   DEFAULT_SERVER_DISCONNECT,
   DEFAULT_STATUS_ICON_POS,
   DEFAULT_SYSTERM_INFO,
+  DEFAULT_TRANSPORT_SKILL,
   DEFAULT_UN_EQUIP,
   DEFAULT_VERIFY_CODE,
 } from '../../constant/OCR-pos';
 import { parseFFOCurrencyToGoldLabel, parsePositionFromTextList, parseRolePositionFromText, parseTextPos } from '../common';
 // 检查服务器是否断线
-export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const isOffline = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): boolean => {
   const offlinePos = DEFAULT_SERVER_DISCONNECT[bindWindowSize];
   const addressName = bindDm.ocr(offlinePos.x1, offlinePos.y1, offlinePos.x2, offlinePos.y2, offlinePos.color, offlinePos.sim);
   return addressName.includes('退出游戏');
 };
 
 // 检查角色是否死亡
-export const isDeadPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): boolean => {
+export const isDeadPos = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): Promise<boolean> => {
   const deadPos = DEFAULT_DEAD[bindWindowSize];
-  const deadIcon = bindDm.ocr(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.color, deadPos.sim);
+  const deadIcon = await bindDm.ocr(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.color, deadPos.sim);
   return deadIcon.includes('死亡');
 };
 
 // 检查角色是否死亡-彩玉复活
-export const isDeadCYPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const isDeadCYPos = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const deadPos = DEFAULT_DEAD_CY[bindWindowSize];
-  const deadIcon = bindDm.findStrFastE(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.string, deadPos.color, deadPos.sim);
+  const deadIcon = await bindDm.findStrFastE(deadPos.x1, deadPos.y1, deadPos.x2, deadPos.y2, deadPos.string, deadPos.color, deadPos.sim);
   return parseTextPos(deadIcon);
 };
 
@@ -91,23 +92,23 @@ export const getMonsterName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 };
 
 // 检查怪物血量是否为空
-export const isMonsterEmptyHp = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const isMonsterEmptyHp = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const emptyHpPos = DEFAULT_MONSTER_BLOOD_EMPTY[bindWindowSize];
-  const emptyHpText = bindDm.findColorE(emptyHpPos.x1, emptyHpPos.y1, emptyHpPos.x2, emptyHpPos.y2, emptyHpPos.color, emptyHpPos.sim);
+  const emptyHpText = await bindDm.findColorE(emptyHpPos.x1, emptyHpPos.y1, emptyHpPos.x2, emptyHpPos.y2, emptyHpPos.color, emptyHpPos.sim);
   return !parseRolePositionFromText(emptyHpText);
 };
 
 // 获取血量状态（获取指定区域颜色均值）
-export const getBloodStatus = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const getBloodStatus = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): string => {
   const bloodStatusPos = DEFAULT_BLOOD_STATUS[bindWindowSize];
   const bloodStatusText = bindDm.findColorE(bloodStatusPos.x1, bloodStatusPos.y1, bloodStatusPos.x2, bloodStatusPos.y2, bloodStatusPos.color, bloodStatusPos.sim);
   return parseRolePositionFromText(bloodStatusText) ? 'safe' : 'danger';
 };
 
 // 是否处于回血状态
-export const getStatusBloodIcon = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const getStatusBloodIcon = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const statusIconPos = (DEFAULT_STATUS_ICON_POS as any)[bindWindowSize]?.status_blood;
-  const statusIconText = bindDm.findColorE(statusIconPos.x1, statusIconPos.y1, statusIconPos.x2, statusIconPos.y2, statusIconPos.color, statusIconPos.sim);
+  const statusIconText = await bindDm.findColorE(statusIconPos.x1, statusIconPos.y1, statusIconPos.x2, statusIconPos.y2, statusIconPos.color, statusIconPos.sim);
   return parseRolePositionFromText(statusIconText);
 };
 
@@ -119,46 +120,46 @@ export const fullScreenShot = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 };
 
 // 是否与目标直接有阻挡
-export const isBlocked = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const isBlocked = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const blockedPos = DEFAULT_ISOLATE[bindWindowSize];
-  const blockedText = bindDm.findStrFastE(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, '有阻挡', blockedPos.color, blockedPos.sim);
+  const blockedText = await bindDm.findStrFastE(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, '有阻挡', blockedPos.color, blockedPos.sim);
   return !!parseRolePositionFromText(blockedText);
 };
 
 // 查看当前金币
-export const getCurrentGold = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const getCurrentGold = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const goldPos = DEFAULT_GOLD[bindWindowSize];
-  const goldText = bindDm.ocr(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, goldPos.color, goldPos.sim);
+  const goldText = await bindDm.ocr(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, goldPos.color, goldPos.sim);
   // bindDm.capturePng(goldPos.x1, goldPos.y1, goldPos.x2, goldPos.y2, `${TEST_PATH}/current_gold.png`);
   return parseFFOCurrencyToGoldLabel(goldText);
 };
 
 // 检查物品栏是否打开
-export const isItemBoxOpen = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): { x: number; y: number } | null => {
+export const isItemBoxOpen = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): Promise<{ x: number; y: number } | null> => {
   const tabPos = DEFAULT_ITEM_BOX[bindWindowSize];
-  const tabTextPos = bindDm.findStrFastE(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.string, tabPos.color, tabPos.sim);
+  const tabTextPos = await bindDm.findStrFastE(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.string, tabPos.color, tabPos.sim);
   return parseTextPos(tabTextPos);
 };
 
 // 检查物品栏具体打开的是哪一页
-export const checkItemBoxTabPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): string | false => {
+export const checkItemBoxTabPos = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): Promise<string | false> => {
   const tabPos = DEFAULT_ITEM_BOX_TAB[bindWindowSize];
-  const tabText = bindDm.ocr(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.color, tabPos.sim);
+  const tabText = await bindDm.ocr(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabPos.color, tabPos.sim);
   return tabText ? tabText : false;
 };
 
 // 切换物品栏tab页
-export const switchItemBoxTabPos = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', tabText: string) => {
+export const switchItemBoxTabPos = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', tabText: string) => {
   const tabPos = DEFAULT_ITEM_BOX_TAB_SWITCH[bindWindowSize];
-  const pos = bindDm.findStrFastE(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabText, tabPos.color, tabPos.sim);
+  const pos = await bindDm.findStrFastE(tabPos.x1, tabPos.y1, tabPos.x2, tabPos.y2, tabText, tabPos.color, tabPos.sim);
   return parseTextPos(pos);
 };
 
 // 检查装备是否已经损坏
-export const checkEquipBroken = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const checkEquipBroken = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const equipBrokenPos = DEFAULT_EQUIP_DAMAGE[bindWindowSize];
   // logger.debug(equipBrokenPos, bindDm, 'equipBrokenPos');
-  const equipBrokenText = bindDm.findColorE(equipBrokenPos.x1, equipBrokenPos.y1, equipBrokenPos.x2, equipBrokenPos.y2, equipBrokenPos.color, equipBrokenPos.sim);
+  const equipBrokenText = await bindDm.findColorE(equipBrokenPos.x1, equipBrokenPos.y1, equipBrokenPos.x2, equipBrokenPos.y2, equipBrokenPos.color, equipBrokenPos.sim);
   // logger.debug(equipBrokenText, 'equipBrokenText');
   return parseRolePositionFromText(equipBrokenText);
 };
@@ -197,7 +198,7 @@ export const checkPetInfo = async (bindDm: AutoT, bindWindowSize: '1600*900' | '
 export const checkMounted = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   await bindDm.moveToClick(65, 85);
   const mountedPos = DEFAULT_MOUNTED[bindWindowSize];
-  const mountedText = bindDm.ocr(mountedPos.x1, mountedPos.y1, mountedPos.x2, mountedPos.y2, mountedPos.color, mountedPos.sim);
+  const mountedText = await bindDm.ocr(mountedPos.x1, mountedPos.y1, mountedPos.x2, mountedPos.y2, mountedPos.color, mountedPos.sim);
   await bindDm.moveToClick(65, 85);
   // console.log(mountedText, 'mountedText');
   return mountedText === '25';
@@ -216,9 +217,9 @@ export const checkMountedByRoleSpeed = async (bindDm: AutoT, bindWindowSize: '16
 };
 
 // 检查物品栏物品数量
-export const checkItemBoxItemCount = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', itemSort: number = 1, message?: string) => {
+export const checkItemBoxItemCount = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', itemSort: number = 1, message?: string) => {
   // 先检查物品栏是否打开
-  const xPos = isItemBoxOpen(bindDm, bindWindowSize);
+  const xPos = await isItemBoxOpen(bindDm, bindWindowSize);
   if (!xPos) {
     logger.warn('物品栏未打开');
     return 0;
@@ -231,14 +232,14 @@ export const checkItemBoxItemCount = (bindDm: AutoT, bindWindowSize: '1600*900' 
 
   const itemPos = firstItem[bindWindowSize];
   // bindDm.capturePng(itemPos.x1 + (itemSort - 1) * 41, itemPos.y1, itemPos.x2 + (itemSort - 1) * 41, itemPos.y2, `${TEST_PATH}/item_count_${itemSort}.png`);
-  const itemBoxItemText = bindDm.ocr(itemPos.x1 + (itemSort - 1) * 41, itemPos.y1, itemPos.x2 + (itemSort - 1) * 41, itemPos.y2, itemPos.color, itemPos.sim);
+  const itemBoxItemText = await bindDm.ocr(itemPos.x1 + (itemSort - 1) * 41, itemPos.y1, itemPos.x2 + (itemSort - 1) * 41, itemPos.y2, itemPos.color, itemPos.sim);
   return !itemBoxItemText ? 0 : Number(itemBoxItemText);
 };
 
 // 检查装备数量
-export const checkEquipCount = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const checkEquipCount = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const checkEquipPos = DEFAULT_EQUIP_COUNT[bindWindowSize];
-  const equipCountText = bindDm.findStrFastEx(checkEquipPos.x1, checkEquipPos.y1, checkEquipPos.x2, checkEquipPos.y2, checkEquipPos.string, checkEquipPos.color, checkEquipPos.sim);
+  const equipCountText = await bindDm.findStrFastEx(checkEquipPos.x1, checkEquipPos.y1, checkEquipPos.x2, checkEquipPos.y2, checkEquipPos.string, checkEquipPos.color, checkEquipPos.sim);
   const list = equipCountText ? equipCountText.split?.('|') : [];
   return parsePositionFromTextList(list);
 };
@@ -251,9 +252,9 @@ interface IUnEquipEquip {
 }
 
 // 识别“未装备”的装备信息
-export const checkUnEquipEquip = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): IUnEquipEquip | null => {
+export const checkUnEquipEquip = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): Promise<IUnEquipEquip | null> => {
   const unEquipPos = DEFAULT_UN_EQUIP[bindWindowSize];
-  const pos = bindDm.findStrFastE(unEquipPos.x1, unEquipPos.y1, unEquipPos.x2, unEquipPos.y2, unEquipPos.string, unEquipPos.color, unEquipPos.sim);
+  const pos = await bindDm.findStrFastE(unEquipPos.x1, unEquipPos.y1, unEquipPos.x2, unEquipPos.y2, unEquipPos.string, unEquipPos.color, unEquipPos.sim);
   const _pos = parseTextPos(pos);
   if (!_pos) {
     logger.warn('未识别到装备信息');
@@ -262,10 +263,10 @@ export const checkUnEquipEquip = (bindDm: AutoT, bindWindowSize: '1600*900' | '1
   // bindDm.capturePng(_pos.x, _pos.y, _pos.x + 128, _pos.y + 153, `${TEST_PATH}/test4.png`);
   // bindDm.capturePng(_pos.x, _pos.y + 153, _pos.x + 128, _pos.y + 306, `${TEST_PATH}/test5.png`);
   // 等级和装备部位
-  const type = bindDm.ocr(_pos.x, _pos.y, _pos.x + 128, _pos.y + 153, 'b0bcb0-111111|e0e8e0-111111|e83c00-111111', unEquipPos.sim);
+  const type = await bindDm.ocr(_pos.x, _pos.y, _pos.x + 128, _pos.y + 153, 'b0bcb0-111111|e0e8e0-111111|e83c00-111111', unEquipPos.sim);
   // bindDm.delay(200);
   // 装备属性
-  const attr = bindDm.ocr(_pos.x, _pos.y + 153, _pos.x + 135, _pos.y + 306, '408ce8-111111|d830e8-111111|00f0c8-111111', unEquipPos.sim);
+  const attr = await bindDm.ocr(_pos.x, _pos.y + 153, _pos.x + 135, _pos.y + 306, '408ce8-111111|d830e8-111111|00f0c8-111111', unEquipPos.sim);
   // logger.info('装备类型和等级：', type);
   // logger.info('装备属性：', attr);
   const res = { type: type.match(/\(([^)]+)\)/)?.[1] ?? null, level: type?.match(/需要等级(\d+)/)?.[1] ?? null, attrName: attr.split('+')?.[0] ?? null, attrValue: attr.split('+')?.[1] ?? null };
@@ -281,38 +282,50 @@ export const checkInviteTeam = (bindDm: AutoT, bindWindowSize: '1600*900' | '128
 };
 
 // 关闭任何突然弹出的弹框
-export const closeDialog = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const closeDialog = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const inviteTeamPos = DEFAULT_CLOSE_DIALOG[bindWindowSize];
-  const inviteTeamText = bindDm.findStrFastE(inviteTeamPos.x1, inviteTeamPos.y1, inviteTeamPos.x2, inviteTeamPos.y2, inviteTeamPos.string, inviteTeamPos.color, inviteTeamPos.sim);
+  const inviteTeamText = await bindDm.findStrFastE(inviteTeamPos.x1, inviteTeamPos.y1, inviteTeamPos.x2, inviteTeamPos.y2, inviteTeamPos.string, inviteTeamPos.color, inviteTeamPos.sim);
   return parseTextPos(inviteTeamText);
 };
 
 // 检查是否快升级了
-export const checkExpBar = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const checkExpBar = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const expBarPos = DEFAULT_EXP_BAR[bindWindowSize];
-  const expBarText = bindDm.findColorE(expBarPos.x1, expBarPos.y1, expBarPos.x2, expBarPos.y2, expBarPos.color, expBarPos.sim);
+  const expBarText = await bindDm.findColorE(expBarPos.x1, expBarPos.y1, expBarPos.x2, expBarPos.y2, expBarPos.color, expBarPos.sim);
   return !!parseRolePositionFromText(expBarText);
 };
 
 // 检查系统是否有提示改信息
-export const checkSystemPrompt = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
+export const checkSystemPrompt = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
   const blockedPos = DEFAULT_SYSTERM_INFO[bindWindowSize];
-  const blockedText = bindDm.findStrFastE(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, keyword, blockedPos.color, blockedPos.sim);
+  const blockedText = await bindDm.findStrFastE(blockedPos.x1, blockedPos.y1, blockedPos.x2, blockedPos.y2, keyword, blockedPos.color, blockedPos.sim);
   return !!parseRolePositionFromText(blockedText);
 };
 
 // 识别到财产密码锁
-export const checkPasswordLock = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const checkPasswordLock = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const passwordLockPos = DEFAULT_PASSWORD_LOCK[bindWindowSize];
-  const passwordLockText = bindDm.ocr(passwordLockPos.x1, passwordLockPos.y1, passwordLockPos.x2, passwordLockPos.y2, passwordLockPos.color, passwordLockPos.sim);
+  const passwordLockText = await bindDm.ocr(passwordLockPos.x1, passwordLockPos.y1, passwordLockPos.x2, passwordLockPos.y2, passwordLockPos.color, passwordLockPos.sim);
   return passwordLockText.includes('操作锁定');
 };
 
 // 识别到财产密码锁中的密码
-export const checkPasswordLockPassword = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
+export const checkPasswordLockPassword = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
   const password = DEFAULT_PASSWORD_LOCK_RANGE[bindWindowSize];
-  const passwordPos = bindDm.findStrFastE(password.x1, password.y1, password.x2, password.y2, keyword, password.color, password.sim);
+  const passwordPos = await bindDm.findStrFastE(password.x1, password.y1, password.x2, password.y2, keyword, password.color, password.sim);
   // 截图
   // bindDm.capturePng(password.x1, password.y1, password.x2, password.y2, `${TEST_PATH}/test6.png`);
   return parseTextPos(passwordPos);
+};
+
+// 检查是否有药师的传送术
+export const checkTransportSkill = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const transportBookPos = DEFAULT_TRANSPORT_SKILL[bindWindowSize];
+  const transportBookText = await bindDm.findStrFastE(transportBookPos.x1, transportBookPos.y1, transportBookPos.x2, transportBookPos.y2, '接受传送', transportBookPos.color, transportBookPos.sim);
+  console.log(transportBookText, 'transportBookText');
+  if (!transportBookText) {
+    logger.warn('未识别到传送术');
+    return null;
+  }
+  return { agree: { x: 711, y: 493 }, reject: { x: 593, y: 493 } };
 };

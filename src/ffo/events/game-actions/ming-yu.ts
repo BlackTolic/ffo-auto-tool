@@ -2,7 +2,7 @@ import logger from '../../../utils/logger';
 import { debounce } from '../../../utils/tool';
 import { OCR_MING_YU_BOSS } from '../../constant/monster-feature';
 import { createStuckChecker, getBindWindowInfo } from '../../utils/common/rolyer';
-import { checkMountedByRoleSpeed } from '../../utils/ocr-check/base';
+import { checkMountedByRoleSpeed, checkTransportSkill } from '../../utils/ocr-check/base';
 import { AttackActions, AttackActionsOptions } from '../attack-action';
 import { BaseAction } from '../base-action';
 import { Conversation } from '../conversation';
@@ -22,7 +22,7 @@ import { AutoFarmingAction } from './auto-farming';
 const TASK_NAME = '跑名誉';
 
 const INIT_POS = { x: 278, y: 79 };
-// const INIT_POS = { x: 320, y: 135 };
+// const INIT_POS = { x: 155, y: 25 };
 
 const PATH_POS = [
   { x: 326, y: 92 },
@@ -37,9 +37,9 @@ const PATH_POS = [
 ];
 
 const skillGroup: AttackActionsOptions['skillGroup'] = [
-  { key: 'F1', interval: 6 * 1000, sort: 2, type: 'delay' }, // 攻击技能
-  { key: 'F2', interval: 5 * 1000, sort: 3, type: 'delay' }, // 攻击技能
-  { key: 'F4', interval: 1 * 700, sort: 1, type: 'lock' },
+  // { key: 'F1', interval: 6 * 1000, sort: 2, type: 'delay' }, // 攻击技能
+  // { key: 'F2', interval: 5 * 1000, sort: 3, type: 'delay' }, // 攻击技能
+  { key: 'F4', interval: 0.5 * 1000, sort: 1, type: 'lock' },
 ]; // 攻击技能
 
 // let autoFarmingAction: AutoFarmingAction | null = null;
@@ -60,6 +60,8 @@ export default class MingYuTask {
   private assistant: RoleTaskItem = { role: null, moveActions: null, baseAction: null }; // 辅助
   private customers: RoleTaskItem[] = []; // 客户
   private autoFarmingAction: AutoFarmingAction | null = null; // 自动寻路操作
+  private soldierStatus: 'receiveTask' | 'taskDoing' | 'taskDone' = 'taskDoing'; // 士兵状态：完成接受名誉任务、完成boss挑战、任务中
+  private assistantStatus: 'idle' | 'taskDoing' = 'idle'; // 辅助状态
 
   constructor(private role?: Role) {}
 
@@ -80,9 +82,10 @@ export default class MingYuTask {
     try {
       const { role } = getBindWindowInfo(selectHwnd);
       this.assistant.role = role;
-      this.assistant.moveActions = new MoveActions(role);
       this.assistant.baseAction = new BaseAction(role);
       logger.info('注册辅助任务');
+      // 关闭loop
+      role?.closeWorkerLoop?.();
     } catch (e) {
       logger.error('注册辅助任务失败', e);
     }
@@ -209,10 +212,10 @@ export default class MingYuTask {
       // 开始攻击怪物
       await soldierAttackActions.scanMonster({ attackType: 'single', attackRange: { x: 321, y: 130, r: 15 } });
       logger.info('当前已经没有怪物了', soldierRole.position);
-      await soldierRole.bindDm.delay(1000);
+      await soldierRole.bindPlugin.delay(1000);
       // 回城
       await soldierBaseAction.backCity({ x: 278, y: 79 }, 'F9');
-      await soldierRole.bindDm.delay(2000);
+      await soldierRole.bindPlugin.delay(2000);
       // 更新状态
       soldierRole.updateTaskStatus('done');
     } catch (e) {
@@ -255,12 +258,27 @@ export default class MingYuTask {
     if (!soldier.role || !soldier.moveActions || !soldier.baseAction || !soldier.attackActions) {
       throw new Error('请先注册士兵');
     }
-    if (!assistant.role) {
+    if (!assistant.role || !assistant.baseAction) {
       throw new Error('请先注册辅助角色');
     }
-    const soldierRole = this.soldier.role;
-    const soldierAttackActions = this.soldier.attackActions;
-    const soldierBaseAction = this.soldier.baseAction;
+    const soldierRole = soldier.role;
+    const assistantRole = assistant.role;
+    const assistantBaseAction = assistant.baseAction;
+    // F7 传送士兵
+    await assistantBaseAction.pressFirstSkillBarSkill('F7');
+    await assistantRole.bindDm.delay(1000);
+    // 点击队长头像
+    await assistantRole.bindPlugin.moveToClick(21, 129);
+    await soldierRole.bindDm.delay(5000);
+    // 士兵是否接受传送
+    const pos = await checkTransportSkill(soldierRole.bindDm, soldierRole.bindWindowSize);
+    if (!pos) {
+      logger.warn('未识别到传送术');
+      return;
+    }
+    // 点击接受传送
+    await soldierRole.bindPlugin.moveToClick(pos.agree.x, pos.agree.y);
+    await soldierRole.bindDm.delay(4000);
     try {
     } catch (e) {
       logger.error('跑名誉任务失败', e);

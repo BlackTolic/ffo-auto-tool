@@ -62,7 +62,6 @@ export class Conversation {
   private async findNPC(npcName: string, delX: number = 0, delY: number = 80): Promise<Pos | false> {
     const key = this.role.bindWindowSize as keyof typeof SCAN_BOX;
     const scanBox = SCAN_BOX[key];
-    // const dialog = DIALOG_OPTIONS_POS[key];
     let NPCPos = await this.bindPlugin.findStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, npcName, scanBox.color, scanBox.sim);
     if (!NPCPos) {
       logger.warn(`没有找到NPC${npcName}`);
@@ -227,23 +226,23 @@ export class Conversation {
       // 找到NPC并且成功开启对话框
       let npcPos = await this.findNPC('荣光使者', 10, 50);
       if (!npcPos) {
+        await this.bindPlugin.delay(3000);
         npcPos = await this.findNPC('荣光使者', 10, 50);
       }
       if (!npcPos) {
-        logger.info('没有找到荣光使者');
+        logger.info(`没有找到荣光使者,${npcPos}`);
         return false;
       }
       const isOpenDialg = await this.openConversation(npcPos);
-      logger.info(isOpenDialg, '是否打开了对话框');
+      logger.info(`是否打开了对话框: ${isOpenDialg ? '是' : '否'}`);
       return isOpenDialg;
     };
-
     const isOpen = await findNpcAndOpenDialog();
     if (!isOpen) return false;
 
     // 检查当前是需要提交任务还是需要领取任务
     const isSubmitTask = await this.findOptions('击败了怨灵');
-    logger.info(isSubmitTask, '是否需要提交任务');
+    logger.info(`是否需要提交任务: ${isSubmitTask ? '是' : '否'}`);
     if (isSubmitTask) {
       // 选择选项提交任务
       await this.moveToClick(isSubmitTask);

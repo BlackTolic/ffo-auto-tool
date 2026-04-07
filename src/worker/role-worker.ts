@@ -31,7 +31,6 @@ const bindWindow = async (hwnd: number) => {
     if (!hwnd || hwnd <= 0) {
       throw new Error(`非法句柄: ${hwnd}`);
     }
-    // 2. 绑定窗口 - 使用项目统一的配置 (参考 DamoBindingManager 的 defaultConfig)
     const display = 'dx.graphic.2d';
     const mouse = 'dx.mouse.position.lock.api|dx.mouse.position.lock.message';
     const keypad = 'dx.keypad.state.api|dx.keypad.api';
@@ -41,6 +40,7 @@ const bindWindow = async (hwnd: number) => {
     if (ret !== 1) {
       throw new Error(`BindWindow 失败，返回值=${ret}, hwnd=${hwnd}`);
     }
+    return true;
   } catch (err) {
     parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 绑定窗口失败: ${String(err)}` } });
     return false;
@@ -67,17 +67,10 @@ const loadDictionary = async () => {
 };
 
 // 初始化：注册、绑定窗口和加载字库
-const init = async () => {
+const init = () => {
   try {
     // 1. 注册大漠 (如果需要收费功能)
     dm.reg();
-    // 2. 绑定窗口 - 使用项目统一的配置 (参考 DamoBindingManager 的 defaultConfig)
-    // await bindWindow();
-    // // 3. 加载字库
-    // await loadDictionary();
-    // // 发送句柄信息给主线程
-    // parentPort?.postMessage({ type: 'HWND', data: { hwnd } });
-
     return true;
   } catch (err) {
     parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 初始化失败: ${String(err)}` } });
@@ -86,6 +79,7 @@ const init = async () => {
 };
 
 const loop = async () => {
+  // console.log('关闭轮询子线程');
   try {
     if (!loopIsRuning || !bindWindowSize) {
       parentPort?.postMessage({ type: 'LOG', data: { level: 'warn', message: '[角色工作线程] 循环已停止或未绑定窗口大小' } });
@@ -161,9 +155,8 @@ const loop = async () => {
     parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 轮询失败: ${String((err as any)?.message || err)}` } });
   } finally {
     if (loopIsRuning) {
-      // 【关键修改】使用 setImmediate 代替 setTimeout
-      // 这能确保在处理完主线程消息后，第一时间执行下一次 loop
-      setImmediate(loop);
+      // 使用 setTimeout 进行轮询节流，避免 setImmediate 忙等抢占 CPU
+      setTimeout(loop, 200);
     }
   }
 };
@@ -213,8 +206,9 @@ const callDm = async (data: any) => {
 parentPort?.on('message', msg => {
   if (msg.type === 'STOP_LOOP') {
     loopIsRuning = false;
+    console.log('关闭轮询子线程');
     try {
-      dm.unbindWindow();
+      // dm.unbindWindow();
     } catch {}
   }
 

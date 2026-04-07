@@ -7,7 +7,7 @@ import { mingYuTask } from '../ffo/events/game-actions/ming-yu';
 import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { logger } from '../utils/logger';
-import { workerManager } from '../worker/worker-manager';
+import WorkerManager, { workerManagerMap } from '../worker/worker-manager';
 // 中文注释：记录每个窗口当前是否开启了自动按键
 const autoKeyOnByHwnd = new Map<number, boolean>();
 
@@ -105,7 +105,9 @@ export const toggleAutoKey = (
 export function registerGlobalHotkeys() {
   // Alt+Q 绑定句柄
   registerHotkey('Alt+Q', async () => {
+    const workerManager = new WorkerManager();
     const hwnd = await workerManager.getChildProcessHwnd();
+    workerManagerMap.set(hwnd, workerManager);
     return await damoBindingManager.bindWindowsByHwnd(hwnd);
   });
 
@@ -114,14 +116,13 @@ export function registerGlobalHotkeys() {
 
   // Alt+2 注册士兵任务
   registerHotkey('Alt+2', () => {
-    console.log('注册士兵任务xxx');
     mingYuTask.registerSoldierTask();
     return true;
   });
   // Alt+3 跑名誉
-  registerHotkey('Alt+3', () => mingYuTask.startMingYuTask());
+  registerHotkey('Alt+3', () => mingYuTask.registerAssistantTask());
   // Alt+4 跑云荒1层
-  registerHotkey('Alt+4', () => toggleYunHuang1West());
+  registerHotkey('Alt+4', () => mingYuTask.startMingYuTask());
   // Alt + S 云荒1层刷怪
   registerHotkey('Alt+S', () => toggleYunHuang1West());
 

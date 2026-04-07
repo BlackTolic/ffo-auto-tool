@@ -44,13 +44,13 @@ export class BaseAction {
   }
 
   // 关闭/打开物品栏
-  operateItemBox(type: 'close' | 'open') {
+  async operateItemBox(type: 'close' | 'open') {
     // 检查物品栏是否打开
-    const closePos = isItemBoxOpen(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
+    const closePos = await isItemBoxOpen(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
     if ((type === 'close' && closePos) || (type === 'open' && !closePos)) {
-      this.bindPlugin.keyPress(VK_F['alt']);
-      this.bindPlugin.keyPress(VK_F['i']);
-      this.bindPlugin.delay(500);
+      await this.bindPlugin.keyPress(VK_F['alt']);
+      await this.bindPlugin.keyPress(VK_F['i']);
+      await this.bindPlugin.delay(500);
       logger.info(`[基本操作] 当前需要${type}物品栏`);
       return;
     }
@@ -58,12 +58,12 @@ export class BaseAction {
   }
 
   // 回城
-  backCity(fixPos?: { x: number; y: number }, ways?: 'F9', checkRedName = false) {
-    return new Promise((res, rej) => {
+  async backCity(fixPos?: { x: number; y: number }, ways?: 'F9', checkRedName = false) {
+    return new Promise(async (res, rej) => {
       // 设置重复回城直到随机到达目标坐标
-      const repeatBack = (fixPos: { x: number; y: number }, maxTimes: number = 20) => {
+      const repeatBack = async (fixPos: { x: number; y: number }, maxTimes: number = 20) => {
         let i = 0;
-        const loop = () => {
+        const loop = async () => {
           // 回到了终点
           if (this.role?.position && isArriveAimNear(this.role?.position, fixPos, 20)) {
             logger.info('[回城] 回城成功');
@@ -73,7 +73,7 @@ export class BaseAction {
           }
 
           if (checkRedName) {
-            const systemPrompt = checkSystemPrompt(this.bindPlugin, this.role?.bindWindowSize ?? '1600*900', '红名玩家不允许使用回城卷轴');
+            const systemPrompt = await checkSystemPrompt(this.bindPlugin, this.role?.bindWindowSize ?? '1600*900', '红名玩家不允许使用回城卷轴');
             if (systemPrompt) {
               logger.warn(`[回城] 检测到红名提示，中断回城操作`);
               this.role?.clearActionTimer('repeatBack');
@@ -146,21 +146,21 @@ export class BaseAction {
   }
 
   // 打开物品栏切换到/消耗/收集/装备页
-  openItemBox(changeTo: '消耗' | '收集' | '装备') {
+  async openItemBox(changeTo: '消耗' | '收集' | '装备') {
     // 识别当前打开的页面
-    const closePos = isItemBoxOpen(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
-    return new Promise((res, rej) => {
+    const closePos = await isItemBoxOpen(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
+    return new Promise(async (res, rej) => {
       if (!closePos) {
-        this.operateItemBox('open');
+        await this.operateItemBox('open');
         // 切换tab页
-        const tabPos = switchItemBoxTabPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', changeTo);
+        const tabPos = await switchItemBoxTabPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', changeTo);
         if (tabPos) {
           this.bindPlugin.moveToClick(tabPos.x, tabPos.y);
         }
         res(true);
       }
       // 切换tab页
-      const tabPos = switchItemBoxTabPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', changeTo);
+      const tabPos = await switchItemBoxTabPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', changeTo);
       if (tabPos) {
         this.bindPlugin.moveToClick(tabPos.x, tabPos.y);
       }
@@ -249,22 +249,34 @@ export class BaseAction {
     });
   }
 
+  // 按下第一栏技能栏技能
+  async pressFirstSkillBarSkill(pressKey: string, times: number = 1) {
+    return new Promise(async (res, rej) => {
+      for (let i = 0; i < times; i++) {
+        await this.bindPlugin.delay(500);
+        await this.bindPlugin.keyPress(VK_F[pressKey]);
+        await this.bindPlugin.delay(500);
+      }
+      res(true);
+    });
+  }
+
   // 拾取有用装备
-  pickUpUsefulEquip(validEquip: ValidEquip, way?: 'mail' | 'saveEquip') {
+  async pickUpUsefulEquip(validEquip: ValidEquip, way?: 'mail' | 'saveEquip') {
     // 获取所有装备坐标
-    const pos = checkEquipCount(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
+    const pos = await checkEquipCount(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
     logger.debug(pos, 'pos');
     if (!pos || pos.length === 0) {
       logger.info('[炼化挑选] 没有装备');
       return;
     }
-    pos.forEach(async item => {
+    for (const item of pos) {
       // new Promise((res, rej) => {
       // 通过阻塞进程实现
       await this.bindPlugin.moveToClick(item.x + 10, item.y - 5);
       await this.bindPlugin.delay(1000);
       // 找到未装备
-      const unEquipPos = checkUnEquipEquip(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
+      const unEquipPos = await checkUnEquipEquip(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
       // logger.debug(unEquipPos, 'unEquipPos');
       if (!unEquipPos) {
         logger.info('[炼化挑选] 没有未装备的装备');
@@ -292,7 +304,7 @@ export class BaseAction {
         return;
       }
       logger.info('[炼化挑选] 这个装备有用');
-    });
+    }
     // });
     // const { equip } = this.role?.menusPos ?? {};
     logger.info('[炼化挑选] 完成装备筛选');
@@ -311,7 +323,7 @@ export class BaseAction {
       if (record === passwordItem.length - 1 || errCount >= 20) {
         return;
       }
-      const passwordPos = checkPasswordLockPassword(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', str);
+      const passwordPos = await checkPasswordLockPassword(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', str);
       if (passwordPos) {
         await this.bindPlugin.moveToClick(passwordPos.x, passwordPos.y);
         await this.bindPlugin.delay(300);

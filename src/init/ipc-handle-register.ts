@@ -5,7 +5,7 @@ import { validateEnvironment } from '../envCheck';
 import { pauseCurActive as pauseWuLeiNanJiao, stopCurActive as stopWuLeiNanJiao, toggleWuLeiNanJiao } from '../ffo/events/game-actions/wu-lei-nan-jiao'; // 中文注释：引入无泪南郊切换/暂停/停止逻辑供 IPC 调用
 import { pauseCurActive as pauseYunHuang1West, stopCurActive as stopYunHuang1West, toggleYunHuang1West } from '../ffo/events/game-actions/yun1'; // 中文注释：引入云荒一层西南角切换/暂停/停止逻辑供 IPC 调用
 import type { RoleTaskSnapshot } from '../ffo/events/rolyer';
-import { WorkerManager } from '../worker/worker-manager';
+import WorkerManager from '../worker/worker-manager';
 
 // 中文注释：可绑定窗口的信息接口（在主进程内部使用）
 interface BindableWindowInfo {

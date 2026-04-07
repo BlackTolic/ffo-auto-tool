@@ -75,6 +75,8 @@ export default class WorkerManager {
     this.role = role;
     this.role.updateInfoFromWorkerManager(this.dm);
     this.startChildProcessRoleLoop();
+    // 添加一个停止loop的回调函数
+    this.role.updateCbFromWorkerManager(() => this.stopChildProcessRoleLoop());
   }
 
   // 向工作线程发送消息

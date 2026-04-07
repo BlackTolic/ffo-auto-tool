@@ -1,7 +1,7 @@
 import { MoveActions } from '..';
 
 export const fromLouLanToChengJiao = (moveActions: MoveActions) => {
-  return moveActions.startAutoFindPath({ toPos: [{ x: 325, y: 95 }], aimPos: '楼兰城郊' });
+  return moveActions.startAutoFindPath({ toPos: [{ x: 325, y: 95 }], aimPos: '楼兰城郊', delay: 0 });
 };
 
 // 中文注释：从城交到名誉NPC
@@ -34,6 +34,7 @@ export const fromMingYuNPCToAntHill = (moveActions: MoveActions) => {
       { x: 293, y: 112 },
     ],
     aimPos: '蚂蚁沙地北',
+    delay: 0,
   });
 };
 
@@ -46,6 +47,7 @@ export const fromAntHillToSunsetDune = (moveActions: MoveActions) => {
     ],
     blockAllBeforeMove: true,
     aimPos: '落日沙丘',
+    delay: 0,
   });
 };
 
@@ -55,12 +57,13 @@ export const fromSunsetDuneToSunsetDuneWest = (moveActions: MoveActions) => {
     toPos: [{ x: 160, y: 58 }],
     blockAllBeforeMove: true,
     aimPos: '落日沙丘西',
+    delay: 0,
   });
 };
 
 // 从落日沙丘西到斯芬尼克
 export const fromSunsetDuneWestToSphinx = (moveActions: MoveActions) => {
-  return moveActions.startAutoFindPath({ toPos: [{ x: 255, y: 148 }], blockAllBeforeMove: true });
+  return moveActions.startAutoFindPath({ toPos: [{ x: 255, y: 148 }], blockAllBeforeMove: true, delay: 0 });
 };
 
 // 从失落神殿一层前往名誉BOSS

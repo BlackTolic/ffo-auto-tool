@@ -3,7 +3,7 @@ import { damoBindingManager, ffoEvents } from '../ffo/events';
 import { Role } from '../ffo/events/rolyer';
 import { stopKeyPress } from '../ffo/utils/key-press';
 import logger from '../utils/logger';
-import { workerManager } from '../worker/worker-manager';
+import { workerManagerMap } from '../worker/worker-manager';
 
 // 中文注释：向所有渲染进程广播字库信息更新
 export const broadcastDictInfoUpdated = (hwnd: number, info: any) => {
@@ -29,6 +29,11 @@ export const registerBoundEventHandlers = () => {
       const role = new Role();
       // 中文注释：设置角色信息
       damoBindingManager.setRole(hwnd, role);
+      const workerManager = workerManagerMap.get(hwnd);
+      if (!workerManager) {
+        logger.warn(`[绑定事件] 窗口 ${hwnd} 未找到对应的 WorkerManager 实例`);
+        return;
+      }
       // 绑定窗口
       workerManager.bindChildProcessWindow(hwnd);
       // 注册角色信息，并启动子线程执行实际绑定与 OCR

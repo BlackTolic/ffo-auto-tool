@@ -18,6 +18,7 @@ interface KeyPressOptions {
 export interface ScanMonsterOptions {
   attackType?: 'group' | 'single';
   times?: number;
+  tickMs?: number;
   attackRange?: {
     x: number;
     y: number;
@@ -356,13 +357,15 @@ export class AttackActions {
 
   // 识别周围有无怪物，并且识别5秒
   async scanMonster(options: ScanMonsterOptions) {
-    const { attackType, times = 5, attackRange, map = '' } = options;
+    const { attackType, times = 5, attackRange, map = '', tickMs = 300 } = options;
+    const periodMs = Math.max(50, Math.floor(tickMs));
     let moveAction = new MoveActions(this.role, { offsetR: 280 });
     return new Promise(async (resolve, reject) => {
-      logger.info(`[自动攻击] 已启动：attackType=${attackType} | 目标点位=${attackRange?.x},${attackRange?.y} | 间隔=${times}S | 范围=${attackRange?.r || '无'}`);
-      let counter = 0;
+      logger.info(`[自动攻击] 已启动：attackType=${attackType} | 目标点位=${attackRange?.x},${attackRange?.y} | 无目标超时=${times}S | tick=${periodMs}ms | 范围=${attackRange?.r || '无'}`);
       let lastIsolateTime = 0;
       let isRunLoop = true;
+      let lastHasTargetAt = Date.now();
+
       const loop = async () => {
         if (!isRunLoop) return;
         // 对怪物进行攻击
@@ -374,52 +377,46 @@ export class AttackActions {
           moveAction.move({ x: roleX, y: roleY }, { x, y });
         }
 
-        // logger.debug(isRange, '我是否在据点范围内');
         if (attackType === 'single' && isRange) {
           await this.attackNearestMonsterForSingle();
         }
         if (attackType !== 'single' && isRange) {
           await this.attackNearestMonster();
         }
-        // todo 缩小范围
+
         const findMonsterPos = await this.findMonsterPos();
         if (findMonsterPos || this.role.selectMonster) {
-          counter = 0;
+          lastHasTargetAt = Date.now();
         }
-        // 检测到与怪物有隔离
+
         const isIsolate = await isBlocked(this.bindDm, this.role.bindWindowSize);
-        // todo技能卡住移动
         const now = Date.now();
-        // 这里需要打开世界频道，刷新掉弹出的红字
         if (isIsolate && now - lastIsolateTime > 5000 && attackRange) {
-          // 连续5S内都有隔离，认为是与怪物有隔离
+          lastIsolateTime = now;
           logger.info(`[自动攻击] 已与怪物隔离，需要移动到目标点 (${attackRange.x},${attackRange.y})`);
           const { x, y } = attackRange;
           const { x: roleX, y: roleY } = this.role.position ?? { x: 0, y: 0 };
           moveAction.move({ x: roleX, y: roleY }, { x, y });
         }
-        // 地图发生改变，中断攻击
+
         if (map && map !== this.role.map) {
           isRunLoop = false;
           this.role.clearActionTimer('scanMonster');
-          this.bindDm;
-          // this.bindPlugin.moveToClick(roleX + 30, roleY);
-          // 点击脚下的死坐标
           this.bindPlugin.moveToClick(800, 525);
           reject(`[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击`);
           return;
         }
-        if (!findMonsterPos && counter > times) {
+
+        if (!findMonsterPos && !this.role.selectMonster && now - lastHasTargetAt > times * 1000) {
           logger.info(`[自动攻击] 已连续${times}S无目标，结束自动攻击`);
           isRunLoop = false;
           this.role.clearActionTimer('scanMonster');
           resolve(true);
           return;
         }
-        counter++;
 
         if (isRunLoop) {
-          const scanTimer = setTimeout(loop, 1000);
+          const scanTimer = setTimeout(loop, periodMs);
           this.role.addActionTimer('scanMonster', scanTimer);
         }
       };
