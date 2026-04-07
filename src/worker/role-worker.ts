@@ -13,13 +13,17 @@ import { checkInviteTeam, getBloodStatus, getMapName, getMonsterName, getRoleNam
  * 负责高频的 OCR 识别、状态监控
  */
 
-const { bindWindowSize, needCheckDead } = workerData;
+const { needCheckDead } = workerData;
 // 子线程内初始化自己的插件实例
 const dm = ensureDamo();
+const bindWindowSize = '1600*900';
 
 let loopIsRuning = true;
 let lastVerifyCaptureTs = 0;
 let openCapture = true;
+
+// 【新增】异步等待函数，不阻塞事件循环
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // 绑定窗口
 const bindWindow = async (hwnd: number) => {
@@ -98,14 +102,13 @@ const loop = async () => {
     const position = getRolePosition(dm, bindWindowSize);
     // 如果没有位置，通知主线程并阻塞
     if (!position) {
-      parentPort?.postMessage({ type: 'LOG', data: { level: 'warn', message: '[角色工作线程] 未获取到角色位置，阻塞两秒' } });
-      // 在子线程中使用同步 delay 是可以的，因为它不阻塞主线程
-      dm.delay(2000);
+      parentPort?.postMessage({ type: 'LOG', data: { level: 'warn', message: '[角色工作线程] 未获取到角色位置，异步等待 500ms' } });
+      // 【关键修改】使用 await sleep 代替同步 dm.delay，让出 CPU 执行权
+      await dm.delay(2000);
     }
     const map = getMapName(dm, bindWindowSize);
     const selectMonster = getMonsterName(dm, bindWindowSize);
     const bloodStatus = getBloodStatus(dm, bindWindowSize);
-
     // 将基础状态实时发回主线程
     parentPort?.postMessage({
       type: 'STATUS_UPDATE',
@@ -165,7 +168,9 @@ const loop = async () => {
     parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 轮询失败: ${String((err as any)?.message || err)}` } });
   } finally {
     if (loopIsRuning) {
-      setTimeout(loop, 250);
+      // 【关键修改】使用 setImmediate 代替 setTimeout
+      // 这能确保在处理完主线程消息后，第一时间执行下一次 loop
+      setImmediate(loop);
     }
   }
 };
@@ -185,12 +190,21 @@ const updateConfig = (config: any) => {
 };
 
 // 执行远程指令
-const callDm = (data: any) => {
+const callDm = async (data: any) => {
   const { method, args, requestId } = data;
   try {
+    // 【关键修改】拦截 delay 指令，改为异步 sleep，防止阻塞 loop 执行
+    if (method.toLowerCase() === 'delay') {
+      await sleep(args[0] || 0);
+      parentPort?.postMessage({ type: 'CALL_DM_DONE', data: { requestId, result: 1 } });
+      return;
+    }
+
     const target = typeof (dm as any)[method] === 'function' ? dm : dm.dm;
     if (target && typeof target[method] === 'function') {
-      const result = target[method](...args);
+      // 使用 await 等待指令执行完成，确保 result 是具体数值而非 Promise，
+      // 避免 postMessage 发送 Promise 时报 DataCloneError
+      const result = await target[method](...args);
       // 将执行结果发回主线程
       parentPort?.postMessage({
         type: 'CALL_DM_DONE',

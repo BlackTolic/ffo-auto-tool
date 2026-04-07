@@ -22,6 +22,7 @@ import { AutoFarmingAction } from './auto-farming';
 const TASK_NAME = '跑名誉';
 
 const INIT_POS = { x: 278, y: 79 };
+// const INIT_POS = { x: 320, y: 135 };
 
 const PATH_POS = [
   { x: 326, y: 92 },
@@ -45,155 +46,6 @@ const skillGroup: AttackActionsOptions['skillGroup'] = [
 
 const delay5S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 5 * 1000, true);
 // const delay1M = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 60 * 1000, true);
-
-// // 名誉回调任务
-// const loopAction = async (role: Role, moveActions: MoveActions) => {
-//   let atackActions = new AttackActions(role, { monsterFeature: OCR_MING_YU_BOSS, skillGroup });
-//   const baseAction = new BaseAction(role);
-//   try {
-//     const dm = role.bindPlugin;
-//     // 屏蔽所有人
-//     baseAction.blockAllPlayers();
-//     // 宠物激活,需要使用的宠物必须放在第一个格子上
-//     await baseAction.openPetBoxAndActivePet();
-//     // 喂养宠物
-//     await baseAction.openPetBoxAndFeed();
-//     // 检查当前是否是坐骑状态
-//     const isMounted = checkMountedByRoleSpeed(dm, role.bindWindowSize);
-//     if (!isMounted) {
-//       // 上马
-//       await baseAction.pressSecondSkillBarSkill('F9');
-//     }
-//     const isArriveChengJiao = await fromLouLanToChengJiao(moveActions);
-//     if (!isArriveChengJiao) {
-//       throw new Error('未到达城郊');
-//     }
-//     // 从城郊到名誉NPC
-//     const isArriveMingYuNPC = await fromChengJiaoToMingYuNPC(moveActions);
-//     if (!isArriveMingYuNPC) {
-//       throw new Error('未到达名誉NPC');
-//     }
-//     const isConversationRongGuang = await new Conversation(role).RongGuang();
-//     if (!isConversationRongGuang) {
-//       throw new Error('未完成领取名誉任务');
-//     }
-//     // 从名誉NPC到蚂蚁沙地北边
-//     const isArriveAntHill = await fromMingYuNPCToAntHill(moveActions);
-//     if (!isArriveAntHill) {
-//       throw new Error('未到达蚂蚁沙地北边');
-//     }
-//     // 从蚂蚁沙地北到落日沙丘
-//     const isArriveSunsetDune = await fromAntHillToSunsetDune(moveActions);
-//     if (!isArriveSunsetDune) {
-//       throw new Error('未到达落日沙丘');
-//     }
-//     // 从落日沙丘到落日沙丘西
-//     const isArriveSunsetDuneWest = await fromSunsetDuneToSunsetDuneWest(moveActions);
-//     if (!isArriveSunsetDuneWest) {
-//       throw new Error('未到达落日沙丘西');
-//     }
-//     // 从落日沙丘西到斯芬尼克
-//     const isArriveSphinx = await fromSunsetDuneWestToSphinx(moveActions);
-//     if (!isArriveSphinx) {
-//       throw new Error('未到达斯芬尼克');
-//     }
-//     // 与斯芬尼克对话
-//     const isConversationSphinx = await new Conversation(role).Sphinx();
-//     if (!isConversationSphinx) {
-//       throw new Error('未完成与斯芬尼克对话');
-//     }
-//     // 从斯芬尼克出口到失落神殿BOSS
-//     const isArriveLostTemple = await fromLostTempleToMingYuBoss(moveActions);
-//     if (!isArriveLostTemple) {
-//       throw new Error('未到达失落神殿BOSS');
-//     }
-//     // 下马
-//     await baseAction.pressSecondSkillBarSkill('F9');
-//     // role.bindDm.delay(1000);
-//     // 添加buff
-//     // atackActions.addBuff();
-//     // 开始攻击怪物
-//     await atackActions.scanMonster({ attackType: 'single', attackRange: { x: 321, y: 130, r: 15 } });
-//     // 停止添加buff
-//     // atackActions.stopAddBuff();
-//     // role.bindDm.delay(2000);
-//     logger.info('当前已经没有怪物了', role.position);
-//     role.bindDm.delay(1000);
-//     // 回城
-//     await new BaseAction(role).backCity({ x: 278, y: 79 }, 'F9');
-//     role.bindDm.delay(2000);
-//     // 更新状态
-//     role.updateTaskStatus('done');
-//   } catch (e) {
-//     logger.error('跑名誉任务失败', e);
-//   }
-// };
-
-// // 中文注释：切换自动寻路（第一次开启，第二次关闭）
-// export const toggleMingYu = () => {
-//   autoFarmingAction = AutoFarmingAction.getInstance({
-//     initPos: INIT_POS,
-//     pathPos: PATH_POS,
-//     ocrMonster: OCR_MING_YU_BOSS,
-//     taskName: TASK_NAME,
-//   });
-
-//   const { role } = getBindWindowInfo();
-//   const baseAction = new BaseAction(role);
-//   const moveActions = new MoveActions(role);
-
-//   // 挂机前置操作
-//   baseAction.preMount();
-
-//   // 回城并且重置任务
-//   const goBackCityAndResetTask = async () => {
-//     // 停止正在执行的任务
-//     moveActions.stopAutoFindPath();
-//     // 回城
-//     logger.info('[静止检查] 执行回城并且重置任务 - goBackCityAndResetTask');
-//     await baseAction.backCity(INIT_POS, 'F9', true);
-//     role.updateTaskStatus('done');
-//   };
-
-//   // 检查名誉是否卡住
-//   const checkMingYuStuck = createStuckChecker(role);
-//   // 添加组队拒绝
-//   role.updateTeamApplyCall(closePos => {
-//     // 拒绝组队
-//     closePos && role.bindPlugin.moveToClick(closePos.x, closePos.y);
-//   });
-//   // 注册全局任务
-//   role.addGlobalStrategyTask([
-//     {
-//       // 3分钟检查一次跑名誉是否卡住，然后回城重置任务
-//       name: '跑名誉过程中3分钟静止不动',
-//       condition: () => checkMingYuStuck(3),
-//       callback: () => delay5S(goBackCityAndResetTask),
-//     },
-//     // {
-//     //   // 安全锁弹出之后，输入密码
-//     //   name: '安全锁弹出之后，输入密码',
-//     //   condition: () => checkPasswordLock(role.bindPlugin, role.bindWindowSize || '1600*900'),
-//     //   callback: () => delay1M(() => baseAction.inputPassword('666666')),
-//     // },
-//   ]);
-
-//   const taskList = [{ taskName: '楼兰跑名誉', loopOriginPos: INIT_POS, action: () => loopAction(role, moveActions), interval: 2000 }];
-//   return autoFarmingAction.toggle(taskList);
-// };
-
-// export const pauseCurActive = () => {
-//   autoFarmingAction?.pause();
-// };
-
-// export const restartCurActive = () => {
-//   autoFarmingAction?.restart();
-// };
-
-// // 中文注释：停止当前激活的无泪南郊动作（清空任务并停止自动寻路）
-// export const stopCurActive = () => {
-//   autoFarmingAction?.stop();
-// };
 
 interface RoleTaskItem {
   role: Role | null;
@@ -261,7 +113,7 @@ export default class MingYuTask {
     // 回城并且重置任务
     const goBackCityAndResetTask = async () => {
       // 停止正在执行的任务
-      this.soldier?.moveActions?.stopAutoFindPath();
+      await this.soldier?.moveActions?.stopAutoFindPath();
       // 回城
       logger.info('[静止检查] 执行回城并且重置任务 - goBackCityAndResetTask');
       await this.soldier?.baseAction?.backCity(INIT_POS, 'F9', true);
@@ -272,9 +124,11 @@ export default class MingYuTask {
     const checkMingYuStuck = createStuckChecker(this.soldier.role);
     // 添加组队拒绝
     const soldierRole = this.soldier.role;
-    this.soldier.role.updateTeamApplyCall(closePos => {
+    this.soldier.role.updateTeamApplyCall(async closePos => {
       // 拒绝组队
-      closePos && soldierRole.bindPlugin?.moveToClick(closePos.x, closePos.y);
+      if (closePos) {
+        await soldierRole.bindPlugin?.moveToClick(closePos.x, closePos.y);
+      }
     });
     // 注册全局任务
     this.soldier.role.addGlobalStrategyTask([
@@ -308,13 +162,13 @@ export default class MingYuTask {
     try {
       const dm = soldierRole.bindPlugin;
       // 屏蔽所有人
-      soldierBaseAction.blockAllPlayers();
+      await soldierBaseAction.blockAllPlayers();
       // 宠物激活,需要使用的宠物必须放在第一个格子上
       await soldierBaseAction.openPetBoxAndActivePet();
       // 喂养宠物
       await soldierBaseAction.openPetBoxAndFeed('F7', 'F8', 'F10');
       // 检查当前是否是坐骑状态
-      const isMounted = checkMountedByRoleSpeed(dm, soldierRole.bindWindowSize);
+      const isMounted = await checkMountedByRoleSpeed(dm, soldierRole.bindWindowSize);
       if (!isMounted) {
         // 上马
         await soldierBaseAction.pressSecondSkillBarSkill('F9');
@@ -340,7 +194,6 @@ export default class MingYuTask {
         // 跑步去斯芬尼克
         await this.runToLostTemple(this.soldier);
       }
-
       // 与斯芬尼克对话
       const isConversationSphinx = await new Conversation(soldierRole).Sphinx();
       if (!isConversationSphinx) {
@@ -353,19 +206,13 @@ export default class MingYuTask {
       }
       // 下马
       await soldierBaseAction.pressSecondSkillBarSkill('F9');
-      // soldierRole.bindDm.delay(1000);
-      // 添加buff
-      // soldierAttackActions.addBuff();
       // 开始攻击怪物
       await soldierAttackActions.scanMonster({ attackType: 'single', attackRange: { x: 321, y: 130, r: 15 } });
-      // 停止添加buff
-      // soldierAttackActions.stopAddBuff();
-      // soldierRole.bindDm.delay(2000);
       logger.info('当前已经没有怪物了', soldierRole.position);
-      soldierRole.bindDm.delay(1000);
+      await soldierRole.bindDm.delay(1000);
       // 回城
       await soldierBaseAction.backCity({ x: 278, y: 79 }, 'F9');
-      soldierRole.bindDm.delay(2000);
+      await soldierRole.bindDm.delay(2000);
       // 更新状态
       soldierRole.updateTaskStatus('done');
     } catch (e) {

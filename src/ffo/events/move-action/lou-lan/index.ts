@@ -52,10 +52,7 @@ export const fromAntHillToSunsetDune = (moveActions: MoveActions) => {
 // 从落日沙丘到落日沙丘西
 export const fromSunsetDuneToSunsetDuneWest = (moveActions: MoveActions) => {
   return moveActions.startAutoFindPath({
-    toPos: [
-      // { x: 161, y: 78 },
-      { x: 160, y: 58 },
-    ],
+    toPos: [{ x: 160, y: 58 }],
     blockAllBeforeMove: true,
     aimPos: '落日沙丘西',
   });

@@ -1,4 +1,5 @@
 import { logger } from '../../../utils/logger';
+import { block } from '../../../utils/tool';
 import { MAIN_CITY } from '../../constant/NPC_position';
 import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
@@ -29,16 +30,17 @@ export class BaseAction {
   preMount() {
     // 将地图切换为小地图
     this.bindPlugin.moveToClick(1589, 96);
+    this.bindPlugin.delay(500);
   }
 
   // 屏蔽所有玩家
-  blockAllPlayers() {
+  async blockAllPlayers() {
     if (!this.role) {
       return;
     }
-    new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
-    new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
-    new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
+    await new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
+    await new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
+    await new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
   }
 
   // 关闭/打开物品栏
@@ -167,81 +169,82 @@ export class BaseAction {
   }
 
   // 打开宠物栏并且激活宠物
-  openPetBoxAndActivePet() {
-    return new Promise((res, rej) => {
+  async openPetBoxAndActivePet() {
+    return new Promise(async (res, rej) => {
       // 检查宠物是否激活
-      const isPetActive = checkPetActive(this.bindPlugin, this.role?.bindWindowSize || '1600*900');
+      const isPetActive = await checkPetActive(this.bindPlugin, this.role?.bindWindowSize || '1600*900');
       if (isPetActive) {
         logger.info('[宠物] 已经是激活状态');
         res(true);
         return;
       }
+      await block(1000);
       // 打开宠物栏
-      this.bindPlugin.moveTo(64, 82);
-      this.bindPlugin.delay(300);
-      this.bindPlugin.leftClick();
-      this.bindPlugin.delay(500);
+      await this.bindPlugin.moveToClick(64, 82);
+      console.log('点击了64，82坐标');
+      await block(1000);
+
       // 激活宠物
-      this.bindPlugin.moveTo(627, 454);
-      this.bindPlugin.leftDoubleClick();
-      this.bindPlugin.delay(300);
+      await this.bindPlugin.moveToDoubleClick(627, 454);
+      console.log('点击了627，454坐标');
+      await block(1000);
       // 关闭宠物栏
-      this.bindPlugin.moveTo(802, 84);
-      this.bindPlugin.delay(300);
-      this.bindPlugin.leftClick();
-      this.bindPlugin.delay(300);
+      await this.bindPlugin.moveToClick(802, 84);
+      console.log('点击了802，84坐标');
+      await block(1000);
       res(true);
     });
   }
 
   // 打开宠物栏并且喂宠物
   openPetBoxAndFeed(key1: string = 'F7', key2: string = 'F8', key3: string = 'F9') {
-    return new Promise((res, rej) => {
+    return new Promise(async (res, rej) => {
       // 打开宠物栏
-      this.bindPlugin.moveTo(64, 82);
-      this.bindPlugin.delay(300);
-      this.bindPlugin.leftClick();
-      this.bindPlugin.delay(500);
+      await this.bindPlugin.moveTo(64, 82);
+      await this.bindPlugin.delay(500);
+      await this.bindPlugin.leftClick();
+      await this.bindPlugin.delay(500);
       // 检查饥渴度
-      const petInfoText = checkPetInfo(this.bindPlugin, this.role?.bindWindowSize || '1600*900');
+      const petInfoText = await checkPetInfo(this.bindPlugin, this.role?.bindWindowSize || '1600*900');
+      logger.info(`[宠物] 饥渴度: ${petInfoText?.thirst ?? -1}`);
       const thirst = petInfoText?.thirst ?? -1;
       if (thirst >= 75) {
         // 大于75 使用第二列F7
-        this.pressSecondSkillBarSkill(key1, Math.ceil((thirst - 75) / 3));
+        await this.pressSecondSkillBarSkill(key1, Math.ceil((thirst - 75) / 3));
         // 大于50 使用第二列F8
-        this.pressSecondSkillBarSkill(key2, Math.ceil((thirst - 50) / 3));
+        await this.pressSecondSkillBarSkill(key2, Math.ceil((thirst - 50) / 3));
         // 大于0 使用第二列F9
-        this.pressSecondSkillBarSkill(key3, Math.ceil(thirst / 3));
+        await this.pressSecondSkillBarSkill(key3, Math.ceil(thirst / 3));
       }
       if (thirst >= 50) {
         // 大于50 使用第二列F8
-        this.pressSecondSkillBarSkill(key2, Math.ceil((thirst - 50) / 3));
+        await this.pressSecondSkillBarSkill(key2, Math.ceil((thirst - 50) / 3));
         // 大于50 使用第二列F9
-        this.pressSecondSkillBarSkill(key3, Math.ceil(thirst / 3));
+        await this.pressSecondSkillBarSkill(key3, Math.ceil(thirst / 3));
       }
       if (thirst >= 6) {
         // 大于50 使用第二列F9
-        this.pressSecondSkillBarSkill(key3, Math.floor(thirst / 3));
+        await this.pressSecondSkillBarSkill(key3, Math.floor(thirst / 3));
       }
       // 关闭宠物栏
-      this.bindPlugin.moveTo(802, 84);
-      this.bindPlugin.delay(300);
-      this.bindPlugin.leftClick();
-      this.bindPlugin.delay(300);
+      await this.bindPlugin.moveTo(802, 84);
+      await this.bindPlugin.delay(300);
+      await this.bindPlugin.leftClick();
+      await this.bindPlugin.delay(300);
       res(true);
     });
   }
 
   // 按下第二栏技能栏技能
-  pressSecondSkillBarSkill(pressKey: string, times: number = 1) {
-    return new Promise((res, rej) => {
-      this.bindPlugin.keyPress(VK_F['tab']);
+  async pressSecondSkillBarSkill(pressKey: string, times: number = 1) {
+    return new Promise(async (res, rej) => {
+      await this.bindPlugin.keyPress(VK_F['tab']);
       for (let i = 0; i < times; i++) {
-        this.bindPlugin.delay(300);
-        this.bindPlugin.keyPress(VK_F[pressKey]);
-        this.bindPlugin.delay(300);
+        await this.bindPlugin.delay(500);
+        await this.bindPlugin.keyPress(VK_F[pressKey]);
+        await this.bindPlugin.delay(500);
       }
-      this.bindPlugin.keyPress(VK_F['tab']);
+      await this.bindPlugin.keyPress(VK_F['tab']);
       res(true);
     });
   }
@@ -255,11 +258,11 @@ export class BaseAction {
       logger.info('[炼化挑选] 没有装备');
       return;
     }
-    pos.forEach(item => {
+    pos.forEach(async item => {
       // new Promise((res, rej) => {
       // 通过阻塞进程实现
-      this.bindPlugin.moveTo(item.x + 10, item.y - 5);
-      this.bindPlugin.delay(1000);
+      await this.bindPlugin.moveToClick(item.x + 10, item.y - 5);
+      await this.bindPlugin.delay(1000);
       // 找到未装备
       const unEquipPos = checkUnEquipEquip(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
       // logger.debug(unEquipPos, 'unEquipPos');
@@ -276,16 +279,16 @@ export class BaseAction {
         return isOk;
       });
       if (way === 'saveEquip' && isUseful) {
-        this.bindPlugin.leftDoubleClick();
+        await this.bindPlugin.leftDoubleClick();
       }
       if (!isUseful) {
         logger.info('[炼化挑选] 这个装备没用');
-        this.bindPlugin.leftDownFromToMove({ x: item.x + 10, y: item.y - 5 }, { x: 800, y: 400 });
-        this.bindPlugin.leftClick();
+        await this.bindPlugin.leftDownFromToMove({ x: item.x + 10, y: item.y - 5 }, { x: 800, y: 400 });
+        await this.bindPlugin.leftClick();
         // 取消
         // this.bindPlugin.moveToClick(894, 492);
         // 丢弃
-        this.bindPlugin.moveToClick(713, 492);
+        await this.bindPlugin.moveToClick(713, 492);
         return;
       }
       logger.info('[炼化挑选] 这个装备有用');
@@ -296,7 +299,7 @@ export class BaseAction {
   }
 
   // 输入密码
-  inputPassword(password: string) {
+  async inputPassword(password: string) {
     if (!password) {
       logger.info('密码不能为空');
       return;
@@ -304,28 +307,28 @@ export class BaseAction {
     let record = 0;
     let errCount = 0;
     const passwordItem = password.split('');
-    const inputSingle = (str: string) => {
+    const inputSingle = async (str: string) => {
       if (record === passwordItem.length - 1 || errCount >= 20) {
         return;
       }
       const passwordPos = checkPasswordLockPassword(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', str);
       if (passwordPos) {
-        this.bindPlugin.moveToClick(passwordPos.x, passwordPos.y);
-        this.bindPlugin.delay(300);
-        this.bindPlugin.moveTo(785, 785);
-        this.bindPlugin.delay(300);
+        await this.bindPlugin.moveToClick(passwordPos.x, passwordPos.y);
+        await this.bindPlugin.delay(300);
+        await this.bindPlugin.moveTo(785, 785);
+        await this.bindPlugin.delay(300);
         record++;
       } else {
         errCount++;
         logger.info(`密码${record}位输入错误`);
       }
       // 延时1S
-      this.bindPlugin.delay(1000);
+      await this.bindPlugin.delay(1000);
       return inputSingle(passwordItem[record]);
     };
     inputSingle(passwordItem[record]);
     // 点击确定
-    this.bindPlugin.moveTo(708, 505);
+    await this.bindPlugin.moveToClick(708, 505);
   }
 }
 

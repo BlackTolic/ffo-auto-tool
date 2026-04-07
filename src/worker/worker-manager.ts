@@ -55,7 +55,6 @@ export class WorkerManager {
       // 监听启动错误
       this.worker.on('error', err => {
         logger.error(`[角色工作线程] 启动/运行错误: ${err.message}`);
-        console.error('Worker Error:', err);
       });
 
       // 监听异常退出
@@ -66,7 +65,7 @@ export class WorkerManager {
 
       // 监听是否成功在线
       this.worker.on('online', () => {
-        console.log('[WorkerManager] 子线程已在线');
+        logger.info(`[角色工作线程] 子线程已在线`);
       });
     } catch (error: any) {
       logger.error(`[角色工作线程] 初始化失败: ${error.message}`);
@@ -77,7 +76,7 @@ export class WorkerManager {
   registerRole(role: Role) {
     this.role = role;
     this.role.updateInfoFromWorkerManager(this.dm);
-    this.startLoop();
+    this.startChildProcessRoleLoop();
   }
 
   // 向工作线程发送消息
@@ -132,8 +131,13 @@ export class WorkerManager {
       this.role?.childProcessInitRoleInfo(name);
     });
     // 更新角色状态信息：位置、地图、选择怪物、血量
-    this.onMessage('STATUS_UPDATE', ({ position, map, selectedMonster, health }) => {
-      this.role?.childProcessUpdateRoleInfo(position, map, selectedMonster, health);
+    this.onMessage('STATUS_UPDATE', ({ position, map, selectMonster, bloodStatus }) => {
+      if (position) {
+        // logger.info(`更新角色状态信息：${position.x},${position.y} ${map} ${selectedMonster}, 血量：${bloodStatus}`);
+      } else {
+        logger.warn(`更新角色状态信息：[未获取到坐标] ${map} ${selectMonster}, 血量：${bloodStatus}`);
+      }
+      this.role?.childProcessUpdateRoleInfo(position, map, selectMonster, bloodStatus);
     });
     // 更新团队邀请信息
     this.onMessage('TEAM_INVITE', data => {
@@ -199,8 +203,13 @@ export class WorkerManager {
   }
 
   // 开启loop
-  startLoop() {
+  startChildProcessRoleLoop() {
     this.postMessage({ type: 'START_LOOP' });
+  }
+
+  // 停止loop
+  stopChildProcessRoleLoop() {
+    this.postMessage({ type: 'STOP_LOOP' });
   }
 
   // 代理插件
@@ -221,7 +230,6 @@ export class WorkerManager {
           const requestId = ++this.requestIdCounter;
           return new Promise((resolve, reject) => {
             this.pendingRequests.set(requestId, { resolve, reject });
-            console.log('postMessage CALL_DM ');
             this.postMessage({
               type: 'CALL_DM',
               data: { method: prop as string, args, requestId },

@@ -35,3 +35,8 @@ export function debounce(fn: (...args: any[]) => void, delay: number, immediate 
     }
   };
 }
+
+// 阻塞函数
+export async function block(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

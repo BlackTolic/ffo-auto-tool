@@ -62,9 +62,9 @@ export class CatchPetAction {
     const monsterName = this.role.selectMonster;
     console.log(monsterName, 'monsterName');
     if (monsterName && monsterName !== '地翼魔') {
-      this.bindDm.KeyDownChar('F2');
+      this.bindDm.keyDownChar('F2');
       this.bindDm.delay(300);
-      this.bindDm.KeyUpChar('F2');
+      this.bindDm.keyUpChar('F2');
       logger.info('[自动捕捉] 目标不是地翼魔，直接干死');
       return;
     }
@@ -79,9 +79,9 @@ export class CatchPetAction {
     if (isEmptyHp && monsterName && this.catchTimes < 8) {
       this.bindDm.delay(300);
       // 开始捕捉
-      this.bindDm.KeyDownChar('F1');
+      this.bindDm.keyDownChar('F1');
       this.bindDm.delay(300);
-      this.bindDm.KeyUpChar('F1');
+      this.bindDm.keyUpChar('F1');
       this.catchTimes++; // 捕捉次数加1
       logger.info(`[自动捕捉] 捕捉地翼魔，当前捕捉次数 ${this.catchTimes}`);
     }
@@ -103,9 +103,9 @@ export class CatchPetAction {
       if (now - this.lastTime > 100 * 1000) {
         // 距离上次执行F10超过100秒
         logger.warn('角色血量进入危险状态，执行F10', bloodStatus);
-        this.bindDm.KeyDownChar('F10');
+        this.bindDm.keyDownChar('F10');
         this.bindDm.delay(300);
-        this.bindDm.KeyUpChar('F10');
+        this.bindDm.keyUpChar('F10');
         this.bindDm.delay(300);
         this.lastTime = now; // 更新上次执行时间
       } else {

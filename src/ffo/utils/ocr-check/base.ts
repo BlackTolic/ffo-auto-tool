@@ -93,7 +93,6 @@ export const getMonsterName = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280
 // 检查怪物血量是否为空
 export const isMonsterEmptyHp = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const emptyHpPos = DEFAULT_MONSTER_BLOOD_EMPTY[bindWindowSize];
-  console.log(emptyHpPos, 'emptyHpPos');
   const emptyHpText = bindDm.findColorE(emptyHpPos.x1, emptyHpPos.y1, emptyHpPos.x2, emptyHpPos.y2, emptyHpPos.color, emptyHpPos.sim);
   return !parseRolePositionFromText(emptyHpText);
 };
@@ -165,9 +164,9 @@ export const checkEquipBroken = (bindDm: AutoT, bindWindowSize: '1600*900' | '12
 };
 
 // 检查宠物是否激活
-export const checkPetActive = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+export const checkPetActive = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const petActivePos = DEFAULT_PET_ACTIVE[bindWindowSize];
-  const petActiveText = bindDm.ocr(petActivePos.x1, petActivePos.y1, petActivePos.x2, petActivePos.y2, petActivePos.color, petActivePos.sim);
+  const petActiveText = await bindDm.ocr(petActivePos.x1, petActivePos.y1, petActivePos.x2, petActivePos.y2, petActivePos.color, petActivePos.sim);
   return petActiveText !== '暂时没有宠物';
 };
 
@@ -178,10 +177,9 @@ export interface PetInfo {
   thirst: number | null;
   trust: number | null;
 }
-export const checkPetInfo = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): PetInfo | null => {
+export const checkPetInfo = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800'): Promise<PetInfo | null> => {
   const petInfoPos = DEFAULT_PET_INFO[bindWindowSize];
-  const petInfoText = bindDm.ocr(petInfoPos.x1, petInfoPos.y1, petInfoPos.x2, petInfoPos.y2, petInfoPos.color, petInfoPos.sim) as string;
-  // console.log(petInfoText, 'petInfoText');
+  const petInfoText = (await bindDm.ocr(petInfoPos.x1, petInfoPos.y1, petInfoPos.x2, petInfoPos.y2, petInfoPos.color, petInfoPos.sim)) as string;
   if (typeof petInfoText !== 'string') {
     return null;
   }
@@ -196,23 +194,24 @@ export const checkPetInfo = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*8
 };
 
 // 检查宠物是否是坐骑状态,通过宠物技能
-export const checkMounted = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
-  bindDm.moveToClick(65, 85);
+export const checkMounted = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  await bindDm.moveToClick(65, 85);
   const mountedPos = DEFAULT_MOUNTED[bindWindowSize];
   const mountedText = bindDm.ocr(mountedPos.x1, mountedPos.y1, mountedPos.x2, mountedPos.y2, mountedPos.color, mountedPos.sim);
-  bindDm.moveToClick(65, 85);
+  await bindDm.moveToClick(65, 85);
   // console.log(mountedText, 'mountedText');
   return mountedText === '25';
 };
 
 // 检查宠物是否是坐骑状态,如果是鞍宠物是没有坐骑技能的，需要用人物速度来判断
-export const checkMountedByRoleSpeed = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
-  bindDm.moveToClick(48, 38);
-  bindDm.delay(500);
-  bindDm.moveToClick(825, 243);
+export const checkMountedByRoleSpeed = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  await bindDm.moveToClick(48, 38);
+  await bindDm.delay(1000);
+  await bindDm.moveToClick(825, 243);
+  await bindDm.delay(1000);
   const moveSpeedPos = DEFAULT_MOVE_SPEED[bindWindowSize];
-  const moveSpeedText = bindDm.ocr(moveSpeedPos.x1, moveSpeedPos.y1, moveSpeedPos.x2, moveSpeedPos.y2, moveSpeedPos.color, moveSpeedPos.sim);
-  bindDm.moveToClick(803, 85);
+  const moveSpeedText = await bindDm.ocr(moveSpeedPos.x1, moveSpeedPos.y1, moveSpeedPos.x2, moveSpeedPos.y2, moveSpeedPos.color, moveSpeedPos.sim);
+  await bindDm.moveToClick(803, 85);
   return Number(moveSpeedText) > 400;
 };
 
@@ -315,7 +314,5 @@ export const checkPasswordLockPassword = (bindDm: AutoT, bindWindowSize: '1600*9
   const passwordPos = bindDm.findStrFastE(password.x1, password.y1, password.x2, password.y2, keyword, password.color, password.sim);
   // 截图
   // bindDm.capturePng(password.x1, password.y1, password.x2, password.y2, `${TEST_PATH}/test6.png`);
-  console.log(keyword, 'keyword');
-  console.log(passwordPos, 'passwordPos');
   return parseTextPos(passwordPos);
 };

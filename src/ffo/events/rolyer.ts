@@ -76,12 +76,13 @@ export class Role {
     this.name = name;
   }
   // 更新角色信息
-  childProcessUpdateRoleInfo(position: Pos, map: string, selectedMonster: string, health: string) {
+  childProcessUpdateRoleInfo(position: Pos, map: string, selectMonster: string, bloodStatus: string) {
     this.position = position;
     this.map = map;
-    this.selectMonster = selectedMonster;
-    this.bloodStatus = health;
-    // console.log('更新角色信息', position, map, selectedMonster, health);
+    this.selectMonster = selectMonster;
+    this.bloodStatus = bloodStatus;
+    // console.log('更新角色信息', position, map, selectedMonster, bloodStatus);
+    // logger.info(`更新角色信息：${position.x},${position.y} ${map} ${selectedMonster}, 血量：${bloodStatus}`);
   }
 
   // 更新团队邀请信息
@@ -90,7 +91,7 @@ export class Role {
   }
 
   // 处理验证码识别结果
-  childProcessUpdateVerifyCodeResult(data: any) {
+  async childProcessUpdateVerifyCodeResult(data: any) {
     const { Ali, TuJian, verifyCodeTextPos, checkPos } = data;
     logger.info('验证码识别结果 Ali', Ali);
     logger.info('验证码识别结果 TuJian', TuJian);
@@ -101,16 +102,17 @@ export class Role {
     const result = selectRightAnwser(Ali, TuJian);
     const answerPos = (map as any)[result as string] || map['I'];
     this.bindDm.moveTo(answerPos.x, answerPos.y);
+    await this.bindDm.delay(300);
     this.bindDm.leftClick();
     logger.info('当前时间:', new Date().toLocaleString());
   }
 
   // 角色死亡后的操作
-  childProcessUpdateDeathInfo() {
+  async childProcessUpdateDeathInfo() {
     const { name } = this;
-    const delayFun = () => {
+    const delayFun = async () => {
       this.bindPlugin.captureFullScreen(ROLE_IS_DEAD_PATH);
-      this.bindPlugin.delay(300);
+      await this.bindPlugin.delay(300);
       emailStrategy.sendMessage({
         to: '1031690983@qq.com',
         subject: '角色死亡',
@@ -122,7 +124,7 @@ export class Role {
     this.deadCall?.();
     this.clearAllActionTimer();
     this.bindPlugin.moveToClick(894, 490);
-    this.bindPlugin.delay(1000);
+    await this.bindPlugin.delay(1000);
     this.bindPlugin.moveToClick(799, 418);
   }
 
@@ -203,11 +205,11 @@ export class Role {
   }
 
   // 处理死亡逻辑
-  private handleDeath() {
+  private async handleDeath() {
     const { name } = this;
-    const delayFun = () => {
+    const delayFun = async () => {
       this.bindPlugin.captureFullScreen(ROLE_IS_DEAD_PATH);
-      this.bindPlugin.delay(300);
+      await this.bindPlugin.delay(300);
       emailStrategy.sendMessage({
         to: '1031690983@qq.com',
         subject: '角色死亡',
@@ -219,7 +221,7 @@ export class Role {
     this.deadCall?.();
     this.clearAllActionTimer();
     this.bindPlugin.moveToClick(894, 490);
-    this.bindPlugin.delay(1000);
+    await this.bindPlugin.delay(1000);
     this.bindPlugin.moveToClick(799, 418);
   }
 

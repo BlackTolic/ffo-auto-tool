@@ -230,27 +230,37 @@ export class Damo {
     return this.dm.FindStrFastE(x, y, w, h, str, color, sim);
   }
 
-  moveTo(x: number, y: number): number {
+  async moveTo(x: number, y: number): Promise<number> {
     return this.dm.MoveTo(x, y);
   }
 
-  moveToClick(x: number, y: number, mouse: 'left' | 'right' = 'left'): void {
-    this.dm.moveTo(x, y);
-    this.dm.delay(300);
+  async moveToClick(x: number, y: number, mouse: 'left' | 'right' = 'left'): Promise<void> {
+    await this.moveTo(x, y);
+    await this.delay(300);
     if (mouse === 'right') {
-      this.dm.rightClick();
+      this.dm.RightClick();
     } else {
-      this.dm.leftClick();
+      this.dm.LeftClick();
     }
   }
 
-  moveToLeftDown(x: number, y: number): void {
-    this.dm.moveTo(x, y);
-    this.dm.delay(300);
+  async moveToDoubleClick(x: number, y: number, mouse: 'left' | 'right' = 'left'): Promise<void> {
+    await this.moveTo(x, y);
+    await this.delay(300);
+    if (mouse === 'right') {
+      this.dm.RightDoubleClick();
+    } else {
+      this.dm.LeftDoubleClick();
+    }
+  }
+
+  async moveToLeftDown(x: number, y: number): Promise<void> {
+    await this.moveTo(x, y);
+    await this.delay(300);
     this.leftDown();
   }
 
-  leftDown(): number {
+  async leftDown(): Promise<number> {
     return this.dm.LeftDown();
   }
 
@@ -259,17 +269,24 @@ export class Damo {
   }
 
   // 鼠标左键按住，从一个坐标拖到另外一个坐标ss
-  leftDownFromToMove(from: Pos, To: Pos): void {
-    this.moveTo(from.x, from.y);
-    this.delay(300);
-    this.leftDown();
-    this.delay(300);
-    this.moveTo(To.x, To.y);
-    this.leftUp();
+  async leftDownFromToMove(from: Pos, To: Pos): Promise<void> {
+    await this.moveTo(from.x, from.y);
+    await this.delay(300);
+    await this.leftDown();
+    await this.delay(300);
+    await this.moveTo(To.x, To.y);
+    await this.leftUp();
   }
 
-  delay(ms: number): number {
-    return this.dm.delay(ms);
+  async delay(ms: number) {
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    await sleep(ms);
+    // this.dm.delay(ms);
+  }
+
+  // 阻塞
+  async block(ms: number) {
+    await this.delay(ms);
   }
 
   keyPress(key: number): number {
@@ -370,6 +387,16 @@ export class Damo {
     const width = this.dm.GetScreenWidth();
     const height = this.dm.GetScreenHeight();
     return this.dm.capturePng(0, 0, width, height, filePath);
+  }
+
+  // 模拟按键按下
+  keyDownChar(key: string): number {
+    return this.dm.KeyDownChar(key);
+  }
+
+  // 模拟按键松开
+  keyUpChar(key: string): number {
+    return this.dm.KeyUpChar(key);
   }
 }
 

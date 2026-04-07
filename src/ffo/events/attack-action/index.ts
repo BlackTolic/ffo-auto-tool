@@ -126,7 +126,7 @@ export class AttackActions {
     this.findMosterOffset = config?.findMosterOffset ?? { x: 10, y: 40 };
   }
 
-  findMonsterPos(dir?: string) {
+  async findMonsterPos(dir?: string) {
     let attackRangeGroup: any;
     if (!dir) {
       attackRangeGroup = this.ocrMonster;
@@ -134,8 +134,8 @@ export class AttackActions {
       attackRangeGroup = { ...this.ocrMonster, ...ATTACK_RANGE_GROUNP[this.role.bindWindowSize][dir] };
     }
     const { x1, y1, x2, y2, string, color, sim } = attackRangeGroup;
-    const result = this.bindDm.FindStrFastE(x1, y1, x2, y2, string, color, sim);
-    // logger.debug('OCR结果', result);
+    const result = await this.bindDm.FindStrFastE(x1, y1, x2, y2, string, color, sim);
+    logger.debug('OCR结果', result);
     // 识别怪物的坐标
     const pos = parseTextPos(result);
     if (!pos || pos.x < 0 || pos.y < 0) return null;
@@ -147,51 +147,42 @@ export class AttackActions {
   }
 
   // 找到最近的怪物进行攻击 - 适用于群攻场景
-  attackNearestMonster(dir?: string) {
+  async attackNearestMonster(dir?: string) {
     // 检查血量是否危险
-    this.checkHealthStatus();
+    await this.checkHealthStatus();
     const freeSkill = this.getFreeSkill();
     // 判断是否有闲置的技能
     if (!freeSkill) {
       logger.info('[自动攻击] 技能在CD中');
       return;
     }
-    const pos = this.findMonsterPos(dir);
+    const pos = await this.findMonsterPos(dir);
     if (!pos) return;
     const { x, y } = pos;
-    this.bindDm.MoveTo(x, y);
-    this.bindDm.delay(300);
-    // 选中目标
-    this.bindDm.RightClick();
-    // const monsterName = this.role.selectMonster;
-    // logger.debug('怪物坐标', pos, '名字', monsterName);
+    await this.bindDm.moveToClick(x, y, 'right');
     // 即将使用带lock技能
-    this.useSkill(freeSkill);
-
-    // this.startAutoSkill(skillGroup);
+    await this.useSkill(freeSkill);
   }
   // 找到最近的怪物进行攻击 - 适用于单体攻击场景
-  attackNearestMonsterForSingle() {
+  async attackNearestMonsterForSingle() {
     const freeSkill = this.getFreeSkill({ attackType: 'single' });
     // 判断是否有闲置的技能
     if (!freeSkill) {
       logger.info('[自动攻击] 技能在CD中');
       return;
     }
-    const pos = this.findMonsterPos();
+    const pos = await this.findMonsterPos();
     if (!pos) return;
     const { x, y } = pos;
     // 选中目标,如果已经选中目标就不再重复选中
     if (!this.role.selectMonster) {
-      this.bindDm.MoveTo(x, y);
-      this.bindDm.delay(300);
-      this.bindDm.LeftClick();
-      this.bindDm.delay(300);
+      await this.bindDm.moveToClick(x, y);
+      await this.bindDm.delay(300);
     }
     // 即将使用带lock技能
-    this.useSkill(freeSkill);
+    await this.useSkill(freeSkill);
     // 检查血量是否危险
-    this.checkHealthStatus();
+    await this.checkHealthStatus();
   }
 
   // 开启自动攻击
@@ -200,19 +191,17 @@ export class AttackActions {
   // }
 
   // 检查角色血量是否健康
-  checkHealthStatus() {
+  async checkHealthStatus() {
     const bloodStatus = this.role.bloodStatus;
-    // logger.debug('血量状态', bloodStatus);
-    // const statusBloodIcon = this.role.statusBloodIcon;
     if (bloodStatus === 'danger') {
       const now = Date.now();
       if (now - this.lastTime > 100 * 1000) {
         // 距离上次执行F10超过100秒
         logger.warn('角色血量进入危险状态，执行F10', bloodStatus);
-        this.bindDm.KeyDownChar('F10');
-        this.bindDm.delay(300);
-        this.bindDm.KeyUpChar('F10');
-        this.bindDm.delay(300);
+        await this.bindDm.keyDownChar('F10');
+        await this.bindDm.delay(300);
+        await this.bindDm.keyUpChar('F10');
+        await this.bindDm.delay(300);
         this.lastTime = now; // 更新上次执行时间
       } else {
         logger.warn('[自动攻击] 角色血量危险，但距离上次执行F10不足100秒，跳过');
@@ -220,22 +209,22 @@ export class AttackActions {
     }
   }
 
-  useSkill(skill: KeyPressOptions) {
+  async useSkill(skill: KeyPressOptions) {
     // logger.debug(skill, 'skill');
     const { key, interval = 0, type, job } = skill;
     // logger.debug(key, interval, type, 'useSkill', this.role.selectMonster);
     if (type === 'lock' && !this.role.selectMonster) {
-      this.bindDm.LeftClick();
+      await this.bindDm.LeftClick();
     } else {
-      this.bindDm.KeyDownChar(key);
-      this.bindDm.delay(300);
-      this.bindDm.KeyUpChar(key);
-      this.bindDm.delay(300);
+      await this.bindDm.keyDownChar(key);
+      await this.bindDm.delay(300);
+      await this.bindDm.keyUpChar(key);
+      await this.bindDm.delay(300);
       if (job === 'JK') {
-        this.bindPlugin.moveTo(897, 438);
+        await this.bindPlugin.moveTo(897, 438);
       }
       // 延时技能需要左键点击释放，并且JK的技能需要移动到目标脚下释放
-      type === 'delay' && this.bindDm.LeftClick();
+      type === 'delay' && (await this.bindDm.LeftClick());
       this.cdController.set(key, true);
       setTimeout(() => {
         this.cdController.set(key, false);
@@ -268,20 +257,20 @@ export class AttackActions {
   }
 
   // 中文注释：启动自动按键（第二参数为毫秒间隔，第三参数为按键名，默认 F1）
-  startKeyPress(props: KeyPressOptions): void {
+  async startKeyPress(props: KeyPressOptions): Promise<void> {
     const { key, interval = null } = props;
     if (interval) {
       // 中文注释：周期即执行的时间间隔（毫秒），设置最小 10ms 防止过于频繁
       const periodMs = Math.max(10, Math.floor(interval));
       // 中文注释：定时按键（使用大漠插件 KeyPress）
-      const timer = setInterval(() => {
+      const timer = setInterval(async () => {
         try {
           // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
-          this.bindDm.KeyPress(VK_F[key]);
+          await this.bindDm.KeyPress(VK_F[key]);
         } catch (err) {
           // 中文注释：按键失败后立即退出定时器并清理状态
           logger.warn('[自动按键] 按键失败，自动停止：', String((err as any)?.message || err));
-          this.stopKeyPress(key);
+          await this.stopKeyPress(key);
         }
       }, periodMs);
       this.timerMapList.set(key, timer);
@@ -289,11 +278,10 @@ export class AttackActions {
       logger.info(`[自动按键] 已启动：key=${key} | 间隔=${periodMs}ms | 频率约=${(1000 / periodMs).toFixed(2)} 次/秒`);
     } else {
       // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
-
-      this.bindDm.KeyDownChar(key);
-      this.bindDm.delay(300);
-      this.bindDm.KeyUpChar(key);
-      this.bindDm.delay(300);
+      await this.bindDm.keyDownChar(key);
+      await this.bindDm.delay(300);
+      await this.bindDm.keyUpChar(key);
+      await this.bindDm.delay(300);
       logger.info(`[自动按键] 已启动：key=${key} | 无间隔（单次按键）`);
     }
   }
@@ -308,45 +296,45 @@ export class AttackActions {
   }
 
   // 循环添加buff
-  addBuff() {
+  async addBuff() {
     if (this.buffTimerMapList.has('F6')) {
       return;
     }
-    this.buffGroup.forEach(item => {
+    this.buffGroup.forEach(async item => {
       logger.info(`[开启uff] 已启动：key=${item.key}`);
       const isUseless = item.type === 'lock' && !this.role.selectMonster;
-      const useSkill = () => {
+      const useSkill = async () => {
         if (item.type === 'specify') {
-          this.bindDm.MoveTo(803, 415);
-          this.bindDm.delay(300);
-          this.bindDm.RightClick();
-          this.bindDm.delay(300);
+          await this.bindDm.MoveTo(803, 415);
+          await this.bindDm.delay(300);
+          await this.bindDm.RightClick();
+          await this.bindDm.delay(300);
         }
-        this.bindDm.KeyDownChar(item.key);
-        this.bindDm.delay(300);
-        this.bindDm.KeyUpChar(item.key);
-        this.bindDm.delay(500);
+        await this.bindDm.keyDownChar(item.key);
+        await this.bindDm.delay(300);
+        await this.bindDm.keyUpChar(item.key);
+        await this.bindDm.delay(500);
       };
       if (isUseless) {
         logger.info(`[自动攻击] 当前技能${item.key}为锁定技能，未选择目标，不执行`);
       } else {
-        useSkill();
+        await useSkill();
       }
       if (this.buffTimerMapList.get(item.key)) {
         return;
       }
-      const timer = setInterval(() => {
+      const timer = setInterval(async () => {
         try {
           if (isUseless) {
             logger.info(`[自动攻击] 当前技能${item.key}为锁定技能，未选择目标，不执行`);
           } else {
-            useSkill();
+            await useSkill();
           }
           // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
         } catch (err) {
           // 中文注释：按键失败后立即退出定时器并清理状态
           logger.warn('[自动按键] 按键失败，自动停止：', String((err as any)?.message || err));
-          this.stopKeyPress(item.key);
+          await this.stopKeyPress(item.key);
         }
       }, item.interval || 0);
       this.buffTimerMapList.set(item.key, timer);
@@ -367,15 +355,15 @@ export class AttackActions {
   }
 
   // 识别周围有无怪物，并且识别5秒
-  scanMonster(options: ScanMonsterOptions) {
+  async scanMonster(options: ScanMonsterOptions) {
     const { attackType, times = 5, attackRange, map = '' } = options;
     let moveAction = new MoveActions(this.role, { offsetR: 280 });
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       logger.info(`[自动攻击] 已启动：attackType=${attackType} | 目标点位=${attackRange?.x},${attackRange?.y} | 间隔=${times}S | 范围=${attackRange?.r || '无'}`);
       let counter = 0;
       let lastIsolateTime = 0;
       let isRunLoop = true;
-      const loop = () => {
+      const loop = async () => {
         if (!isRunLoop) return;
         // 对怪物进行攻击
         const isRange = attackRange && isArriveAimNear(this.role.position, { x: attackRange.x, y: attackRange.y }, attackRange.r);
@@ -388,13 +376,13 @@ export class AttackActions {
 
         // logger.debug(isRange, '我是否在据点范围内');
         if (attackType === 'single' && isRange) {
-          this.attackNearestMonsterForSingle();
+          await this.attackNearestMonsterForSingle();
         }
         if (attackType !== 'single' && isRange) {
-          this.attackNearestMonster();
+          await this.attackNearestMonster();
         }
         // todo 缩小范围
-        const findMonsterPos = this.findMonsterPos();
+        const findMonsterPos = await this.findMonsterPos();
         if (findMonsterPos || this.role.selectMonster) {
           counter = 0;
         }
