@@ -4,7 +4,7 @@ import { AutoT } from '../auto-plugin';
 import { Role } from '../ffo/events/rolyer';
 import logger from '../utils/logger';
 
-export class WorkerManager {
+export default class WorkerManager {
   private static readonly workerMap = new Map<number, Worker>();
   private worker: Worker | null = null; // 工作线程
   private hwnd: number | null = null; // 窗口句柄
@@ -37,8 +37,6 @@ export class WorkerManager {
         workerData: {
           // 开启数据更新
           enableUpdateUpdate: true,
-          // 句柄
-          hwnd: this.hwnd,
           // 窗口大小
           bindWindowSize: this.bindWindowSize,
         },
@@ -127,8 +125,8 @@ export class WorkerManager {
   // 更新角色信息
   registerEvent() {
     // 初始化角色信息
-    this.onMessage('INITIALIZED', ({ name }) => {
-      this.role?.childProcessInitRoleInfo(name);
+    this.onMessage('INITIALIZED', ({ name, hwnd }) => {
+      this.role?.childProcessInitRoleInfo(name, hwnd);
     });
     // 更新角色状态信息：位置、地图、选择怪物、血量
     this.onMessage('STATUS_UPDATE', ({ position, map, selectMonster, bloodStatus }) => {
@@ -250,4 +248,5 @@ export class WorkerManager {
   }
 }
 
-export const workerManager = new WorkerManager();
+// export const workerManager = new WorkerManager();
+export const workerManagerMap = new Map<number, WorkerManager>();

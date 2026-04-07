@@ -55,13 +55,6 @@ const loadDictionary = async () => {
       const ret = await dm.loadDictFromFileAsync(0, OCR_FONT_PATH);
       if (ret === 1) {
         dm.useDict(0);
-        // 4. 初始化角色信息并通知主线程
-        const currentName = getRoleName(dm, bindWindowSize);
-        parentPort?.postMessage({
-          type: 'INITIALIZED',
-          data: { name: currentName },
-        });
-        parentPort?.postMessage({ type: 'LOG', data: { level: 'info', message: `[角色工作线程] 子线程初始化成功，角色名: ${currentName}` } });
       } else {
         parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 加载字库失败，返回值: ${ret}` } });
       }
@@ -102,7 +95,7 @@ const loop = async () => {
     const position = getRolePosition(dm, bindWindowSize);
     // 如果没有位置，通知主线程并阻塞
     if (!position) {
-      parentPort?.postMessage({ type: 'LOG', data: { level: 'warn', message: '[角色工作线程] 未获取到角色位置，异步等待 500ms' } });
+      parentPort?.postMessage({ type: 'LOG', data: { level: 'warn', message: '[角色工作线程] 未获取到角色位置，异步等待 2S' } });
       // 【关键修改】使用 await sleep 代替同步 dm.delay，让出 CPU 执行权
       await dm.delay(2000);
     }
@@ -158,7 +151,7 @@ const loop = async () => {
     }
 
     // 死亡检查
-    if (needCheckDead && isDeadCYPos(dm, bindWindowSize)) {
+    if (needCheckDead && (await isDeadCYPos(dm, bindWindowSize))) {
       parentPort?.postMessage({ type: 'DEATH_DETECTED' });
     }
 
@@ -177,12 +170,6 @@ const loop = async () => {
 
 // 执行初始化并启动循环
 init();
-
-// .then(success => {
-//   if (success) {
-//     loop();
-//   }
-// });
 
 // 更新配置
 const updateConfig = (config: any) => {
@@ -250,6 +237,13 @@ parentPort?.on('message', msg => {
     try {
       bindWindow(msg.data.hwnd);
       loadDictionary();
+      // 4. 初始化角色信息并通知主线程
+      const currentName = getRoleName(dm, bindWindowSize);
+      parentPort?.postMessage({
+        type: 'INITIALIZED',
+        data: { name: currentName, hwnd: msg.data.hwnd },
+      });
+      parentPort?.postMessage({ type: 'LOG', data: { level: 'info', message: `[角色工作线程] 绑定窗口成功: ${msg.data.hwnd}，角色名: ${currentName}` } });
     } catch (err) {
       parentPort?.postMessage({ type: 'LOG', data: { level: 'error', message: `[角色工作线程] 绑定窗口失败: ${String((err as any)?.message || err)}` } });
     }

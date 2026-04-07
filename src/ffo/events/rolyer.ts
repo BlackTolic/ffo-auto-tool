@@ -3,7 +3,7 @@ import { ROLE_IS_DEAD_PATH } from '../../constant/config';
 import { emailStrategy } from '../../utils/email';
 import { logger } from '../../utils/logger';
 import { debounce } from '../../utils/tool';
-import { WorkerManager } from '../../worker/worker-manager';
+import WorkerManager from '../../worker/worker-manager';
 import { DEFAULT_MENUS_POS } from '../constant/OCR-pos';
 import { isArriveAimNear, selectRightAnwser } from '../utils/common';
 import { AttackActions } from './attack-action';
@@ -72,8 +72,9 @@ export class Role {
   constructor() {}
 
   // 初始化角色信息，项目初始化执行
-  childProcessInitRoleInfo(name: string) {
+  childProcessInitRoleInfo(name: string, hwnd: number) {
     this.name = name;
+    this.hwnd = hwnd;
   }
   // 更新角色信息
   childProcessUpdateRoleInfo(position: Pos, map: string, selectMonster: string, bloodStatus: string) {

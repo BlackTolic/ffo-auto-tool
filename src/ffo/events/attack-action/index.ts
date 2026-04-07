@@ -387,7 +387,7 @@ export class AttackActions {
           counter = 0;
         }
         // 检测到与怪物有隔离
-        const isIsolate = isBlocked(this.bindDm, this.role.bindWindowSize);
+        const isIsolate = await isBlocked(this.bindDm, this.role.bindWindowSize);
         // todo技能卡住移动
         const now = Date.now();
         // 这里需要打开世界频道，刷新掉弹出的红字

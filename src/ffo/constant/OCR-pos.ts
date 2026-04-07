@@ -248,3 +248,9 @@ export const DEFAULT_PASSWORD_LOCK_RANGE = {
   '1600*900': { x1: 181, y1: 3, x2: 968, y2: 366, color: '7706458-101010|787870-101010', sim: DEFAULT_SIM },
   '1280*800': { x1: 677, y1: 378, x2: 910, y2: 393, color: '706458-101010|787870-101010', sim: DEFAULT_SIM },
 };
+
+// 检查是否有药师的传送术
+export const DEFAULT_TRANSPORT_SKILL = {
+  '1600*900': { x1: 623, y1: 386, x2: 977, y2: 523, color: 'e8f0e8-111111', sim: DEFAULT_SIM },
+  '1280*800': { x1: 623, y1: 386, x2: 977, y2: 523, color: 'e8f0e8-111111', sim: DEFAULT_SIM },
+};
