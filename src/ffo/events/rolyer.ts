@@ -175,7 +175,7 @@ export class Role {
       if (this.globalStrategyTask) {
         for (const task of this.globalStrategyTask) {
           if (task.condition()) {
-            logger.info(`[全局任务检查] 执行任务：${task.name}`);
+            task.name && logger.info(`[全局任务检查] 执行任务：${task.name}`);
             task.callback();
             break;
           }

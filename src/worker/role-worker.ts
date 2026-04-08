@@ -186,11 +186,10 @@ const callDm = async (data: any) => {
       // 避免 postMessage 发送 Promise 时报 DataCloneError
       const result = await target[method](...args);
       // 将执行结果发回主线程
-      parentPort?.postMessage({
-        type: 'CALL_DM_DONE',
-        data: { requestId, result },
-      });
+      parentPort?.postMessage({ type: 'CALL_DM_DONE', data: { requestId, result } });
+      return;
     }
+    parentPort?.postMessage({ type: 'CALL_DM_DONE', data: { requestId, error: `Unknown dm method: ${String(method)}` } });
   } catch (err) {
     parentPort?.postMessage({
       type: 'CALL_DM_DONE',

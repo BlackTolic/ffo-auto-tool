@@ -332,10 +332,20 @@ export const checkTransportSkill = async (bindDm: AutoT, bindWindowSize: '1600*9
 };
 
 // 查看购买商品的信息
-export const checkMerchant = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
+export const checkMerchantPos = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
   const merchantsPos = DEFAULT_MERCHANT_RANGE[bindWindowSize];
-  console.log(merchantsPos.x1, merchantsPos.y1, merchantsPos.x2, merchantsPos.y2, keyword, merchantsPos.color, merchantsPos.sim, 'merchantsPos111');
-  const merchantText = await bindDm.findStrFastE(merchantsPos.x1, merchantsPos.y1, merchantsPos.x2, merchantsPos.y2, keyword, merchantsPos.color, merchantsPos.sim);
-  console.log(merchantText, 'merchantText');
-  return parseTextPos(merchantText);
+  const merchantText = await bindDm.findStrFastEx(merchantsPos.x1, merchantsPos.y1, merchantsPos.x2, merchantsPos.y2, keyword, merchantsPos.color, merchantsPos.sim);
+  if (!merchantText) {
+    logger.info('未识别到购买商品');
+    return null;
+  }
+  const list = merchantText ? merchantText.split?.('|') : [];
+  return parsePositionFromTextList(list);
+};
+
+// 识别商品范围内的信息
+export const checkMerchantInfo = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', pos: { x: number; y: number }) => {
+  const merchantsPos = DEFAULT_MERCHANT_RANGE[bindWindowSize];
+  const merchantText = await bindDm.ocr(pos.x - 51, pos.y - 8, pos.x + 200, pos.y + 34, merchantsPos.color, merchantsPos.sim);
+  return merchantText;
 };
