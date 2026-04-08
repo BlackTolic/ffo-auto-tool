@@ -155,7 +155,7 @@ export default class MingYuTask {
       return this.autoFarmingAction.toggle(taskList);
     } catch (e) {
       // 按ESC键退出任务
-      this?.soldier?.baseAction?.pressKeybord('ESC');
+      this?.soldier?.baseAction?.pressKeyboard('esc');
       logger.error('启动任务分工失败', e);
     }
   }

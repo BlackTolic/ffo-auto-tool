@@ -262,15 +262,17 @@ export class BaseAction {
   }
 
   // 按下键盘的键
+  async pressKeyboard(pressKey: string, times: number = 1) {
+    for (let i = 0; i < times; i++) {
+      await this.bindPlugin.delay(300);
+      await this.bindPlugin.keyPress(VK_F[pressKey]);
+      await this.bindPlugin.delay(300);
+    }
+    return true;
+  }
+
   async pressKeybord(pressKey: string, times: number = 1) {
-    return new Promise(async (res, rej) => {
-      for (let i = 0; i < times; i++) {
-        await this.bindPlugin.delay(300);
-        await this.bindPlugin.keyPress(VK_F[pressKey]);
-        await this.bindPlugin.delay(300);
-      }
-      res(true);
-    });
+    return this.pressKeyboard(pressKey, times);
   }
 
   // 拾取有用装备
