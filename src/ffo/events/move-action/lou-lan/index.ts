@@ -63,7 +63,7 @@ export const fromSunsetDuneToSunsetDuneWest = (moveActions: MoveActions) => {
 
 // 从落日沙丘西到斯芬尼克
 export const fromSunsetDuneWestToSphinx = (moveActions: MoveActions) => {
-  return moveActions.startAutoFindPath({ toPos: [{ x: 255, y: 148 }], blockAllBeforeMove: true, delay: 0 });
+  return moveActions.startAutoFindPath({ toPos: [{ x: 255, y: 148 }], blockAllBeforeMove: true });
 };
 
 // 从失落神殿一层前往名誉BOSS

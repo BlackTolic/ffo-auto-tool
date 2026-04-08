@@ -102,56 +102,62 @@ export default class MingYuTask {
 
   // 启动任务分工
   startMingYuTask() {
-    this.autoFarmingAction = AutoFarmingAction.getInstance({
-      initPos: INIT_POS,
-      pathPos: PATH_POS,
-      ocrMonster: OCR_MING_YU_BOSS,
-      taskName: TASK_NAME,
-    });
-    if (!this.soldier.role || !this.soldier.moveActions || !this.soldier.baseAction) {
-      throw new Error('请先注册士兵');
-    }
-    // 挂机前置操作
-    this.soldier.baseAction.preMount();
-    // 回城并且重置任务
-    const goBackCityAndResetTask = async () => {
-      // 停止正在执行的任务
-      await this.soldier?.moveActions?.stopAutoFindPath();
-      // 回城
-      logger.info('[静止检查] 执行回城并且重置任务 - goBackCityAndResetTask');
-      await this.soldier?.baseAction?.backCity(INIT_POS, 'F9', true);
-      this.soldier?.role?.updateTaskStatus('done');
-    };
-
-    // 检查名誉是否卡住
-    const checkMingYuStuck = createStuckChecker(this.soldier.role);
-    // 添加组队拒绝
-    const soldierRole = this.soldier.role;
-    this.soldier.role.updateTeamApplyCall(async closePos => {
-      // 拒绝组队
-      if (closePos) {
-        await soldierRole.bindPlugin?.moveToClick(closePos.x, closePos.y);
+    try {
+      this.autoFarmingAction = AutoFarmingAction.getInstance({
+        initPos: INIT_POS,
+        pathPos: PATH_POS,
+        ocrMonster: OCR_MING_YU_BOSS,
+        taskName: TASK_NAME,
+      });
+      if (!this.soldier.role || !this.soldier.moveActions || !this.soldier.baseAction) {
+        throw new Error('请先注册士兵');
       }
-    });
-    // 注册全局任务
-    this.soldier.role.addGlobalStrategyTask([
-      {
-        // 3分钟检查一次跑名誉是否卡住，然后回城重置任务
-        name: '跑名誉过程中3分钟静止不动',
-        condition: () => checkMingYuStuck(3),
-        callback: () => delay5S(goBackCityAndResetTask),
-      },
-      // {
-      //   // 安全锁弹出之后，输入密码
-      //   name: '安全锁弹出之后，输入密码',
-      //   condition: () => checkPasswordLock(role.bindPlugin, role.bindWindowSize || '1600*900'),
-      //   callback: () => delay1M(() => baseAction.inputPassword('666666')),
-      // },
-    ]);
+      // 挂机前置操作
+      this.soldier.baseAction.preMount();
+      // 回城并且重置任务
+      const goBackCityAndResetTask = async () => {
+        // 停止正在执行的任务
+        await this.soldier?.moveActions?.stopAutoFindPath();
+        // 回城
+        logger.info('[静止检查] 执行回城并且重置任务 - goBackCityAndResetTask');
+        await this.soldier?.baseAction?.backCity(INIT_POS, 'F9', true);
+        this.soldier?.role?.updateTaskStatus('done');
+      };
 
-    // 这里只需要调用soldier一个人的循环任务就行了，其他人作为辅助
-    const taskList = [{ taskName: this.taskName, loopOriginPos: INIT_POS, action: () => this.loopAction(), interval: 2000 }];
-    return this.autoFarmingAction.toggle(taskList);
+      // 检查名誉是否卡住
+      const checkMingYuStuck = createStuckChecker(this.soldier.role);
+      // 添加组队拒绝
+      const soldierRole = this.soldier.role;
+      this.soldier.role.updateTeamApplyCall(async closePos => {
+        // 拒绝组队
+        if (closePos) {
+          await soldierRole.bindPlugin?.moveToClick(closePos.x, closePos.y);
+        }
+      });
+      // 注册全局任务
+      this.soldier.role.addGlobalStrategyTask([
+        {
+          // 3分钟检查一次跑名誉是否卡住，然后回城重置任务
+          name: '跑名誉过程中3分钟静止不动',
+          condition: () => checkMingYuStuck(3),
+          callback: () => delay5S(goBackCityAndResetTask),
+        },
+        // {
+        //   // 安全锁弹出之后，输入密码
+        //   name: '安全锁弹出之后，输入密码',
+        //   condition: () => checkPasswordLock(role.bindPlugin, role.bindWindowSize || '1600*900'),
+        //   callback: () => delay1M(() => baseAction.inputPassword('666666')),
+        // },
+      ]);
+
+      // 这里只需要调用soldier一个人的循环任务就行了，其他人作为辅助
+      const taskList = [{ taskName: this.taskName, loopOriginPos: INIT_POS, action: () => this.loopAction(), interval: 2000 }];
+      return this.autoFarmingAction.toggle(taskList);
+    } catch (e) {
+      // 按ESC键退出任务
+      this?.soldier?.baseAction?.pressKeybord('ESC');
+      logger.error('启动任务分工失败', e);
+    }
   }
 
   // 循环任务
@@ -169,12 +175,12 @@ export default class MingYuTask {
       // 宠物激活,需要使用的宠物必须放在第一个格子上
       await soldierBaseAction.openPetBoxAndActivePet();
       // 喂养宠物
-      await soldierBaseAction.openPetBoxAndFeed('F7', 'F8', 'F10');
+      await soldierBaseAction.openPetBoxAndFeed('F7', 'F10', 'F8');
       // 检查当前是否是坐骑状态
       const isMounted = await checkMountedByRoleSpeed(dm, soldierRole.bindWindowSize);
       if (!isMounted) {
         // 上马
-        await soldierBaseAction.pressSecondSkillBarSkill('F9');
+        await soldierBaseAction.pressSecondSkillBarSkill('F10');
       }
       const isArriveChengJiao = await fromLouLanToChengJiao(this.soldier.moveActions);
       if (!isArriveChengJiao) {
@@ -208,7 +214,7 @@ export default class MingYuTask {
         throw new Error('未到达失落神殿BOSS');
       }
       // 下马
-      await soldierBaseAction.pressSecondSkillBarSkill('F9');
+      await soldierBaseAction.pressSecondSkillBarSkill('F10');
       // 开始攻击怪物
       await soldierAttackActions.scanMonster({ attackType: 'single', attackRange: { x: 321, y: 130, r: 15 } });
       logger.info('当前已经没有怪物了', soldierRole.position);
