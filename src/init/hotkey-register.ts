@@ -4,7 +4,9 @@ import { OCR_NAN_JIAO_MONSTER } from '../ffo/constant/monster-feature';
 import { damoBindingManager } from '../ffo/events';
 import { AttackActions } from '../ffo/events/attack-action';
 import { mingYuTask } from '../ffo/events/game-actions/ming-yu';
+import ShoppingTask from '../ffo/events/game-actions/shopping';
 import { toggleYunHuang1West } from '../ffo/events/game-actions/yun1';
+import { getBindWindowInfo } from '../ffo/utils/common/rolyer';
 import { startKeyPress, stopKeyPress } from '../ffo/utils/key-press';
 import { logger } from '../utils/logger';
 import WorkerManager, { workerManagerMap } from '../worker/worker-manager';
@@ -131,6 +133,11 @@ export function registerGlobalHotkeys() {
 
   // 无泪南郊刷怪
   // registerHotkey('Alt+6', () => toggleBiYiCityNorth());
+
+  registerHotkey('Alt+7', () => {
+    const { role } = getBindWindowInfo();
+    new ShoppingTask(role).startShoppingTask();
+  });
 }
 
 // 中文注释：记录每个窗口的自动打怪操作实例（用于 Alt+R 开/关切换）

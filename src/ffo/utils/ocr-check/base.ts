@@ -15,6 +15,7 @@ import {
   DEFAULT_ITEM_BOX,
   DEFAULT_ITEM_BOX_TAB,
   DEFAULT_ITEM_BOX_TAB_SWITCH,
+  DEFAULT_MERCHANT_RANGE,
   DEFAULT_MONSTER_BLOOD_EMPTY,
   DEFAULT_MONSTER_NAME,
   DEFAULT_MOUNTED,
@@ -328,4 +329,13 @@ export const checkTransportSkill = async (bindDm: AutoT, bindWindowSize: '1600*9
     return null;
   }
   return { agree: { x: 711, y: 493 }, reject: { x: 593, y: 493 } };
+};
+
+// 查看购买商品的信息
+export const checkMerchant = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
+  const merchantsPos = DEFAULT_MERCHANT_RANGE[bindWindowSize];
+  console.log(merchantsPos.x1, merchantsPos.y1, merchantsPos.x2, merchantsPos.y2, keyword, merchantsPos.color, merchantsPos.sim, 'merchantsPos111');
+  const merchantText = await bindDm.findStrFastE(merchantsPos.x1, merchantsPos.y1, merchantsPos.x2, merchantsPos.y2, keyword, merchantsPos.color, merchantsPos.sim);
+  console.log(merchantText, 'merchantText');
+  return parseTextPos(merchantText);
 };

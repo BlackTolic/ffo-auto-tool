@@ -3,7 +3,17 @@ import { block } from '../../../utils/tool';
 import { MAIN_CITY } from '../../constant/NPC_position';
 import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
-import { checkEquipCount, checkPasswordLockPassword, checkPetActive, checkPetInfo, checkSystemPrompt, checkUnEquipEquip, isItemBoxOpen, switchItemBoxTabPos } from '../../utils/ocr-check/base';
+import {
+  checkEquipCount,
+  checkMerchant,
+  checkPasswordLockPassword,
+  checkPetActive,
+  checkPetInfo,
+  checkSystemPrompt,
+  checkUnEquipEquip,
+  isItemBoxOpen,
+  switchItemBoxTabPos,
+} from '../../utils/ocr-check/base';
 import { AttackActions } from '../attack-action';
 import { Role } from '../rolyer';
 
@@ -271,10 +281,6 @@ export class BaseAction {
     return true;
   }
 
-  async pressKeybord(pressKey: string, times: number = 1) {
-    return this.pressKeyboard(pressKey, times);
-  }
-
   // 拾取有用装备
   async pickUpUsefulEquip(validEquip: ValidEquip, way?: 'mail' | 'saveEquip') {
     // 获取所有装备坐标
@@ -355,6 +361,19 @@ export class BaseAction {
     inputSingle(passwordItem[record]);
     // 点击确定
     await this.bindPlugin.moveToClick(708, 505);
+  }
+
+  // 点满商人技能
+  async pressMerchantSkillBarSkill() {
+    // 识别物品
+    const isMerchantPos = await checkMerchant(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', '愿望果实');
+    console.log(isMerchantPos, 'isMerchantPos');
+    if (!isMerchantPos) {
+      logger.info('[点满商人技能] 没有愿望果实');
+      return;
+    }
+    await this.bindPlugin.move(isMerchantPos.x, isMerchantPos.y);
+    // return this.pressSecondSkillBarSkill(pressKey, times);
   }
 }
 

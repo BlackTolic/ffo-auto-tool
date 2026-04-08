@@ -134,9 +134,9 @@ export const DEFAULT_ITEM_BOX_TAB_SWITCH = {
   '1280*800': { x1: 867, y1: 471, x2: 1270, y2: 507, color: '886c38-111111', sim: DEFAULT_SIM },
 };
 
-// 金币
+// 金币·
 export const DEFAULT_GOLD = {
-  '1600*900': { x1: 1186, y1: 753, x2: 1316, y2: 893, color: 'e8f0e8-111111|d0a028-111111|989490-000000|986450-555555', sim: DEFAULT_SIM },
+  '1600*900': { x1: 1186, y1: 753, x2: 1316, y2: 893, color: 'e8f0e8-111111|d0a028-111111|989490-111111|986450-555555', sim: DEFAULT_SIM },
   '1280*800': { x1: 872, y1: 713, x2: 986, y2: 729, color: 'e8f0e8-111111|d0a028-111111|989490-000000|986450-555555', sim: DEFAULT_SIM },
 };
 
@@ -253,4 +253,10 @@ export const DEFAULT_PASSWORD_LOCK_RANGE = {
 export const DEFAULT_TRANSPORT_SKILL = {
   '1600*900': { x1: 623, y1: 386, x2: 977, y2: 523, color: 'e8f0e8-111111', sim: DEFAULT_SIM },
   '1280*800': { x1: 623, y1: 386, x2: 977, y2: 523, color: 'e8f0e8-111111', sim: DEFAULT_SIM },
+};
+
+// 查找商品的指定范围
+export const DEFAULT_MERCHANT_RANGE = {
+  '1600*900': { x1: 297, y1: 183, x2: 551, y2: 480, color: 'e8f0e8-111111|d0a028-111111|989490-111111|986450-555555', sim: DEFAULT_SIM },
+  '1280*800': { x1: 343, y1: 229, x2: 597, y2: 526, color: 'e8f0e8-111111|d0a028-111111|989490-111111|986450-555555', sim: DEFAULT_SIM },
 };
