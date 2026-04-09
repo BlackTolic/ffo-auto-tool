@@ -76,8 +76,34 @@ const PATROL_CONFIG = [
   { pos: COORDS.INIT_POS_YUN1, r: 6, times: 3 },
 ];
 
-const delay10S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 10 * 1000, true);
-const delay5S = debounce((fn: (...args: any[]) => void, ...args: any[]) => fn.apply(this, args), 5 * 1000, true);
+const delay10S = debounce(
+  (fn: (...args: any[]) => any, ...args: any[]) => {
+    try {
+      const ret = fn(...args);
+      if (ret && typeof ret.then === 'function') {
+        ret.catch((err: any) => logger.error(err));
+      }
+    } catch (err) {
+      logger.error(err);
+    }
+  },
+  10 * 1000,
+  true
+);
+const delay5S = debounce(
+  (fn: (...args: any[]) => any, ...args: any[]) => {
+    try {
+      const ret = fn(...args);
+      if (ret && typeof ret.then === 'function') {
+        ret.catch((err: any) => logger.error(err));
+      }
+    } catch (err) {
+      logger.error(err);
+    }
+  },
+  5 * 1000,
+  true
+);
 
 let autoFarmingAction: AutoFarmingAction | null = null;
 let executionCount = 0;
@@ -104,11 +130,9 @@ const selectGoBackCity = async (baseAction: BaseAction, moveActions: MoveActions
   // 进行红名检验
   const res = await baseAction.backCity(COORDS.INIT_POS_ROUTE, 'F9', true);
   if (res === 'redName') {
-    return new Promise(async res => {
-      await moveActions.startAutoFindPath({ toPos: COORDS.RED_NAME_POS, stationR: CONSTANTS.STATION_R, delay: 100, taskMap: MAP_NAME.YUN_ZE });
-      await moveActions.startAutoFindPath({ toPos: COORDS.STORE_NPC, stationR: CONSTANTS.STATION_R, delay: 100 });
-      res('红名操作');
-    });
+    await moveActions.startAutoFindPath({ toPos: COORDS.RED_NAME_POS, stationR: CONSTANTS.STATION_R, delay: 100, taskMap: MAP_NAME.YUN_ZE });
+    await moveActions.startAutoFindPath({ toPos: COORDS.STORE_NPC, stationR: CONSTANTS.STATION_R, delay: 100 });
+    return '红名操作';
   }
   return res;
 };
@@ -124,7 +148,7 @@ const loopAutoAttackInWest = async (attackActions?: AttackActions) => {
     const baseAction = new BaseAction(role);
 
     // 添加buff
-    attackActions?.addBuff();
+    await attackActions?.addBuff();
     // 检查角色是群攻还是单攻击
     const attackType = role.job === 'SS' ? 'group' : 'single';
 
@@ -146,15 +170,15 @@ const loopAutoAttackInWest = async (attackActions?: AttackActions) => {
     }
 
     // 检查装备栏是否已经满了
-    const equipCount = checkEquipCount(role.bindPlugin, role.bindWindowSize);
+    const equipCount = await checkEquipCount(role.bindPlugin, role.bindWindowSize);
     logger.info(`[云荒打怪] 检查当前装备数量: ${equipCount.length}`);
     if (equipCount.length >= CONSTANTS.CHECK_EQUIP_COUNT) {
       // 结束buff
-      attackActions?.stopAddBuff();
+      await attackActions?.stopAddBuff();
       // 选择回城方式
       const res = await selectGoBackCity(baseAction, moveActions);
       if (res === '红名操作') {
-        loopCheckStatus();
+        void loopCheckStatus().catch(err => logger.error(err));
         return;
       }
     }
@@ -180,14 +204,14 @@ const loopCheckStatus = async () => {
 
   await new Promise(res => setTimeout(res, 5 * 1000));
   // 屏蔽所有人
-  baseAction.blockAllPlayers();
+  await baseAction.blockAllPlayers();
   // 检查宠物是否激活
-  const isPetActive = checkPetActive(dm, role.bindWindowSize);
+  const isPetActive = await checkPetActive(dm, role.bindWindowSize);
   if (!isPetActive) {
     await baseAction.openPetBoxAndActivePet();
   }
   // 检查当前是否是坐骑状态
-  const isMounted = checkMounted(dm, role.bindWindowSize);
+  const isMounted = await checkMounted(dm, role.bindWindowSize);
   if (!isMounted) {
     // 喂养宠物
     await baseAction.openPetBoxAndFeed('F6', 'F7', 'F8');
@@ -197,12 +221,12 @@ const loopCheckStatus = async () => {
   // 打开物品栏中的“消耗”页
   await baseAction.openItemBox('消耗');
   // 检查红、蓝、回城数量
-  const blueCount = checkItemBoxItemCount(dm, role.bindWindowSize, 1, '蓝药');
-  const redCount = checkItemBoxItemCount(dm, role.bindWindowSize, 2, '人参');
-  const returnCount = checkItemBoxItemCount(dm, role.bindWindowSize, 3, '回城卷轴');
+  const blueCount = await checkItemBoxItemCount(dm, role.bindWindowSize, 1, '蓝药');
+  const redCount = await checkItemBoxItemCount(dm, role.bindWindowSize, 2, '人参');
+  const returnCount = await checkItemBoxItemCount(dm, role.bindWindowSize, 3, '回城卷轴');
 
   // 检查装备是否已经损坏
-  const isEquipBroken = checkEquipBroken(dm, role.bindWindowSize);
+  const isEquipBroken = await checkEquipBroken(dm, role.bindWindowSize);
   logger.info(`[云荒检查] 装备情况:${isEquipBroken ? '已损坏' : '未损坏'};蓝药数量${blueCount};人参数量${redCount};回城卷轴数量${returnCount};`);
 
   // 鼠标归位，防止影响下一次识别
@@ -212,7 +236,7 @@ const loopCheckStatus = async () => {
   // 打开物品栏中的“装备”页
   await baseAction.openItemBox('装备');
   // 检查装备栏装备是否超过15件
-  const equipCount = checkEquipCount(dm, role.bindWindowSize);
+  const equipCount = await checkEquipCount(dm, role.bindWindowSize);
   logger.info(`[云荒检查] 装备数量${equipCount.length}`);
 
   let needMoney = redCount === 0 && blueCount === 0 ? false : redCount < 50 || blueCount < 200 || isEquipBroken;
@@ -223,7 +247,7 @@ const loopCheckStatus = async () => {
     // 与仓库管理员对话
     const config = Object.assign(
       needMoney ? { task: 'withdraw', money: '5' } : {},
-      equipCount.length > 14 ? { saveEquipCall: () => baseAction.pickUpUsefulEquip(validEquip, 'saveEquip') } : {}
+      equipCount.length > 14 ? { saveEquipCall: async () => await baseAction.pickUpUsefulEquip(validEquip, 'saveEquip') } : {}
     ) as StoreManagerConfig;
     const withdrawOk = await new Conversation(role).YunHuangStoreManager(config);
     if (!withdrawOk) {
@@ -254,7 +278,7 @@ const loopCheckStatus = async () => {
   }
 
   // 存钱
-  const gold = getCurrentGold(role.bindDm, role.bindWindowSize);
+  const gold = await getCurrentGold(role.bindDm, role.bindWindowSize);
   spendMoney = gold ? 5 - Number(gold) + spendMoney : spendMoney;
   logger.info(`[云荒检查] 当前金币数量${gold}`);
   logger.info(`[云荒检查] 当前从${currentDate}到${new Date().toLocaleString()}，消费了${spendMoney}`);
@@ -283,7 +307,7 @@ const loopCheckStatus = async () => {
       aimPos: MAP_NAME.YUN_ZE,
       refreshTime: 1000,
     });
-    dm.delay(1000);
+    await dm.delay(1000);
     return isPassYZ();
   };
 
@@ -297,13 +321,13 @@ const loopCheckStatus = async () => {
 };
 
 // 中文注释：切换自动寻路（第一次开启，第二次关闭）
-export const toggleYunHuang1West = () => {
+export const toggleYunHuang1West = async () => {
   const role = getBoundRole();
   let baseAction = new BaseAction(role);
   let attackActions = new AttackActions(role, { monsterFeature: OCR_YUN_HUAN_1_MONSTER });
 
   // 前置检查
-  baseAction.preMount();
+  await baseAction.preMount();
 
   // 死亡时回调
   const deadCall = () => {
@@ -315,7 +339,7 @@ export const toggleYunHuang1West = () => {
     setTimeout(async () => {
       logger.info(`[云荒检查] 云荒打怪死亡开始执行死亡回调`);
       // 移动到云荒1
-      goBackCityAndResetTask();
+      await goBackCityAndResetTask();
       // 重新更新循环状态
       role.updateTaskStatus('done');
     }, CONSTANTS.DEAD_CALL_TIME);
@@ -334,9 +358,9 @@ export const toggleYunHuang1West = () => {
   // 注册死亡回调
   // role.addDeadCall(deadCall);
   // 添加组队拒绝
-  role.updateTeamApplyCall(closePos => {
+  role.updateTeamApplyCall(async closePos => {
     // 拒绝组队
-    closePos && role.bindPlugin.moveToClick(closePos.x, closePos.y);
+    closePos && (await role.bindPlugin.moveToClick(closePos.x, closePos.y));
   });
 
   // 检查是否卡住（未移动）- 工厂函数，生成独立的状态闭包
@@ -379,22 +403,23 @@ export const toggleYunHuang1West = () => {
     if (res === 'redName') {
       logger.info('[云荒检查] 红名自动前往仓库管理员处');
       await moveActions.startAutoFindPath({ toPos: COORDS.STORE_NPC, stationR: CONSTANTS.STATION_R, delay: 100 });
-      loopCheckStatus();
+      void loopCheckStatus().catch(err => logger.error(err));
       return;
     }
     role.updateTaskStatus('done');
   };
 
-  // 检查经验是否已经快满了
-  const isLevelUp = () => {
-    return checkExpBar(role.bindPlugin, role.bindWindowSize);
-  };
+  let lastExpCheckTs = 0;
+  let expStopTriggered = false;
+
+  // 升级停止任务的触发条件（GlobalStrategyTask.condition 必须是同步 boolean）
+  const shouldCheckExp = () => !expStopTriggered && Date.now() - lastExpCheckTs >= 60 * 1000;
 
   // 关闭循环任务
   const closeLoopTask = async () => {
     await baseAction.backCity(COORDS.INIT_POS_ROUTE, 'F9');
     role.updateTaskStatus('doing');
-    role.unregisterRole();
+    await role.unregisterRole();
     logger.info('[云荒检查] 经验快满了，终止打怪！！');
   };
 
@@ -409,8 +434,17 @@ export const toggleYunHuang1West = () => {
     },
     {
       name: '升级停止任务',
-      condition: isLevelUp,
-      callback: () => delay10S(closeLoopTask),
+      condition: () => shouldCheckExp(),
+      callback: () => {
+        lastExpCheckTs = Date.now();
+        void checkExpBar(role.bindPlugin, role.bindWindowSize)
+          .then(expNearFull => {
+            if (!expNearFull || expStopTriggered) return;
+            expStopTriggered = true;
+            delay10S(closeLoopTask);
+          })
+          .catch(err => logger.error(err));
+      },
     },
     {
       name: '云荒卡住检查重置回城',

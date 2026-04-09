@@ -3,17 +3,7 @@ import { block } from '../../../utils/tool';
 import { MAIN_CITY } from '../../constant/NPC_position';
 import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
-import {
-  checkEquipCount,
-  checkMerchant,
-  checkPasswordLockPassword,
-  checkPetActive,
-  checkPetInfo,
-  checkSystemPrompt,
-  checkUnEquipEquip,
-  isItemBoxOpen,
-  switchItemBoxTabPos,
-} from '../../utils/ocr-check/base';
+import { checkEquipCount, checkPasswordLockPassword, checkPetActive, checkPetInfo, checkSystemPrompt, checkUnEquipEquip, isItemBoxOpen, switchItemBoxTabPos } from '../../utils/ocr-check/base';
 import { AttackActions } from '../attack-action';
 import { Role } from '../rolyer';
 
@@ -165,14 +155,14 @@ export class BaseAction {
         // 切换tab页
         const tabPos = await switchItemBoxTabPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', changeTo);
         if (tabPos) {
-          this.bindPlugin.moveToClick(tabPos.x, tabPos.y);
+          await this.bindPlugin.moveToClick(tabPos.x, tabPos.y);
         }
         res(true);
       }
       // 切换tab页
       const tabPos = await switchItemBoxTabPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', changeTo);
       if (tabPos) {
-        this.bindPlugin.moveToClick(tabPos.x, tabPos.y);
+        await this.bindPlugin.moveToClick(tabPos.x, tabPos.y);
       }
       res(true);
     });
@@ -191,16 +181,13 @@ export class BaseAction {
       await block(1000);
       // 打开宠物栏
       await this.bindPlugin.moveToClick(64, 82);
-      console.log('点击了64，82坐标');
       await block(1000);
 
       // 激活宠物
       await this.bindPlugin.moveToDoubleClick(627, 454);
-      console.log('点击了627，454坐标');
       await block(1000);
       // 关闭宠物栏
       await this.bindPlugin.moveToClick(802, 84);
-      console.log('点击了802，84坐标');
       await block(1000);
       res(true);
     });
@@ -361,19 +348,6 @@ export class BaseAction {
     inputSingle(passwordItem[record]);
     // 点击确定
     await this.bindPlugin.moveToClick(708, 505);
-  }
-
-  // 点满商人技能
-  async pressMerchantSkillBarSkill() {
-    // 识别物品
-    const isMerchantPos = await checkMerchant(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', '愿望果实');
-    console.log(isMerchantPos, 'isMerchantPos');
-    if (!isMerchantPos) {
-      logger.info('[点满商人技能] 没有愿望果实');
-      return;
-    }
-    await this.bindPlugin.move(isMerchantPos.x, isMerchantPos.y);
-    // return this.pressSecondSkillBarSkill(pressKey, times);
   }
 }
 

@@ -4,7 +4,7 @@ import { Role } from '../rolyer';
 import { AutoFarmingAction } from './auto-farming';
 
 const TASK_NAME = '查询捡漏';
-const CHECK_INTERVAL_MS = 1000;
+const CHECK_INTERVAL_MS = 200;
 
 const computed = (s: string) => {
   const re = /^(?<name>.+)(?<route>\d+)线(?<number>\d+)@金(?<gold>\d+)@银(?<silver>\d+)@铜(?<copper>\d+)$/;
@@ -39,28 +39,28 @@ export default class ShoppingTask {
     // 点击购买
     const buy = async (pos: { x: number; y: number }) => {
       await this.role?.bindPlugin.moveToClick(pos.x + 159, pos.y + 17);
-      await this.role?.bindPlugin.delay(200);
+      // await this.role?.bindPlugin.delay(100);
       await this.role?.bindPlugin.moveToClick(pos.x + 159, pos.y + 17 - 32);
-      await this.role?.bindPlugin.delay(200);
+      // await this.role?.bindPlugin.delay(100);
       // 确认购买
       await this.role?.bindPlugin.moveToClick(711, 495);
     };
     // 识别物品
-    const isMerchantPos = await checkMerchantPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', '愿望果实');
+    const isMerchantPos = await checkMerchantPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', '肉片');
     if (!isMerchantPos) {
       logger.info('[查询捡漏] 没有愿望果实');
       return;
     }
 
     for (const [index, pos] of isMerchantPos.entries()) {
-      if (index !== 1) continue;
-      await this.role?.bindPlugin.delay(300);
+      // if (index !== 2 && index !== 3) continue;
+      // await this.role?.bindPlugin.delay(100);
       const merchantInfo = await checkMerchantInfo(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', { x: pos.x, y: pos.y });
-      await this.role?.bindPlugin.delay(300);
+      await this.role?.bindPlugin.delay(100);
       const item = computed(merchantInfo);
       if (!item) continue;
       logger.info(`[查询捡漏] 找到商品：${item.name}，路线：${item.route}，数量：${item.number}，价格：${item.money}`);
-      if (item.route === 3) {
+      if (item.route === 3 && item.money === 0.000585) {
         await buy(pos);
       }
 

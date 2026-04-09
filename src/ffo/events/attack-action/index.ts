@@ -301,7 +301,8 @@ export class AttackActions {
     if (this.buffTimerMapList.has('F6')) {
       return;
     }
-    this.buffGroup.forEach(async item => {
+
+    for (const item of this.buffGroup) {
       logger.info(`[开启uff] 已启动：key=${item.key}`);
       const isUseless = item.type === 'lock' && !this.role.selectMonster;
       const useSkill = async () => {
@@ -316,14 +317,17 @@ export class AttackActions {
         await this.bindDm.keyUpChar(item.key);
         await this.bindDm.delay(500);
       };
+
       if (isUseless) {
         logger.info(`[自动攻击] 当前技能${item.key}为锁定技能，未选择目标，不执行`);
       } else {
         await useSkill();
       }
+
       if (this.buffTimerMapList.get(item.key)) {
-        return;
+        continue;
       }
+
       const timer = setInterval(async () => {
         try {
           if (isUseless) {
@@ -331,16 +335,13 @@ export class AttackActions {
           } else {
             await useSkill();
           }
-          // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
         } catch (err) {
-          // 中文注释：按键失败后立即退出定时器并清理状态
           logger.warn('[自动按键] 按键失败，自动停止：', String((err as any)?.message || err));
           await this.stopKeyPress(item.key);
         }
       }, item.interval || 0);
       this.buffTimerMapList.set(item.key, timer);
-      // this.role.addActionTimer(`buff_${item.key}`, timer);
-    });
+    }
   }
 
   // 停止添加buff
