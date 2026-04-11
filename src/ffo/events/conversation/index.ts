@@ -353,7 +353,7 @@ export class Conversation {
     }
     // 存入装备
     if (typeof saveEquipCall === 'function') {
-      saveEquipCall();
+      await saveEquipCall();
     }
     // 关闭仓库
     await this.moveToClick({ x: 1540, y: 39 });

@@ -272,7 +272,6 @@ export class BaseAction {
   async pickUpUsefulEquip(validEquip: ValidEquip, way?: 'mail' | 'saveEquip') {
     // 获取所有装备坐标
     const pos = await checkEquipCount(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
-    logger.debug(pos, 'pos');
     if (!pos || pos.length === 0) {
       logger.info('[炼化挑选] 没有装备');
       return;
@@ -280,14 +279,14 @@ export class BaseAction {
     for (const item of pos) {
       // new Promise((res, rej) => {
       // 通过阻塞进程实现
-      await this.bindPlugin.moveToClick(item.x + 10, item.y - 5);
+      await this.bindPlugin.moveTo(item.x + 10, item.y - 5);
       await this.bindPlugin.delay(1000);
       // 找到未装备
       const unEquipPos = await checkUnEquipEquip(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
       // logger.debug(unEquipPos, 'unEquipPos');
       if (!unEquipPos) {
         logger.info('[炼化挑选] 没有未装备的装备');
-        return;
+        continue;
       }
       // 遍历每个列表，只要有一个符合条件，就认为是有用的装备
       const isUseful = validEquip.some(equip => {
@@ -299,16 +298,18 @@ export class BaseAction {
       });
       if (way === 'saveEquip' && isUseful) {
         await this.bindPlugin.leftDoubleClick();
+        await this.bindPlugin.delay(1000);
       }
       if (!isUseful) {
         logger.info('[炼化挑选] 这个装备没用');
         await this.bindPlugin.leftDownFromToMove({ x: item.x + 10, y: item.y - 5 }, { x: 800, y: 400 });
+        await this.bindPlugin.delay(300);
         await this.bindPlugin.leftClick();
         // 取消
         // this.bindPlugin.moveToClick(894, 492);
         // 丢弃
         await this.bindPlugin.moveToClick(713, 492);
-        return;
+        continue;
       }
       logger.info('[炼化挑选] 这个装备有用');
     }

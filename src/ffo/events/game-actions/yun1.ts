@@ -433,13 +433,14 @@ export const toggleYunHuang1West = async () => {
       callback: () => delay5S(goBackCityAndResetTask),
     },
     {
-      name: '升级停止任务',
+      // name: '升级停止任务',
       condition: () => shouldCheckExp(),
       callback: () => {
         lastExpCheckTs = Date.now();
         void checkExpBar(role.bindPlugin, role.bindWindowSize)
           .then(expNearFull => {
             if (!expNearFull || expStopTriggered) return;
+            logger.info(`[全局任务检查] 执行任务：升级停止任务`);
             expStopTriggered = true;
             delay10S(closeLoopTask);
           })

@@ -13,10 +13,11 @@ import { checkInviteTeam, getBloodStatus, getMapName, getMonsterName, getRoleNam
  * 负责高频的 OCR 识别、状态监控
  */
 
-const { needCheckDead } = workerData;
+// const { needCheckDead } = workerData;
 // 子线程内初始化自己的插件实例
 const dm = ensureDamo();
 const bindWindowSize = '1600*900';
+const needCheckDead = true;
 
 let loopIsRuning = true;
 let lastVerifyCaptureTs = 0;
@@ -88,11 +89,11 @@ const loop = async () => {
     // 获取角色位置
     const position = getRolePosition(dm, bindWindowSize);
     // 如果没有位置，通知主线程并阻塞
-    if (!position) {
-      parentPort?.postMessage({ type: 'LOG', data: { level: 'warn', message: '[角色工作线程] 未获取到角色位置，异步等待 2S' } });
-      // 【关键修改】使用 await sleep 代替同步 dm.delay，让出 CPU 执行权
-      await dm.delay(2000);
-    }
+    // if (!position) {
+    //   parentPort?.postMessage({ type: 'LOG', data: { level: 'warn', message: '[角色工作线程] 未获取到角色位置，异步等待 2S' } });
+    //   // 【关键修改】使用 await sleep 代替同步 dm.delay，让出 CPU 执行权
+    //   await dm.delay(2000);
+    // }
     const map = getMapName(dm, bindWindowSize);
     const selectMonster = getMonsterName(dm, bindWindowSize);
     const bloodStatus = getBloodStatus(dm, bindWindowSize);

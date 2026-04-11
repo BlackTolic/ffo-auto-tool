@@ -3,6 +3,7 @@ import { Worker } from 'worker_threads';
 import { AutoT } from '../auto-plugin';
 import { Role } from '../ffo/events/rolyer';
 import logger from '../utils/logger';
+import { block } from '../utils/tool';
 
 export default class WorkerManager {
   private static readonly workerMap = new Map<number, Worker>();
@@ -131,10 +132,12 @@ export default class WorkerManager {
       this.role?.childProcessInitRoleInfo(name, hwnd);
     });
     // 更新角色状态信息：位置、地图、选择怪物、血量
-    this.onMessage('STATUS_UPDATE', ({ position, map, selectMonster, bloodStatus }) => {
+    this.onMessage('STATUS_UPDATE', async ({ position, map, selectMonster, bloodStatus }) => {
       if (position) {
         // logger.info(`更新角色状态信息：${position.x},${position.y} ${map} ${selectedMonster}, 血量：${bloodStatus}`);
       } else {
+        // 延时2秒，等待角色位置更新
+        await block(2000);
         logger.warn(`更新角色状态信息：[未获取到坐标] ${map} ${selectMonster}, 血量：${bloodStatus}`);
       }
       this.role?.childProcessUpdateRoleInfo(position, map, selectMonster, bloodStatus);

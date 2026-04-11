@@ -110,7 +110,7 @@ export class Role {
   async childProcessUpdateDeathInfo() {
     const { name } = this;
     const delayFun = async () => {
-      this.bindPlugin.captureFullScreen(ROLE_IS_DEAD_PATH);
+      await this.bindPlugin.captureFullScreen(ROLE_IS_DEAD_PATH);
       await this.bindPlugin.delay(300);
       emailStrategy.sendMessage({
         to: '1031690983@qq.com',
@@ -122,9 +122,9 @@ export class Role {
     delay20S(delayFun);
     this.deadCall?.();
     this.clearAllActionTimer();
-    this.bindPlugin.moveToClick(894, 490);
+    await this.bindPlugin.moveToClick(894, 490);
     await this.bindPlugin.delay(1000);
-    this.bindPlugin.moveToClick(799, 418);
+    await this.bindPlugin.moveToClick(799, 418);
   }
 
   // 更新离线信息
