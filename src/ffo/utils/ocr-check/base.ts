@@ -270,16 +270,14 @@ export const checkUnEquipEquip = async (bindDm: AutoT, bindWindowSize: '1600*900
   const attr = await bindDm.ocr(_pos.x, _pos.y + 153, _pos.x + 135, _pos.y + 306, '408ce8-111111|d830e8-111111|00f0c8-111111', unEquipPos.sim);
   // logger.info('装备类型和等级：', type);
   // logger.info('装备属性：', attr);
-  const res = { type: type.match(/\(([^)]+)\)/)?.[1] ?? null, level: type?.match(/需要等级(\d+)/)?.[1] ?? null, attrName: attr.split('+')?.[0] ?? null, attrValue: attr.split('+')?.[1] ?? null };
-  // logger.info(res);
-  return res;
+  return { type: type.match(/\(([^)]+)\)/)?.[1] ?? null, level: type?.match(/需要等级(\d+)/)?.[1] ?? null, attrName: attr.split('+')?.[0] ?? '空白', attrValue: attr.split('+')?.[1] ?? null };
 };
 
 // 别人的队伍邀请
 export const checkInviteTeam = (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
   const inviteTeamPos = DEFAULT_INVITE_TEAM[bindWindowSize];
   const inviteTeamText = bindDm.ocr(inviteTeamPos.x1, inviteTeamPos.y1, inviteTeamPos.x2, inviteTeamPos.y2, inviteTeamPos.color, inviteTeamPos.sim);
-  return inviteTeamText.includes('邀') && inviteTeamText.includes('伍');
+  return inviteTeamText.includes('邀') || inviteTeamText.includes('伍');
 };
 
 // 关闭任何突然弹出的弹框

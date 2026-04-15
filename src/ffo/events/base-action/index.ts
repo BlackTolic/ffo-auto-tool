@@ -301,7 +301,7 @@ export class BaseAction {
         await this.bindPlugin.delay(1000);
       }
       if (!isUseful) {
-        logger.info('[炼化挑选] 这个装备没用');
+        // logger.info('[炼化挑选] 这个装备没用');
         await this.bindPlugin.leftDownFromToMove({ x: item.x + 10, y: item.y - 5 }, { x: 800, y: 400 });
         await this.bindPlugin.delay(300);
         await this.bindPlugin.leftClick();
@@ -311,7 +311,7 @@ export class BaseAction {
         await this.bindPlugin.moveToClick(713, 492);
         continue;
       }
-      logger.info('[炼化挑选] 这个装备有用');
+      // logger.info('[炼化挑选] 这个装备有用');
     }
     // });
     // const { equip } = this.role?.menusPos ?? {};
