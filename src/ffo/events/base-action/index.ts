@@ -264,6 +264,7 @@ export class BaseAction {
       await this.bindPlugin.delay(300);
       await this.bindPlugin.keyPress(VK_F[pressKey]);
       await this.bindPlugin.delay(300);
+      logger.info(`[按键] ${pressKey}`);
     }
     return true;
   }

@@ -74,6 +74,8 @@ export default class MingYuTask {
       this.soldier.baseAction = new BaseAction(role);
       this.soldier.attackActions = new AttackActions(role, { monsterFeature: OCR_MING_YU_BOSS, skillGroup });
       logger.info('注册士兵任务');
+      // this?.soldier?.baseAction?.pressKeyboard('esc');
+      // console.log(11111);
     } catch (e) {
       logger.error('注册士兵任务失败', e);
     }
@@ -116,12 +118,18 @@ export default class MingYuTask {
       this.soldier.baseAction.preMount();
       // 回城并且重置任务
       const goBackCityAndResetTask = async () => {
-        // 停止正在执行的任务
-        await this.soldier?.moveActions?.stopAutoFindPath();
-        // 回城
-        logger.info('[静止检查] 执行回城并且重置任务 - goBackCityAndResetTask');
-        await this.soldier?.baseAction?.backCity(INIT_POS, 'F9', true);
-        this.soldier?.role?.updateTaskStatus('done');
+        try {
+          // 停止正在执行的任务
+          await this.soldier?.moveActions?.stopAutoFindPath();
+          // 回城
+          logger.info('[静止检查] 执行回城并且重置任务 - goBackCityAndResetTask');
+          await this.soldier?.baseAction?.backCity(INIT_POS, 'F9', true);
+          this.soldier?.role?.updateTaskStatus('done');
+        } catch (e) {
+          // 按esc键退出任务
+          this?.soldier?.baseAction?.pressKeyboard('esc');
+          logger.error('回城并且重置任务失败', e);
+        }
       };
 
       // 检查名誉是否卡住
