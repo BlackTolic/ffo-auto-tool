@@ -79,7 +79,7 @@ export const fromLostTempleToMingYuBoss = (moveActions: MoveActions) => {
   ];
   // 距离长但是安全
   const route2 = [
-    { x: 44, y: 94 },
+    { x: 36, y: 100 },
     { x: 127, y: 134 },
     { x: 151, y: 115 },
     { x: 252, y: 168 },

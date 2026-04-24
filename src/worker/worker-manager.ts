@@ -3,7 +3,6 @@ import { Worker } from 'worker_threads';
 import { AutoT } from '../auto-plugin';
 import { Role } from '../ffo/events/rolyer';
 import logger from '../utils/logger';
-import { block } from '../utils/tool';
 
 export default class WorkerManager {
   private static readonly workerMap = new Map<number, Worker>();
@@ -137,10 +136,10 @@ export default class WorkerManager {
         // logger.info(`更新角色状态信息：${position.x},${position.y} ${map} ${selectedMonster}, 血量：${bloodStatus}`);
       } else {
         // 延时2秒，等待角色位置更新
-        await block(2000);
-        logger.warn(`更新角色状态信息：[未获取到坐标] ${map} ${selectMonster}, 血量：${bloodStatus}`);
+        // await block(2000);
+        logger.warn(`更新角色状态信息： ${map} ${selectMonster}, 血量：${bloodStatus},坐标:-1,-1`);
       }
-      this.role?.childProcessUpdateRoleInfo(position, map, selectMonster, bloodStatus);
+      this.role?.childProcessUpdateRoleInfo(position ? position : { x: -1, y: -1 }, map, selectMonster, bloodStatus);
     });
     // 更新团队邀请信息
     this.onMessage('TEAM_INVITE', data => {

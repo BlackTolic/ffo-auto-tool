@@ -120,7 +120,7 @@ export default class MingYuTask {
       const goBackCityAndResetTask = async () => {
         try {
           // 停止正在执行的任务
-          await this.soldier?.moveActions?.stopAutoFindPath();
+          await this.soldier?.moveActions?.stopAutoFindPath({ x: 610, y: 630 });
           // 回城
           logger.info('[静止检查] 执行回城并且重置任务 - goBackCityAndResetTask');
           await this.soldier?.baseAction?.backCity(INIT_POS, 'F9', true);
@@ -146,10 +146,11 @@ export default class MingYuTask {
       this.soldier.role.addGlobalStrategyTask([
         {
           // 3分钟检查一次跑名誉是否卡住，然后回城重置任务
-          name: '跑名誉过程中3分钟静止不动',
-          condition: () => checkMingYuStuck(3),
+          name: '跑名誉过程中2分钟静止不动',
+          condition: () => checkMingYuStuck(2),
           callback: () => delay5S(goBackCityAndResetTask),
         },
+
         // {
         //   // 安全锁弹出之后，输入密码
         //   name: '安全锁弹出之后，输入密码',
@@ -204,7 +205,7 @@ export default class MingYuTask {
         throw new Error('未完成领取名誉任务');
       }
       // 如果绑定了辅助角色，就传送去斯芬尼克，否则跑图去斯芬尼克
-      if (this.assistant.role) {
+      if (this.assistant.role && this.assistant.role.map === '落日沙丘西') {
         // 传送去斯芬尼克
         await this.sendToLostTemple(this.soldier, this.assistant);
       } else {
@@ -278,21 +279,29 @@ export default class MingYuTask {
     const soldierRole = soldier.role;
     const assistantRole = assistant.role;
     const assistantBaseAction = assistant.baseAction;
-    // F7 传送士兵
+    // F7 使用传送技能
     await assistantBaseAction.pressFirstSkillBarSkill('F7');
-    await assistantRole.bindDm.delay(1000);
+    await assistantRole.bindDm.delay(1500);
     // 点击队长头像
     await assistantRole.bindPlugin.moveToClick(21, 129);
-    await soldierRole.bindDm.delay(5000);
+    await soldierRole.bindDm.delay(8000);
     // 士兵是否接受传送
     const pos = await checkTransportSkill(soldierRole.bindDm, soldierRole.bindWindowSize);
     if (!pos) {
       logger.warn('未识别到传送术');
+      await this.runToLostTemple(soldier);
       return;
     }
     // 点击接受传送
     await soldierRole.bindPlugin.moveToClick(pos.agree.x, pos.agree.y);
-    await soldierRole.bindDm.delay(4000);
+    await soldierRole.bindDm.delay(5000);
+    if (soldier.role.map !== '落日沙丘西') {
+      await this.runToLostTemple(soldier);
+      return;
+    }
+    // 屏蔽所有人
+    await soldier.baseAction.blockAllPlayers();
+    await soldierRole.bindDm.delay(1000);
     try {
     } catch (e) {
       logger.error('跑名誉任务失败', e);

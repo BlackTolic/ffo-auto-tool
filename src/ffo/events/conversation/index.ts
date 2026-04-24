@@ -62,14 +62,14 @@ export class Conversation {
   private async findNPC(npcName: string, delX: number = 0, delY: number = 80): Promise<Pos | false> {
     const key = this.role.bindWindowSize as keyof typeof SCAN_BOX;
     const scanBox = SCAN_BOX[key];
-    let NPCPos = await this.bindPlugin.findStrEx(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, npcName, scanBox.color, scanBox.sim);
-    if (!NPCPos) {
+    let NPCPosStr = await this.bindPlugin.FindStrFastE(scanBox.x1, scanBox.y1, scanBox.x2, scanBox.y2, npcName, scanBox.color, scanBox.sim);
+    const trsPos = parseTextPos(NPCPosStr);
+    if (!trsPos) {
       logger.warn(`没有找到NPC${npcName}`);
       return false;
     } else {
-      let trsPos = NPCPos.split(',');
-      logger.info(`NPC位置: ${NPCPos}`);
-      return { x: Number(trsPos[1]) + delX, y: Number(trsPos[2]) + delY };
+      logger.info(`NPC位置: ${trsPos?.x},${trsPos?.y}`);
+      return { x: trsPos.x + delX, y: trsPos.y + delY };
     }
   }
 
@@ -224,10 +224,10 @@ export class Conversation {
     // 找到荣光使者并且打开对话框
     const findNpcAndOpenDialog = async () => {
       // 找到NPC并且成功开启对话框
-      let npcPos = await this.findNPC('荣光使者', 10, 50);
+      let npcPos = await this.findNPC('荣光使者|荣光|使者|荣|光|使|者', 10, 50);
       if (!npcPos) {
         await this.bindPlugin.delay(3000);
-        npcPos = await this.findNPC('荣光使者', 10, 50);
+        npcPos = await this.findNPC('荣光使者|荣光|使者|荣|光|使|者', 10, 50);
       }
       if (!npcPos) {
         logger.info(`没有找到荣光使者,${npcPos}`);
@@ -298,8 +298,9 @@ export class Conversation {
       logger.info('没有领取任务无法进入');
       return false;
     } else {
+      await this.bindPlugin.delay(500);
       await this.moveToClick(isPass);
-      await this.bindPlugin.delay(3000);
+      await this.bindPlugin.delay(5000);
       logger.info(this.role.map, 'map');
       if (this.role.map === '失落神殿') {
         logger.info('进入失落神殿');

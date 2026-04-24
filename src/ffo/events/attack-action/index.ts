@@ -258,34 +258,34 @@ export class AttackActions {
   }
 
   // 中文注释：启动自动按键（第二参数为毫秒间隔，第三参数为按键名，默认 F1）
-  async startKeyPress(props: KeyPressOptions): Promise<void> {
-    const { key, interval = null } = props;
-    if (interval) {
-      // 中文注释：周期即执行的时间间隔（毫秒），设置最小 10ms 防止过于频繁
-      const periodMs = Math.max(10, Math.floor(interval));
-      // 中文注释：定时按键（使用大漠插件 KeyPress）
-      const timer = setInterval(async () => {
-        try {
-          // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
-          await this.bindDm.KeyPress(VK_F[key]);
-        } catch (err) {
-          // 中文注释：按键失败后立即退出定时器并清理状态
-          logger.warn('[自动按键] 按键失败，自动停止：', String((err as any)?.message || err));
-          await this.stopKeyPress(key);
-        }
-      }, periodMs);
-      this.timerMapList.set(key, timer);
-      // this.role.addActionTimer(`key_press_${key}`, timer);
-      logger.info(`[自动按键] 已启动：key=${key} | 间隔=${periodMs}ms | 频率约=${(1000 / periodMs).toFixed(2)} 次/秒`);
-    } else {
-      // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
-      await this.bindDm.keyDownChar(key);
-      await this.bindDm.delay(300);
-      await this.bindDm.keyUpChar(key);
-      await this.bindDm.delay(300);
-      logger.info(`[自动按键] 已启动：key=${key} | 无间隔（单次按键）`);
-    }
-  }
+  // async startKeyPress(props: KeyPressOptions): Promise<void> {
+  //   const { key, interval = null } = props;
+  //   if (interval) {
+  //     // 中文注释：周期即执行的时间间隔（毫秒），设置最小 10ms 防止过于频繁
+  //     const periodMs = Math.max(10, Math.floor(interval));
+  //     // 中文注释：定时按键（使用大漠插件 KeyPress）
+  //     const timer = setInterval(async () => {
+  //       try {
+  //         // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
+  //         await this.bindDm.KeyPress(VK_F[key]);
+  //       } catch (err) {
+  //         // 中文注释：按键失败后立即退出定时器并清理状态
+  //         logger.warn('[自动按键] 按键失败，自动停止：', String((err as any)?.message || err));
+  //         await this.stopKeyPress(key);
+  //       }
+  //     }, periodMs);
+  //     this.timerMapList.set(key, timer);
+  //     // this.role.addActionTimer(`key_press_${key}`, timer);
+  //     logger.info(`[自动按键] 已启动：key=${key} | 间隔=${periodMs}ms | 频率约=${(1000 / periodMs).toFixed(2)} 次/秒`);
+  //   } else {
+  //     // 中文注释：按指定功能键（通过映射获取虚拟键码并转字符串）
+  //     await this.bindDm.keyDownChar(key);
+  //     await this.bindDm.delay(300);
+  //     await this.bindDm.keyUpChar(key);
+  //     await this.bindDm.delay(300);
+  //     logger.info(`[自动按键] 已启动：key=${key} | 无间隔（单次按键）`);
+  //   }
+  // }
 
   stopKeyPress(key: keyof typeof VK_F): void {
     const timer = this.timerMapList.get(key);

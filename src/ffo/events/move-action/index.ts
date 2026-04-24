@@ -115,7 +115,7 @@ export class MoveActions {
 
   async move(fromPos: Pos, curAimPos: Pos) {
     // 未识别到坐标点，不进行寻路
-    if (!fromPos || !fromPos.x || !fromPos.y) {
+    if (!fromPos || fromPos.x < 0 || fromPos.y < 0) {
       logger.warn('[自动寻路] 未识别到坐标点', curAimPos);
       return;
     }
@@ -128,14 +128,14 @@ export class MoveActions {
   // 一边移动一边攻击
   async moveAndAttack(fromPos: Pos, curAimPos: Pos) {
     // 未识别到坐标点，不进行寻路
-    if (!fromPos || !fromPos.x || !fromPos.y) {
+    if (!fromPos || fromPos.x < 0 || fromPos.y < 0) {
       logger.warn('[自动寻路] 未识别到坐标点', curAimPos);
       return;
     }
     const angle = getAngle(fromPos.x, fromPos.y, curAimPos.x, curAimPos.y);
     const { x, y } = getCirclePoint(angle, this.role.bindWindowSize, this.offsetR);
     const freeSkill = this.actions?.getFreeSkill?.();
-    const findMonster = this.actions?.findMonsterPos?.();
+    const findMonster = await this.actions?.findMonsterPos?.();
     if (freeSkill && findMonster && Date.now() - this.lastAttackTime > 2000) {
       // 计算与（800，450）的角度
       const angle = getAngle(x, y, 800, 450);
@@ -158,7 +158,7 @@ export class MoveActions {
     logger.info('[自动寻路] 开始进行随机移动');
   }
 
-  async fromTo(fromPos: Pos | null, toPos: Pos[] | Pos, stationR: number): Promise<boolean> {
+  async fromTo(fromPos: Pos | null, toPos: Pos[] | Pos, stationR: number, aimMap?: string): Promise<boolean> {
     if (!Array.isArray(toPos)) {
       toPos = [toPos];
     }
@@ -321,7 +321,7 @@ export class MoveActions {
     });
   }
 
-  async stopAutoFindPath() {
+  async stopAutoFindPath(pos = { x: 800, y: 525 }) {
     this.isRunLoop = false;
     if (this.cancelPreviousAutoFindPath) {
       this.cancelPreviousAutoFindPath('[角色信息] 已手动关闭自动寻路');
@@ -330,7 +330,7 @@ export class MoveActions {
       // 中文注释：停止寻路时释放鼠标左键，避免卡住按下状态
       try {
         if (this.bindPlugin && typeof this.bindPlugin.moveToClick === 'function') {
-          await this.bindPlugin.moveToClick(800, 525);
+          await this.bindPlugin.moveToClick(pos.x, pos.y);
         }
       } catch {}
       logger.info('[角色信息] 已手动关闭自动寻路(无进行中任务)');

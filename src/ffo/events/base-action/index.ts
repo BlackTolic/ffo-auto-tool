@@ -4,7 +4,6 @@ import { MAIN_CITY } from '../../constant/NPC_position';
 import { VK_F } from '../../constant/virtual-key-code';
 import { isArriveAimNear, parseRolePositionFromText } from '../../utils/common';
 import { checkEquipCount, checkPasswordLockPassword, checkPetActive, checkPetInfo, checkSystemPrompt, checkUnEquipEquip, isItemBoxOpen, switchItemBoxTabPos } from '../../utils/ocr-check/base';
-import { AttackActions } from '../attack-action';
 import { Role } from '../rolyer';
 
 export type ValidEquip = {
@@ -38,9 +37,9 @@ export class BaseAction {
     if (!this.role) {
       return;
     }
-    await new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
-    await new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
-    await new AttackActions(this.role).startKeyPress({ key: 'F11', interval: null });
+    await this.pressFirstSkillBarSkill('F11');
+    await this.pressFirstSkillBarSkill('F11');
+    await this.pressFirstSkillBarSkill('F11');
   }
 
   // 关闭/打开物品栏
@@ -91,8 +90,7 @@ export class BaseAction {
           }
 
           // 未到达，执行回城动作
-          ways === 'F9' && this.role ? new AttackActions(this.role).startKeyPress({ key: 'F9', interval: null }) : this.bindPlugin.leftClick();
-
+          ways === 'F9' && this.role ? await this.pressFirstSkillBarSkill('F9') : this.bindPlugin.leftClick();
           i++;
           // 这里必须要超过4S 否则无法读到地图坐标
           const timer = setTimeout(loop, 4000);
@@ -105,7 +103,7 @@ export class BaseAction {
       // 回城前角色坐标
       // this.beforePos = JSON.parse(JSON.stringify(this.role?.position)) ?? null;
       if (ways === 'F9' && this.role) {
-        new AttackActions(this.role).startKeyPress({ key: 'F9', interval: null });
+        await this.pressFirstSkillBarSkill('F9');
         if (fixPos) {
           // 重复回城直到到达目标点
           repeatBack(fixPos);
