@@ -84,6 +84,17 @@ export class Role {
     // logger.info(`更新角色信息：${position.x},${position.y} ${map} ${selectedMonster}, 血量：${bloodStatus}`);
   }
 
+  // 获取角色信息
+  getRoleInfo() {
+    return {
+      name: this.name,
+      position: this.position,
+      map: this.map,
+      selectMonster: this.selectMonster,
+      bloodStatus: this.bloodStatus,
+    };
+  }
+
   // 更新团队邀请信息
   childProcessUpdateTeamInviteInfo(data: any) {
     this.teamApplyCall?.(data.rejectPos, data.agreePos);

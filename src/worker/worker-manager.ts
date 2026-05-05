@@ -19,6 +19,8 @@ export default class WorkerManager {
   private requestIdCounter = 0;
   private pendingRequests = new Map<number, { resolve: (val: any) => void; reject: (err: any) => void }>();
 
+  private lastStatusSeq = 0;
+
   // 公开代理对象
   public dm: any;
 
@@ -131,12 +133,17 @@ export default class WorkerManager {
       this.role?.childProcessInitRoleInfo(name, hwnd);
     });
     // 更新角色状态信息：位置、地图、选择怪物、血量
-    this.onMessage('STATUS_UPDATE', async ({ position, map, selectMonster, bloodStatus }) => {
+    this.onMessage('STATUS_UPDATE', ({ position, map, selectMonster, bloodStatus, seq }) => {
+      if (typeof seq === 'number' && seq > 0) {
+        if (seq <= this.lastStatusSeq) {
+          return;
+        }
+        this.lastStatusSeq = seq;
+      }
+
       if (position) {
         // logger.info(`更新角色状态信息：${position.x},${position.y} ${map} ${selectedMonster}, 血量：${bloodStatus}`);
       } else {
-        // 延时2秒，等待角色位置更新
-        // await block(2000);
         logger.warn(`更新角色状态信息： ${map} ${selectMonster}, 血量：${bloodStatus},坐标:-1,-1`);
       }
       this.role?.childProcessUpdateRoleInfo(position ? position : { x: -1, y: -1 }, map, selectMonster, bloodStatus);
@@ -212,6 +219,11 @@ export default class WorkerManager {
   // 停止loop
   stopChildProcessRoleLoop() {
     this.postMessage({ type: 'STOP_LOOP' });
+  }
+
+  // 更新角色信息
+  updateChildProcessRoleInfo() {
+    this.postMessage({ type: 'UPDATE_ROLE_INFO' });
   }
 
   // 代理插件

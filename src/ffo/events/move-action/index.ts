@@ -83,7 +83,7 @@ function getCirclePoint(angle: number, bindWindowSize: string, offsetR?: number)
   return { x, y };
 }
 
-interface MoveConfig {
+export interface MoveConfig {
   offsetR?: number; //
   mirrorJitter?: boolean; // 移动时的镜像抖动（默认false）
 }

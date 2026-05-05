@@ -44,7 +44,7 @@ export class AutoFarmingAction {
     this.initPos = initPos;
     this.pathPos = [...pathPos, initPos];
     this.actions = new MoveActions(role);
-    this.active = new AttackActions(role, ocrMonster);
+    this.active = new AttackActions(role, { monsterFeature: ocrMonster });
     this.taskName = taskName;
   }
 
@@ -70,6 +70,7 @@ export class AutoFarmingAction {
   }
 
   public start(taskList?: { taskName: string; loopOriginPos: Pos; action: () => void; interval: number }[]) {
+    // 没有传入taskList，默认添加一个任务循环
     if (!taskList || taskList.length === 0) {
       const params = [
         {
