@@ -23,31 +23,31 @@ interface DmRegRuntimeAttempt {
   message: string;
 }
 
-// 中文注释：在应用首次运行时，若未注册 dm.dmsoft，则尝试以管理员提权注册 dm.dll（32 位）
+// 中文注释：在应用首次运行时，若未注册 ts.tssoft，则尝试以管理员提权注册 TSPlug.dll（32 位）
 // 说明：不依赖 Squirrel 事件，适用于 MSI 安装后的首次启动场景
 function ensureDmComRegisteredAtRuntime(): DmRegRuntimeAttempt {
   try {
     // 中文注释：优先尝试创建 COM 对象，若成功说明已注册，无需重复
     try {
       const ax = require('winax');
-      new ax.Object('dm.dmsoft');
-      return { alreadyRegistered: true, dllFound: true, elevationStarted: false, message: 'dm.dmsoft 已注册，无需重复' };
+      new ax.Object('ts.tssoft');
+      return { alreadyRegistered: true, dllFound: true, elevationStarted: false, message: 'ts.tssoft 已注册，无需重复' };
     } catch {
-      // 中文注释：未注册则继续定位 dm.dll 并尝试提权注册
+      // 中文注释：未注册则继续定位 TSPlug.dll 并尝试提权注册
     }
 
-    // 中文注释：定位安装目录内的 dm.dll（基于已打包资源路径）
+    // 中文注释：定位安装目录内的 TSPlug.dll（基于已打包资源路径）
     const exeDir = path.dirname(process.execPath);
-    const candidate1 = path.join(exeDir, 'resources', 'app', 'src', 'lib', 'dm.dll'); // 中文注释：常规路径（asar=false）
-    const candidate2 = path.join(exeDir, 'resources', 'src', 'lib', 'dm.dll'); // 中文注释：兜底路径
+    const candidate1 = path.join(exeDir, 'resources', 'app', 'src', 'lib', 'TSPlug.dll'); // 中文注释：常规路径（asar=false）
+    const candidate2 = path.join(exeDir, 'resources', 'src', 'lib', 'TSPlug.dll'); // 中文注释：兜底路径
     const fs = require('fs');
     const dllPath = fs.existsSync(candidate1) ? candidate1 : fs.existsSync(candidate2) ? candidate2 : undefined;
 
     if (!dllPath) {
-      return { alreadyRegistered: false, dllFound: false, elevationStarted: false, message: '未找到 dm.dll（请检查打包阶段是否复制 src\\lib）' };
+      return { alreadyRegistered: false, dllFound: false, elevationStarted: false, message: '未找到 TSPlug.dll（请检查打包阶段是否复制 src\\lib）' };
     }
 
-    // 中文注释：以管理员提权调用 SysWOW64\\regsvr32.exe 注册 32 位 dm.dll
+    // 中文注释：以管理员提权调用 SysWOW64\\regsvr32.exe 注册 32 位 TSPlug.dll
     // 注意：必须使用 SysWOW64 下的 regsvr32 以匹配 ia32 进程架构
     const psArgs = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', `Start-Process 'C:\\Windows\\SysWOW64\\regsvr32.exe' -ArgumentList @('"${dllPath}"') -Verb runAs`];
     cp.spawn('powershell.exe', psArgs, { detached: true, stdio: 'ignore' }).unref();
@@ -57,7 +57,7 @@ function ensureDmComRegisteredAtRuntime(): DmRegRuntimeAttempt {
       dllFound: true,
       dllPath,
       elevationStarted: true,
-      message: `已尝试以管理员权限注册 dm.dll：${dllPath}`,
+      message: `已尝试以管理员权限注册 TSPlug.dll：${dllPath}`,
     };
   } catch (e) {
     return {
@@ -197,22 +197,22 @@ interface DmRegInstallAttempt {
   message: string;
 }
 
-// 中文注释：安装/更新阶段尝试管理员提权注册 dm.dll（32 位）
-// 注意：依赖 UAC 提权，用户需点击“是”授权；未授权则无法完成注册
+// 中文注释：安装/更新阶段尝试管理员提权注册 TSPlug.dll（32 位）
+// 注意：依赖 UAC 提权，用户需点击"是"授权；未授权则无法完成注册
 function registerDmOnInstall(): DmRegInstallAttempt {
   try {
     // 中文注释：Squirrel 安装后的主程序路径位于 %LocalAppData%\\<appName>\\app-<version>\\<exe>
-    // 资源位于同目录下的 resources\\app\\src\\lib\\dm.dll（前提：打包时已复制 src\\lib）
+    // 资源位于同目录下的 resources\\app\\src\\lib\\TSPlug.dll（前提：打包时已复制 src\\lib）
     const exeDir = path.dirname(process.execPath);
-    const candidate1 = path.join(exeDir, 'resources', 'app', 'src', 'lib', 'dm.dll'); // 中文注释：常规路径（asar=false）
-    const candidate2 = path.join(exeDir, 'resources', 'src', 'lib', 'dm.dll'); // 中文注释：兜底路径（某些打包器）
+    const candidate1 = path.join(exeDir, 'resources', 'app', 'src', 'lib', 'TSPlug.dll'); // 中文注释：常规路径（asar=false）
+    const candidate2 = path.join(exeDir, 'resources', 'src', 'lib', 'TSPlug.dll'); // 中文注释：兜底路径（某些打包器）
     const dllPath = require('fs').existsSync(candidate1) ? candidate1 : require('fs').existsSync(candidate2) ? candidate2 : undefined;
 
     if (!dllPath) {
-      return { dllFound: false, elevationStarted: false, message: '未找到 dm.dll（请检查 forge.config.js 的资源复制配置）' };
+      return { dllFound: false, elevationStarted: false, message: '未找到 TSPlug.dll（请检查 forge.config.js 的资源复制配置）' };
     }
 
-    // 中文注释：通过 PowerShell 的 Start-Process 以管理员提权运行 SysWOW64\\regsvr32.exe 注册 32 位 dm.dll
+    // 中文注释：通过 PowerShell 的 Start-Process 以管理员提权运行 SysWOW64\\regsvr32.exe 注册 32 位 TSPlug.dll
     // 说明：必须使用 SysWOW64 下的 regsvr32，以匹配 32 位 Electron（ia32）
     const psArgs = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', `Start-Process 'C:\\Windows\\SysWOW64\\regsvr32.exe' -ArgumentList @('"${dllPath}"') -Verb runAs`];
     cp.spawn('powershell.exe', psArgs, { detached: true, stdio: 'ignore' }).unref();
@@ -221,7 +221,7 @@ function registerDmOnInstall(): DmRegInstallAttempt {
       dllFound: true,
       dllPath,
       elevationStarted: true,
-      message: `已尝试以管理员权限注册 dm.dll：${dllPath}`,
+      message: `已尝试以管理员权限注册 TSPlug.dll：${dllPath}`,
     };
   } catch (e) {
     return {
@@ -258,7 +258,7 @@ function handleSquirrelEvents(): SquirrelEventResult {
     // 中文注释：创建开始菜单/桌面快捷方式
     runUpdate(['--createShortcut', targetExeName]);
 
-    // 中文注释：尝试注册 dm.dll（需要管理员授权）
+    // 中文注释：尝试注册 TSPlug.dll（需要管理员授权）
     const reg = registerDmOnInstall();
     return {
       handled: true,
@@ -306,14 +306,14 @@ interface DmRegisterOptions {
   retry: number;
 }
 
-// 中文注释：检测系统是否已注册 dm.dmsoft（返回布尔）
+// 中文注释：检测系统是否已注册 ts.tssoft（返回布尔）
 function isDmRegistered(): boolean {
   try {
     // 中文注释：使用 winax 尝试创建 COM 对象，成功即表示已注册
 
     const winax = require('winax');
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const obj = new winax.Object('dm.dmsoft');
+    const obj = new winax.Object('ts.tssoft');
     return true;
   } catch {
     return false;

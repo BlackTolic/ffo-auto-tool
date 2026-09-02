@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 环境综合校验（Node 脚本，中文注释，UTF-8）
- * 校验项：Electron 版本(从 package.json 读取)、Python 版本、VS2022 MSBuild 是否存在、dm.dll 位数
+ * 校验项：Electron 版本(从 package.json 读取)、Python 版本、VS2022 MSBuild 是否存在、TSPlug.dll 位数
  */
 const fs = require('fs');
 const path = require('path');
@@ -75,8 +75,8 @@ let vsOk = msvsVersion === '2022' && msbuildFound;
 let vsMsg = (msvsVersion === '2022' ? 'msvs_version=2022 已设置' : 'msvs_version 未设置为 2022') + '，' + (msbuildFound ? '检测到 VS2022 MSBuild' : '未检测到 VS2022 MSBuild');
 printItem('VS2022 Build Tools', vsOk, vsMsg);
 
-// 4) dm.dll 位数（解析 PE 头 Machine）
-const dllPath = path.join(process.cwd(), 'src/lib/dm.dll');
+// 4) TSPlug.dll 位数（解析 PE 头 Machine）
+const dllPath = path.join(process.cwd(), 'src/lib/TSPlug.dll');
 let dllOk = false;
 let dllMsg = '';
 let dllArch = '';
@@ -91,14 +91,14 @@ if (fs.existsSync(dllPath)) {
     else if (machine === 0x8664) dllArch = 'x64';
     else dllArch = `未知(0x${machine.toString(16).toUpperCase()})`;
     dllOk = dllArch === 'x86'; // 期望 32 位
-    dllMsg = `dm.dll 架构: ${dllArch}（期望 x86 与 Electron ia32 匹配）`;
+    dllMsg = `TSPlug.dll 架构: ${dllArch}（期望 x86 与 Electron ia32 匹配）`;
   } catch (e) {
-    dllMsg = `解析 dm.dll 失败: ${e.message}`;
+    dllMsg = `解析 TSPlug.dll 失败: ${e.message}`;
   }
 } else {
-  dllMsg = `未找到 dm.dll: ${dllPath}`;
+  dllMsg = `未找到 TSPlug.dll: ${dllPath}`;
 }
-printItem('dm.dll 位数匹配(期望 x86)', dllOk, dllMsg);
+printItem('TSPlug.dll 位数匹配(期望 x86)', dllOk, dllMsg);
 
 // 综合结果
 const overall = electronOk && pyOk && vsOk && dllOk;

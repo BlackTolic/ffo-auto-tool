@@ -32,10 +32,10 @@ export interface TSInstance {
   GetWindow(hWnd: number, flag: GetWindowFlag): number;
   GetWindowTitle(hWnd: number): string;
   GetWindowClass(hWnd: number): string;
-  GetWindowRect(hWnd: number, x1: number, y1: number, x2: number, y2: number): TsRet;
+  GetWindowRect(hWnd: number, x1: Winax.Variant, y1: Winax.Variant, x2: Winax.Variant, y2: Winax.Variant): TsRet;
   GetWindowProcessPath(hWnd: number): string;
   GetWindowState(hWnd: number, flag: WindowStateFlag): TsRet;
-  GetClientRect(hWnd: number, x1: number, y1: number, x2: number, y2: number): TsRet;
+  GetClientRect(hWnd: number, x1: Winax.Variant, y1: Winax.Variant, x2: Winax.Variant, y2: Winax.Variant): TsRet;
   GetForegroundWindow(): number;
   GetForegroundFocus(): number;
   GetWindowProcessId(hWnd: number): number;
@@ -47,7 +47,8 @@ export interface TSInstance {
   EnumWindow(parent: number, title: string, className: string, filter: EnumWindowFilter): string;
   EnumProcess(processName: string): string;
   EnumWindowByProcess(processName: string, title: string, className: string, filter: EnumWindowFilter): string;
-  ScreenToClient(hWnd: number, x: number, y: number): number;
+  ScreenToClient(hWnd: number, x: Winax.Variant, y: Winax.Variant): number;
+  ClientToScreen(hWnd: number, x: Winax.Variant, y: Winax.Variant): number;
   SetWindowText(hWnd: number, title: string): TsRet;
   SetWindowSize(hWnd: number, width: number, height: number): TsRet;
   SetWindowState(hWnd: number, flag: WindowStateFlag): TsRet;

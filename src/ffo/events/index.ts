@@ -8,13 +8,15 @@ import { EventEmitter } from 'events';
 import { AutoT } from '../../auto-plugin';
 import { logger } from '../../utils/logger';
 import { Role } from './rolyer';
+import type { displayMode, mouseMode, keypadMode } from '../../auto-plugin/TianShi/modules/interface';
 
 // 中文注释：绑定配置（可按需覆盖默认值）
+// 说明：display/mouse/keypad 类型对齐 TianShi 插件的 displayMode/mouseMode/keypadMode union
 export interface BindConfig {
-  display?: string; // 显示绑定方式，如 'gdi'、'dx'
-  mouse?: string; // 鼠标绑定方式，如 'windows'、'dx'
-  keypad?: string; // 键盘绑定方式，如 'windows'、'dx'
-  api?: string; // 扩展 API/模式，如 'dx.public.active.api'
+  display?: displayMode; // 显示绑定方式，如 'gdi'、'dx'、'dx.graphic.2d'
+  mouse?: mouseMode; // 鼠标绑定方式，如 'windows'、'dx'
+  keypad?: keypadMode; // 键盘绑定方式，如 'windows'、'dx'
+  api?: string; // 扩展 API/模式，如 'dx.public.active.api'（TianShi 不使用此参数，保留兼容）
   mode?: number; // 绑定模式参数（整数位标志位）
 }
 
@@ -164,14 +166,15 @@ export class DamoBindingManager {
     const results: number[] = [];
     try {
       // 8=顶级窗口，16=可见窗口；优先取可见顶级
-      const visTop = String(dmRaw.enumWindowByProcessId(pid, '', '', 8 + 16) || '')
+      // 中文注释：TianShi 插件上的兼容方法是 EnumWindowByProcessId（大驼峰），不是大漠的小驼峰
+      const visTop = String(dmRaw.EnumWindowByProcessId(pid, '', '', 8 + 16) || '')
         .split(',')
         .map(s => parseInt(s))
         .filter(n => Number.isFinite(n) && n > 0);
       results.push(...visTop);
       if (results.length === 0) {
         // 回退仅顶级（可能当前不可见）
-        const topOnly = String(dmRaw.enumWindowByProcessId(pid, '', '', 8) || '')
+        const topOnly = String(dmRaw.EnumWindowByProcessId(pid, '', '', 8) || '')
           .split(',')
           .map(s => parseInt(s))
           .filter(n => Number.isFinite(n) && n > 0);
@@ -212,15 +215,14 @@ export class DamoBindingManager {
       }
 
       try {
-        // const ret = client.dm.BindWindowEx(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
-        logger.info(`[插件绑定] 版本 ${client.dm.Ver()}`);
-        // const ret = 2;
-        const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
-        // client.dm.delay(200);
+        // 中文注释：TianShi 插件的 bindWindow 签名是 5 参（无 api），Damo 风格 6 参调用需去掉 api
+        // 这里直接传 5 参；api 字段保留在 cfg 中以兼容配置但此处不使用
+        logger.info(`[插件绑定] 版本 ${client.ver()}`);
+        const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
         logger.info(`[插件绑定] BindWindow 结果: ret=${ret}, hwnd=${hwnd}, pid=${pid}`);
         if (ret !== 1) {
           // 中文注释：返回非 1 表示失败，抛错并通知事件
-          throw new Error(`BindWindowEx 失败，返回值=${ret}, hwnd=${hwnd}, pid=${pid}`);
+          throw new Error(`BindWindow 失败，返回值=${ret}, hwnd=${hwnd}, pid=${pid}`);
         }
         // 中文注释：记录成功绑定的客户端
         this.clientsByHwnd.set(hwnd, { pid, hwnd, ffoClient: client });
@@ -262,7 +264,8 @@ export class DamoBindingManager {
       return false;
     }
     try {
-      const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.api, cfg.mode);
+      // 中文注释：TianShi 插件的 bindWindow 是 5 参（无 api）
+      const ret = client.bindWindow(hwnd, cfg.display, cfg.mouse, cfg.keypad, cfg.mode);
       if (ret !== 1) {
         throw new Error(`BindWindow 失败，返回值=${ret}, hwnd=${hwnd}`);
       }

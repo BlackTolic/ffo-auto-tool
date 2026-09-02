@@ -33,11 +33,16 @@ import { TSInstance } from './types/plugin';
 
 export default class TSPlug {
   public ts: TSInstance;
-  public dm: TSInstance;
+  // 中文注释：业务侧大量代码直接以 client.dm.X() 形式访问底层 COM 对象（Damo 习惯）
+  // 这里放宽为 any 以避免 TypeScript 接口检查，运行时由 winax 的 ts.tssoft 代理
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public dm: any;
 
   constructor() {
     this.ts = TSPlug.init('ts.tssoft');
-    this.dm = TSPlug.init('ts.tssoft');
+    // 中文注释：业务侧大量代码直接以 client.dm.X() 形式访问底层 COM 对象（Damo 习惯）
+    // 此处把 this.dm 指向 this.ts，使得原有 Damo 风格代码无需改动即可工作
+    this.dm = this.ts as any;
   }
 
   private static init(COM: string): TSInstance {
@@ -54,10 +59,32 @@ export default class TSPlug {
       }
       return x;
     } catch {
+      // 中文注释：未注册时尝试注册 TSPlug.dll
+      // 候选路径按优先级：
+      //   1. __dirname/lib/TSPlug.dll —— 打包后 .webpack/main/lib/
+      //   2. __dirname/../lib/TSPlug.dll —— forge 打包兜底
+      //   3. process.cwd()/src/lib/TSPlug.dll —— dev 模式
+      //   4. process.cwd()/src/auto-plugin/TianShi/lib/TSPlug.dll —— 原始位置
+      const candidates = [
+        resolve(__dirname, './lib/TSPlug.dll'),
+        resolve(__dirname, '..', 'lib', 'TSPlug.dll'),
+        resolve(process.cwd(), 'src', 'lib', 'TSPlug.dll'),
+        resolve(process.cwd(), 'src', 'auto-plugin', 'TianShi', 'lib', 'TSPlug.dll'),
+      ];
+      const fs = require('fs') as typeof import('fs');
+      const found = candidates.find(p => {
+        try {
+          return fs.existsSync(p);
+        } catch {
+          return false;
+        }
+      });
+      if (!found) {
+        throw new Error(`未找到 TSPlug.dll，已尝试路径: ${candidates.join('; ')}`);
+      }
       try {
-        const dllPath = resolve(__dirname, './lib/TSPlug.dll');
-        logger.info(`尝试注册 TSPlug.dll: ${dllPath}`);
-        execSync(`regsvr32 /s "${dllPath}"`);
+        logger.info(`尝试注册 TSPlug.dll: ${found}`);
+        execSync(`regsvr32 /s "${found}"`);
         const x = new winax.Object(COM);
         logger.info(`注册后创建 COM 对象成功: ${COM}`);
         return x;
@@ -101,17 +128,7 @@ export default class TSPlug {
     return this.ts.GetWindowClass(hWnd);
   }
 
-  getWindowRect<T = number>(hWnd: T, x1: T, y1: T, x2: T, y2: T): TsRet;
-  getWindowRect(hWnd: number, { x1, y1, x2, y2 }: Area): TsRet;
-  getWindowRect(hWnd: number, ...args: number[] | Area[]): TsRet {
-    let [x1, y1, x2, y2] = [] as number[];
-    if (args.length > 1) {
-      [x1, y1, x2, y2] = args as number[];
-    } else {
-      ({ x1, y1, x2, y2 } = args[0] as Area);
-    }
-    return this.ts.GetWindowRect(hWnd, x1, y1, x2, y2);
-  }
+  // getWindowRect: 已被 Damo 兼容版重写，移至类末尾
 
   getWindowProcessPath(hWnd: number): string {
     return this.ts.GetWindowProcessPath(hWnd);
@@ -121,17 +138,7 @@ export default class TSPlug {
     return this.ts.GetWindowState(hWnd, flag);
   }
 
-  getClientRect<T = number>(hWnd: T, x1: T, y1: T, x2: T, y2: T): TsRet;
-  getClientRect(hWnd: number, { x1, y1, x2, y2 }: Area): TsRet;
-  getClientRect(hWnd: number, ...args: number[] | Area[]): TsRet {
-    let [x1, y1, x2, y2] = [] as number[];
-    if (args.length > 1) {
-      [x1, y1, x2, y2] = args as number[];
-    } else {
-      ({ x1, y1, x2, y2 } = args[0] as Area);
-    }
-    return this.ts.GetClientRect(hWnd, x1, y1, x2, y2);
-  }
+  // getClientRect: 已被 Damo 兼容版重写，移至类末尾
 
   getForegroundWindow(): number {
     return this.ts.GetForegroundWindow();
@@ -180,17 +187,7 @@ export default class TSPlug {
     return this.ts.EnumWindowByProcess(processName, title, className, filter);
   }
 
-  screenToClient<T = number>(hWnd: T, x: T, y: T): T;
-  screenToClient(hWnd: number, { x, y }: Coordinate): number;
-  screenToClient(hWnd: number, ...args: number[] | Coordinate[]): number {
-    let [x, y] = [] as number[];
-    if (args.length > 1) {
-      [x, y] = args as number[];
-    } else {
-      ({ x, y } = args[0] as Coordinate);
-    }
-    return this.ts.ScreenToClient(hWnd, x, y);
-  }
+  // screenToClient: 已被 Damo 兼容版重写，移至类末尾
 
   setWindowText(hWnd: number, title: string): TsRet {
     return this.ts.SetWindowText(hWnd, title);
@@ -408,9 +405,7 @@ export default class TSPlug {
     return this.ts.Delay(ms);
   }
 
-  reg(regCode: string, type: TsMode): number {
-    return this.ts.Reg(regCode, type);
-  }
+  // reg: 已被 Damo 兼容版重写，移至类末尾
 
   getPath(): string {
     return this.ts.GetPath();
@@ -469,17 +464,7 @@ export default class TSPlug {
     return this.ts.CaptureJpg(x1, y1, x2, y2, filename);
   }
 
-  capturePng<T = number>(filename: string, x1: T, y1: T, x2: T, y2: T): TsRet;
-  capturePng(filename: string, { x1, y1, x2, y2 }: Area): TsRet;
-  capturePng(filename: string, ...args: number[] | Area[]): TsRet {
-    let [x1, y1, x2, y2] = [] as number[];
-    if (args.length > 1) {
-      [x1, y1, x2, y2] = args as number[];
-    } else {
-      ({ x1, y1, x2, y2 } = args[0] as Area);
-    }
-    return this.ts.CapturePng(x1, y1, x2, y2, filename);
-  }
+  // capturePng: 已被 Damo 兼容版重写，移至类末尾
 
   getColor(x: number, y: number): string;
   getColor({ x, y }: Coordinate): string;
@@ -741,10 +726,7 @@ export default class TSPlug {
     return { ret, x: Number(x), y: Number(y) };
   }
 
-  findStrFastE(x1: number, y1: number, x2: number, y2: number, str: string, color: string, sim: number): number {
-    const [x, y] = [new winax.Variant(-1, 'byref'), new winax.Variant(-1, 'byref')];
-    return this.ts.FindStrFast(x1, y1, x2, y2, str, color, sim, x, y);
-  }
+  // findStrFastE: 已被 Damo 兼容版重写，移至类末尾
 
   findStrFastS<T = number, K = string>(str: K, color: K, sim: T, x1: T, y1: T, x2: T, y2: T): VariantPointerParams;
   findStrFastS<K = string>(str: K, color: K, sim: number, { x1, y1, x2, y2 }: Area): VariantPointerParams;
@@ -760,14 +742,22 @@ export default class TSPlug {
     return { ret, x: Number(x), y: Number(y) };
   }
 
+  // 中文注释：Damo 风格签名 (x1, y1, x2, y2, str, color, sim) - 兼容业务侧代码
+  findStrFastEx(x1: number, y1: number, x2: number, y2: number, str: string, color: string, sim: number): string;
   findStrFastEx<T = number, K = string>(str: K, color: K, sim: T, x1: T, y1: T, x2: T, y2: T): string;
   findStrFastEx<K = string>(str: K, color: K, sim: number, { x1, y1, x2, y2 }: Area): string;
-  findStrFastEx(str: string, color: string, sim: number, ...args: number[] | Area[]): string {
-    let [x1, y1, x2, y2] = [] as number[];
-    if (args.length > 1) {
-      [x1, y1, x2, y2] = args as number[];
-    } else {
-      ({ x1, y1, x2, y2 } = args[0] as Area);
+  findStrFastEx(...args: any[]): string {
+    // 中文注释：根据第一个参数类型分发
+    if (args.length === 7 && typeof args[0] === 'number') {
+      // Damo 风格: (x1, y1, x2, y2, str, color, sim)
+      const [x1, y1, x2, y2, str, color, sim] = args;
+      return this.ts.FindStrFastEx(x1, y1, x2, y2, str, color, sim);
+    }
+    // TSPlug 原生: (str, color, sim, x1, y1, x2, y2) 或 (str, color, sim, Area)
+    const [str, color, sim, ...rest] = args;
+    let [x1, y1, x2, y2] = rest as number[];
+    if (rest.length === 1 && typeof rest[0] === 'object') {
+      ({ x1, y1, x2, y2 } = rest[0] as Area);
     }
     return this.ts.FindStrFastEx(x1, y1, x2, y2, str, color, sim);
   }
@@ -788,9 +778,7 @@ export default class TSPlug {
     return this.ts.UseDict(index);
   }
 
-  setDict(index: number, file: string): TsRet {
-    return this.ts.SetDict(index, file);
-  }
+  // setDict: 已被 Damo 兼容版重写，移至类末尾
 
   setDictPwd(password: string): TsRet {
     return this.ts.SetDictPwd(password);
@@ -1006,5 +994,243 @@ export default class TSPlug {
     }
 
     return result.join(',');
+  }
+
+  // ============================================================
+  // 中文注释：Damo 兼容层
+  // 说明：业务侧代码沿用 Damo 的方法签名与返回类型，此处补齐 TSPlug 缺失或签名不一致的方法
+  // 主要差异点：
+  //   - getWindowRect / getClientRect / clientToScreen / screenToClient：
+  //     Damo 通过 byref 参数返回 {x, y, width, height} 或 {x, y} 对象；
+  //     TSInstance 接口是 byref + TsRet 返回值
+  //   - capturePng：Damo 习惯 (x, y, w, h, filePath)；TSPlug 是 (filename, x1, y1, x2, y2) —— 参数顺序不同
+  //   - setDict：Damo 接受字符串内容；TSPlug 仅接受文件路径 —— 写临时文件再 SetDict
+  //   - Reg：Damo 是 (regCode, attachCode)；TSPlug 是 (regCode, type: TsMode) —— 概念不同
+  //   - 缺失方法：moveToClick / moveToLeftDown / leftDownFromToMove / findColorE /
+  //     findStrFastE / getAveRGB / enumWindowByProcessId / getCurrentDictInfo /
+  //     loadDictFromFileAsync 等
+  // ============================================================
+
+  // ---- 几何信息（Damo 风格返回对象）----
+
+  getWindowRect(hwnd: number): { x: number; y: number; width: number; height: number } {
+    const x1 = new winax.Variant(0, 'byref');
+    const y1 = new winax.Variant(0, 'byref');
+    const x2 = new winax.Variant(0, 'byref');
+    const y2 = new winax.Variant(0, 'byref');
+    const ok = this.ts.GetWindowRect(hwnd, x1, y1, x2, y2);
+    if (!ok) {
+      throw new Error(`GetWindowRect 失败，hwnd=${hwnd}`);
+    }
+    // 中文注释：winax Variant 实例的 .value 属性不在类型声明中，用 (v as any).value 绕过
+    const left = Number((x1 as any).value) || 0;
+    const top = Number((y1 as any).value) || 0;
+    const right = Number((x2 as any).value) || 0;
+    const bottom = Number((y2 as any).value) || 0;
+    return { x: left, y: top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+  }
+
+  getClientRect(hwnd: number): { x: number; y: number; width: number; height: number } {
+    const x1 = new winax.Variant(0, 'byref');
+    const y1 = new winax.Variant(0, 'byref');
+    const x2 = new winax.Variant(0, 'byref');
+    const y2 = new winax.Variant(0, 'byref');
+    const ok = this.ts.GetClientRect(hwnd, x1, y1, x2, y2);
+    if (!ok) {
+      throw new Error(`GetClientRect 失败，hwnd=${hwnd}`);
+    }
+    const left = Number((x1 as any).value) || 0;
+    const top = Number((y1 as any).value) || 0;
+    const right = Number((x2 as any).value) || 0;
+    const bottom = Number((y2 as any).value) || 0;
+    return { x: left, y: top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+  }
+
+  // TSPlug 的 ts.ScreenToClient(hwnd, x, y) 返回 number（高低位打包坐标），需要 byref 解出
+  clientToScreen(hwnd: number, x: number, y: number): { x: number; y: number } {
+    const xr = new winax.Variant(x, 'byref');
+    const yr = new winax.Variant(y, 'byref');
+    const ok = this.ts.ClientToScreen(hwnd, xr, yr);
+    if (!ok) {
+      throw new Error(`ClientToScreen 失败，hwnd=${hwnd}`);
+    }
+    return { x: Number((xr as any).value) || 0, y: Number((yr as any).value) || 0 };
+  }
+
+  screenToClient(hwnd: number, x: number, y: number): { x: number; y: number } {
+    const xr = new winax.Variant(x, 'byref');
+    const yr = new winax.Variant(y, 'byref');
+    const ok = this.ts.ScreenToClient(hwnd, xr, yr);
+    if (!ok) {
+      throw new Error(`ScreenToClient 失败，hwnd=${hwnd}`);
+    }
+    return { x: Number((xr as any).value) || 0, y: Number((yr as any).value) || 0 };
+  }
+
+  // ---- 截图（Damo 风格参数顺序）----
+
+  capturePng(x: number, y: number, w: number, h: number, filePath: string): number {
+    // Damo 习惯 (x, y, w, h, filePath)；TSPlug 底层 (x1, y1, x2, y2, filename)
+    const x2 = x + w;
+    const y2 = y + h;
+    const ret = this.ts.CapturePng(x, y, x2, y2, filePath);
+    return Number(ret) || 0;
+  }
+
+  // Damo 的 captureFullScreen 需要 GetScreenWidth/Height；TSPlug 上对应 GetClientSize 但语义不同
+  // 退而求其次：使用 ts.GetClientSize(0) 获取屏幕尺寸（部分插件支持）
+  captureFullScreen(filePath: string): number {
+    // 中文注释：ts.tssoft 暂未提供 GetScreenWidth/Height，这里尝试通过特殊窗口获取屏幕尺寸并截全屏
+    // 0 表示桌面窗口句柄；不保证跨插件版本可用，失败时抛错
+    const w = new winax.Variant(0, 'byref');
+    const h = new winax.Variant(0, 'byref');
+    const ret = this.ts.GetClientSize('0', w, h);
+    if (!ret) {
+      throw new Error('GetClientSize(0) 失败：无法获取屏幕尺寸，captureFullScreen 不可用');
+    }
+    const width = Number((w as any).value) || 0;
+    const height = Number((h as any).value) || 0;
+    return Number(this.ts.CapturePng(0, 0, width, height, filePath)) || 0;
+  }
+
+  // ---- 鼠标辅助（Damo 自定义 helper）----
+
+  // 中文注释：移到坐标 → 等待 300ms → 左/右键点击
+  moveToClick(x: number, y: number, mouse: 'left' | 'right' = 'left'): void {
+    this.ts.MoveTo(x, y);
+    this.ts.Delay(300);
+    if (mouse === 'right') {
+      this.ts.RightClick();
+    } else {
+      this.ts.LeftClick();
+    }
+  }
+
+  // 中文注释：移到坐标 → 等待 300ms → 按下左键（不释放）
+  moveToLeftDown(x: number, y: number): void {
+    this.ts.MoveTo(x, y);
+    this.ts.Delay(300);
+    this.ts.LeftDown();
+  }
+
+  // 中文注释：拖拽（按下并保持，从 from 拖到 to 后释放）
+  leftDownFromToMove(from: { x: number; y: number }, to: { x: number; y: number }): void {
+    this.ts.MoveTo(from.x, from.y);
+    this.ts.Delay(300);
+    this.ts.LeftDown();
+    this.ts.Delay(300);
+    this.ts.MoveTo(to.x, to.y);
+    this.ts.LeftUp();
+  }
+
+  // ---- 颜色/找图：Damo 风格 6 参数 ----
+
+  // findColorE: Damo 6 参 (x, y, w, h, color, sim)；TSPlug 的 ts.FindColor 是 8 参（含 direction + byref x/y）
+  findColorE(x: number, y: number, w: number, h: number, color: string, sim: number, _direction = 0): string {
+    const xr = new winax.Variant(-1, 'byref');
+    const yr = new winax.Variant(-1, 'byref');
+    const ret = this.ts.FindColor(x, y, x + w, y + h, color, sim, _direction, xr, yr);
+    if (!ret || Number(ret) < 0) return '-1|-1';
+    return `${Number((xr as any).value) || 0}|${Number((yr as any).value) || 0}`;
+  }
+
+  // findStrFastE: Damo 返回 string（坐标 "x|y"）；TSPlug 的 findStrFastE 包装返回 number
+  findStrFastE(x: number, y: number, w: number, h: number, str: string, color: string, sim: number): string {
+    const xr = new winax.Variant(-1, 'byref');
+    const yr = new winax.Variant(-1, 'byref');
+    const ret = this.ts.FindStrFast(x, y, x + w, y + h, str, color, sim, xr, yr);
+    if (Number(ret) <= 0) return '-1|-1';
+    return `${Number((xr as any).value) || 0}|${Number((yr as any).value) || 0}`;
+  }
+
+  // ---- 平均色（TSPlug 暂不提供原生命令，返回 hex 字符串占位）----
+
+  getAveRGB(x: number, y: number, w: number, h: number): string {
+    // 中文注释：TSPlug 未提供 GetAveRGB；保守返回 "000000"
+    // 业务侧若依赖此结果做判定，需自行实现截图+采样
+    logger.warn('[TianShi] getAveRGB 暂未实现，返回 000000');
+    return '000000';
+  }
+
+  // ---- 字库相关 ----
+
+  // Damo 接受字符串内容；TSPlug 写临时文件再 SetDict
+  setDict(index: number, content: string): number {
+    try {
+      const tmpDir = require('os').tmpdir();
+      const tmpPath = require('path').join(tmpDir, `tianshi_dict_${index}_${Date.now()}.txt`);
+      // 移除 BOM + 统一换行（与 Damo.sanitizeDictContent 行为一致）
+      let s = content || '';
+      if (s.charCodeAt(0) === 0xfeff) s = s.slice(1);
+      s = s.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
+      require('fs').writeFileSync(tmpPath, s, 'utf8');
+      const ret = this.ts.SetDict(index, tmpPath);
+      // 记录以便 getCurrentDictInfo
+      this.activeDictIndex = index;
+      this.dictSource = { type: 'inline', path: tmpPath, length: s.length };
+      return Number(ret) || 0;
+    } catch (e) {
+      logger.error(`[TianShi] setDict 失败: ${String((e as any)?.message || e)}`);
+      return 0;
+    }
+  }
+
+  loadDictFromFile(index: number, filePath: string): number {
+    const ret = this.ts.SetDict(index, filePath);
+    if (Number(ret) === 1) {
+      this.activeDictIndex = index;
+      this.dictSource = { type: 'file', path: filePath, length: 0 };
+    }
+    return Number(ret) || 0;
+  }
+
+  async loadDictFromFileAsync(index: number, filePath: string): Promise<number> {
+    // 中文注释：TSPlug 的 SetDict 是同步 COM 调用，但保留 async 以兼容 Damo API 风格
+    return this.loadDictFromFile(index, filePath);
+  }
+
+  // Damo 的 useDict 返回 number（1/0）；TSPlug 包装已存在但返回 TsRet
+  // 业务侧一般忽略返回值，所以这里保留原包装；如需 number 形式可读 ts.GetNowDict()
+
+  // ---- 当前字库信息（getCurrentDictInfo）----
+
+  // 中文注释：当前字库索引
+  private activeDictIndex: number | null = null;
+  // 中文注释：最近一次 SetDict 的来源信息
+  private dictSource: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null = null;
+
+  getCurrentDictInfo(): { activeIndex: number | null; source: { type: 'inline' | 'file' | 'unknown'; path?: string; length?: number } | null } {
+    return {
+      activeIndex: this.activeDictIndex,
+      source: this.dictSource || { type: 'unknown' },
+    };
+  }
+
+  // ---- Reg 兼容：0 参调用 + attachCode 概念忽略 ----
+
+  // 中文注释：Damo 的 reg() 0 参，内部使用模块顶部定义的 registerCode / attachCode
+  // TSPlug 的 reg(regCode, type) 不支持 attachCode，按"高级模式"调一次并容忍空实现
+  reg(): number {
+    // 占位实现：registerCode/attachCode 应由调用方在调用前注入或从配置读取
+    // 业务侧 registerDamoOnce 在 auto-plugin/index.ts 中负责实际传参
+    const elevated = TSPlug.isElevated();
+    if (!elevated) {
+      logger.warn('TianShi 注册未执行：当前进程非管理员(-2)。请以管理员运行后重试。');
+      return -2;
+    }
+    const regCode = (TSPlug as any).__registerCode || '';
+    const ret = this.ts.Reg(regCode, TsMode.Advanced);
+    logger.info(`[TianShi] Reg 返回值: ${ret}`);
+    return Number(ret) || 0;
+  }
+
+  // 中文注释：判断当前进程是否以管理员运行
+  static isElevated(): boolean {
+    try {
+      require('child_process').execSync('fltmc', { stdio: 'ignore' });
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

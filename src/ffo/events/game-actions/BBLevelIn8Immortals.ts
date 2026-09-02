@@ -1,3 +1,3 @@
-import { Damo } from '../../../auto-plugin/Damo/damo';
+import { AutoT } from '../../../auto-plugin/index';
 
-export const BBLevelIn8Immortals = (damo: Damo) => {};
+export const BBLevelIn8Immortals = (damo: AutoT) => {};

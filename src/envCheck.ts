@@ -88,11 +88,11 @@ function checkVSBuildTools(msvsVersion?: string): { ok: boolean; message: string
   return { ok, message: msgParts.join('，') };
 }
 
-// 解析 PE 头判断 dm.dll 为 32/64 位
+// 解析 PE 头判断 TSPlug.dll 为 32/64 位
 function detectDllArch(dllPath: string): { ok: boolean; arch?: 'x86' | 'x64'; message: string } {
   try {
     if (!fs.existsSync(dllPath)) {
-      return { ok: false, message: `未找到 dm.dll: ${dllPath}` };
+      return { ok: false, message: `未找到 TSPlug.dll: ${dllPath}` };
     }
     const buf = fs.readFileSync(dllPath);
     // 读取 DOS 头中 e_lfanew 偏移（0x3C 处的 4 字节）
@@ -107,9 +107,9 @@ function detectDllArch(dllPath: string): { ok: boolean; arch?: 'x86' | 'x64'; me
     if (!arch) {
       return { ok: false, message: `未知的 PE Machine 值: 0x${machine.toString(16)}` };
     }
-    return { ok: true, arch, message: `dm.dll 架构: ${arch}` };
+    return { ok: true, arch, message: `TSPlug.dll 架构: ${arch}` };
   } catch (err: any) {
-    return { ok: false, message: `解析 dm.dll 失败: ${String(err?.message || err)}` };
+    return { ok: false, message: `解析 TSPlug.dll 失败: ${String(err?.message || err)}` };
   }
 }
 
@@ -181,24 +181,24 @@ export function validateEnvironment(): EnvCheckResult {
     items.push({ name: '编译工具链', ok: true, message: '运行时无需 VS Build Tools (Production)' });
   }
 
-  // 5) dm.dll 位数（要求与 Electron 进程架构一致）
+  // 5) TSPlug.dll 位数（要求与 Electron 进程架构一致）
   {
-    // 在生产环境，dm.dll 可能位于 resources/app/src/lib 或其他位置
+    // 在生产环境，TSPlug.dll 可能位于 resources/app/src/lib 或其他位置
     // 简单起见，我们尝试在当前目录及常见的打包路径寻找
-    let dllPath = path.resolve(cwd, 'src', 'lib', 'dm.dll'); // 中文注释：开发模式路径
+    let dllPath = path.resolve(cwd, 'src', 'lib', 'TSPlug.dll'); // 中文注释：开发模式路径
     if (!fs.existsSync(dllPath) && process.resourcesPath) {
       // 中文注释：常见打包路径（asar:false）
-      const candidate1 = path.resolve(process.resourcesPath, 'app', 'src', 'lib', 'dm.dll');
+      const candidate1 = path.resolve(process.resourcesPath, 'app', 'src', 'lib', 'TSPlug.dll');
       // 中文注释：兜底路径，某些打包器可能直接将资源放在 resources\src\lib
-      const candidate2 = path.resolve(process.resourcesPath, 'src', 'lib', 'dm.dll');
+      const candidate2 = path.resolve(process.resourcesPath, 'src', 'lib', 'TSPlug.dll');
       dllPath = fs.existsSync(candidate1) ? candidate1 : candidate2;
     }
 
-    const r = detectDllArch(dllPath); // 中文注释：检测 dm.dll 位数
+    const r = detectDllArch(dllPath); // 中文注释：检测 TSPlug.dll 位数
     const archMatch = r.arch ? (r.arch === 'x86' && process.arch === 'ia32') || (r.arch === 'x64' && process.arch === 'x64') : false;
     const ok = r.ok && archMatch;
     const message = r.message + (r.ok ? (archMatch ? '（与进程位数匹配）' : '（与进程位数不匹配）') : '');
-    items.push({ name: 'dm.dll 位数匹配', ok, message });
+    items.push({ name: 'TSPlug.dll 位数匹配', ok, message });
   }
 
   // 汇总

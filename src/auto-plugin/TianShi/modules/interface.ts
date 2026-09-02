@@ -111,6 +111,7 @@ export interface MoveRange extends Coordinate {
   h: number;
 }
 
-export type displayMode = 'normal' | 'dx' | 'gdi' | 'gdi2' | 'dx2';
-export type mouseMode = 'normal' | 'dx' | 'windows';
+// 中文注释：扩展 displayMode 以兼容大漠风格字符串（如 'dx.graphic.2d'），TianShi 原生 union 仍是子集
+export type displayMode = 'normal' | 'dx' | 'gdi' | 'gdi2' | 'dx2' | (string & {});
+export type mouseMode = 'normal' | 'dx' | 'windows' | (string & {});
 export type keypadMode = mouseMode;
