@@ -1,4 +1,13 @@
 {
+  "files.encoding": "utf8",
+  "files.autoGuessEncoding": false,
+  "terminal.integrated.defaultProfile.windows": "Windows PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "Windows PowerShell": {
+      "source": "PowerShell",
+      "args": ["-NoExit", "-Command", "chcp 65001 > $null; [Console]::InputEncoding = [System.Text.UTF8Encoding]::new(); [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()"]
+    }
+  },
   // 中文注释：启用保存时自动格式化（由 Prettier 负责）
   "editor.formatOnSave": true,
   // 中文注释：全局默认格式化器指定为 Prettier 扩展

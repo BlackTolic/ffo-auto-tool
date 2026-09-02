@@ -29,4 +29,4 @@ $env:ELECTRON_MIRROR = 'https://npmmirror.com/mirrors/electron/'
 # 中文注释：允许 electron-get 走系统代理（若有）
 $env:ELECTRON_GET_USE_PROXY = 'true'
 
-npm run start
+npm run start:electron

@@ -5,8 +5,9 @@
   "description": "My Electron application description",
   "main": ".webpack/main",
   "scripts": {
-    "start": "npx --yes --package @electron-forge/cli@latest electron-forge start",
-    "start:utf8": "powershell -ExecutionPolicy Bypass -File scripts/start_utf8.ps1",
+    "start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start_utf8.ps1",
+    "start:electron": "npx --yes --package @electron-forge/cli@latest electron-forge start",
+    "start:utf8": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start_utf8.ps1",
     "setup:ia32": "powershell -ExecutionPolicy Bypass -File scripts/setup_ia32.ps1",
     "dm:verify32": "powershell -ExecutionPolicy Bypass -File scripts/verify_dm_reg_ia32.ps1",
     "package": "npx --yes --package @electron-forge/cli@latest electron-forge package --arch=ia32",
