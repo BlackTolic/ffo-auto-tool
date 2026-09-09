@@ -143,6 +143,9 @@ const loopAutoAttackInWest = async (attackActions?: AttackActions) => {
   try {
     const role = getBoundRole();
     logger.info(`当前开始执行第${executionCount + 1}次任务`, role.position);
+    // 开启loop获取坐标点
+    role.openWorkerLoop();
+    logger.info('[自动寻路] 开启loop获取坐标点');
 
     // const attackActions = new AttackActions(role, OCR_YUN_HUAN_1_MONSTER);
     const moveActions = new MoveActions(role, { offsetR: 300 }); // 将鼠标半径调整为300
@@ -169,6 +172,10 @@ const loopAutoAttackInWest = async (attackActions?: AttackActions) => {
         map: MAP_NAME.YUN_ZE,
       });
     }
+
+    // 关闭loop获取坐标点
+    role.closeWorkerLoop();
+    logger.info('[自动寻路] 关闭loop获取坐标点');
 
     // 检查装备栏是否已经满了
     const equipCount = await checkEquipCount(role.bindPlugin, role.bindWindowSize);

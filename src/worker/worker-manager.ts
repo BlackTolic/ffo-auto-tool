@@ -76,7 +76,9 @@ export default class WorkerManager {
     this.role.updateInfoFromWorkerManager(this.dm);
     this.startChildProcessRoleLoop();
     // 添加一个停止loop的回调函数
-    this.role.updateCbFromWorkerManager(() => this.stopChildProcessRoleLoop());
+    // this.role.updateCbFromWorkerManager(() => this.stopChildProcessRoleLoop());
+    // // 添加一个开启loop的回调函数
+    // this.role.updateOpenLoopFromWorkerManager(() => this.startChildProcessRoleLoop());
   }
 
   // 向工作线程发送消息
@@ -243,7 +245,7 @@ export default class WorkerManager {
                 reject(new Error(`指令调用超时: ${String(prop)}`));
                 this.pendingRequests.delete(requestId);
               }
-            }, 10000);
+            }, 20000);
           });
         };
       },

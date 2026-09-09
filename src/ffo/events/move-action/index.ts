@@ -219,6 +219,10 @@ export class MoveActions {
   async startAutoFindPath(config: AutoFindPathConfig) {
     const { toPos, actions, aimPos, stationR = pointR, delay = 2000, refreshTime = 300, attackMode, taskMap, blockAllBeforeMove = false } = config;
 
+    // 开启loop获取坐标点
+    this.role.openWorkerLoop();
+    logger.info('[自动寻路] 开启loop获取坐标点');
+
     // 如果已有寻路任务，先停止它，确保只有一个寻路任务在运行
     if (this.cancelPreviousAutoFindPath) {
       this.cancelPreviousAutoFindPath('[自动寻路] 任务被新的寻路任务覆盖，已停止前一个任务。');
@@ -246,6 +250,9 @@ export class MoveActions {
         this.role.clearActionTimer('autoFindPath');
         this.cancelPreviousAutoFindPath = undefined;
         this.recordAimPosIndex = 0;
+        // 结束loop获取坐标点
+        this.role.closeWorkerLoop();
+        logger.info('[自动寻路] 结束loop获取坐标点');
         // 停止寻路时释放鼠标左键，避免卡住按下状态
         try {
           if (this.bindPlugin && typeof this.bindPlugin.moveToClick === 'function') {
@@ -271,6 +278,9 @@ export class MoveActions {
             // 点击脚下的死坐标
             await this.bindPlugin.moveToClick(800, 525);
             logger.info(`[自动寻路] 到达下一张地图退出寻路,点击坐标 (${x},${y + 2}) 停止寻路，`);
+            // 结束loop获取坐标点
+            this.role.closeWorkerLoop();
+            logger.info('[自动寻路] 结束loop获取坐标点');
             isArrive = true;
             // 到达目标点位退出寻路
           } else if (aimPos && typeof aimPos === 'object' && isArriveAimNear(this.role.position, aimPos, stationR)) {
@@ -294,6 +304,9 @@ export class MoveActions {
           if (taskMap && this.role.map !== taskMap) {
             const reason = `[自动寻路] 已切换地图，当前地图${this.role.map}，任务地图${taskMap}，结束自动寻路`;
             this.cancelPreviousAutoFindPath?.(reason);
+            // 结束loop获取坐标点
+            this.role.closeWorkerLoop();
+            logger.info('[自动寻路] 结束loop获取坐标点');
             // 鼠标点击结束寻路的左键按下
             await this.dm.LeftClick();
             return;
@@ -306,6 +319,9 @@ export class MoveActions {
             setTimeout(() => {
               logger.info(`[自动寻路] 已关闭自动寻路，并解除定时器,同时延时${delay}毫秒，确保已经静止`);
               // 这里刚进入地图没法读取坐标
+              // 结束loop获取坐标点
+              this.role.closeWorkerLoop();
+              logger.info('[自动寻路] 结束loop获取坐标点');
               res(true);
             }, delay);
             this.isRunLoop = false; // 关闭循环

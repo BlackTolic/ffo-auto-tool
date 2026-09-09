@@ -257,6 +257,12 @@ export const DEFAULT_TRANSPORT_SKILL = {
 
 // 查找商品的指定范围
 export const DEFAULT_MERCHANT_RANGE = {
-  '1600*900': { x1: 305, y1: 185, x2: 556, y2: 477, color: 'e8f0e8-111111|d0a028-111111|989490-111111|986450-555555', sim: DEFAULT_SIM },
-  '1280*800': { x1: 343, y1: 229, x2: 597, y2: 526, color: 'e8f0e8-111111|d0a028-111111|989490-111111|986450-555555', sim: DEFAULT_SIM },
+  '1600*900': { color: 'e8f0e8-111111|d0a028-111111|989490-111111|986450-555555', sim: DEFAULT_SIM },
+  '1280*800': { color: 'e8f0e8-111111|d0a028-111111|989490-111111|986450-555555', sim: DEFAULT_SIM },
+};
+
+// 查找摆摊购物栏的指定范围
+export const SHOPPING_RANGE = {
+  '1600*900': { x1: 2, y1: 102, x2: 986, y2: 592, string: '@X2', color: 'c07810-111111', sim: 1.0 },
+  '1280*800': { x1: 2, y1: 102, x2: 986, y2: 592, string: '@X2', color: 'c07810-111111', sim: 1.0 },
 };

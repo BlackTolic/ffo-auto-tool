@@ -66,6 +66,7 @@ export class Role {
   private workerManager: WorkerManager | null = null; // 工作线程管理器
   public emailMessage: string = ''; // 邮件消息
   public closeWorkerLoop: () => void = () => {};
+  public openWorkerLoop: () => void = () => {};
 
   constructor() {}
 
@@ -345,6 +346,15 @@ export class Role {
 
   // 关闭worker中的loop
   updateCbFromWorkerManager(cb: () => void) {
-    this.closeWorkerLoop = cb;
+    if (typeof cb === 'function') {
+      this.closeWorkerLoop = cb;
+    }
+  }
+
+  // 开启worker中的loop
+  updateOpenLoopFromWorkerManager(cb: () => void) {
+    if (typeof cb === 'function') {
+      this.openWorkerLoop = cb;
+    }
   }
 }

@@ -19,7 +19,7 @@ const dm = ensureDamo();
 const bindWindowSize = '1600*900';
 const needCheckDead = true;
 
-let loopIsRuning = true;
+let loopIsRuning = false;
 let lastVerifyCaptureTs = 0;
 let openCapture = true;
 

@@ -115,7 +115,7 @@ export class AttackActions {
 
   constructor(role: Role, config?: AttackActionsOptions) {
     this.role = role;
-    this.bindDm = role.bindDm;
+    this.bindDm = role.bindPlugin;
     this.ocrMonster = { ...ATTACK_RANGE[this.role.bindWindowSize], ...(config?.monsterFeature || OCR_MONSTER) };
     if (config?.skillGroup) {
       this.skillGroup = config.skillGroup;
@@ -358,6 +358,9 @@ export class AttackActions {
 
   // 识别周围有无怪物，并且识别5秒
   async scanMonster(options: ScanMonsterOptions) {
+    // 开启loop获取坐标点
+    this.role.openWorkerLoop();
+    logger.info('[自动攻击] 开启loop获取坐标点');
     const { attackType, times = 5, attackRange, map = '', tickMs = 300 } = options;
     const periodMs = Math.max(50, Math.floor(tickMs));
     let moveAction = new MoveActions(this.role, { offsetR: 280 });
@@ -404,6 +407,9 @@ export class AttackActions {
           isRunLoop = false;
           this.role.clearActionTimer('scanMonster');
           this.bindPlugin.moveToClick(800, 525);
+          // 结束loop获取坐标点
+          this.role.closeWorkerLoop();
+          logger.info('[自动攻击] 结束loop获取坐标点');
           reject(`[自动攻击] 已切换地图，当前地图${this.role.map}，目标地图${map}，结束自动攻击`);
           return;
         }
@@ -412,6 +418,9 @@ export class AttackActions {
           logger.info(`[自动攻击] 已连续${times}S无目标，结束自动攻击`);
           isRunLoop = false;
           this.role.clearActionTimer('scanMonster');
+          // 结束loop获取坐标点
+          this.role.closeWorkerLoop();
+          logger.info('[自动攻击] 结束loop获取坐标点');
           resolve(true);
           return;
         }

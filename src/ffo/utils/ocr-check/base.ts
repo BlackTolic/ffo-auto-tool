@@ -32,6 +32,7 @@ import {
   DEFAULT_TRANSPORT_SKILL,
   DEFAULT_UN_EQUIP,
   DEFAULT_VERIFY_CODE,
+  SHOPPING_RANGE,
 } from '../../constant/OCR-pos';
 import { parseFFOCurrencyToGoldLabel, parsePositionFromTextList, parseRolePositionFromText, parseTextPos } from '../common';
 // 检查服务器是否断线
@@ -330,9 +331,10 @@ export const checkTransportSkill = async (bindDm: AutoT, bindWindowSize: '1600*9
 };
 
 // 查看购买商品的信息
-export const checkMerchantPos = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string) => {
-  const merchantsPos = DEFAULT_MERCHANT_RANGE[bindWindowSize];
-  const merchantText = await bindDm.findStrFastEx(merchantsPos.x1, merchantsPos.y1, merchantsPos.x2, merchantsPos.y2, keyword, merchantsPos.color, merchantsPos.sim);
+export const checkMerchantPos = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800', keyword: string, merchantsPos: { x1: number; y1: number; x2: number; y2: number }) => {
+  const type = DEFAULT_MERCHANT_RANGE[bindWindowSize];
+  //
+  const merchantText = await bindDm.findStrFastEx(merchantsPos.x1, merchantsPos.y1, merchantsPos.x2, merchantsPos.y2, keyword, type.color, type.sim);
   if (!merchantText) {
     logger.info('未识别到购买商品');
     return null;
@@ -346,4 +348,11 @@ export const checkMerchantInfo = async (bindDm: AutoT, bindWindowSize: '1600*900
   const merchantsPos = DEFAULT_MERCHANT_RANGE[bindWindowSize];
   const merchantText = await bindDm.ocr(pos.x - 51, pos.y - 8, pos.x + 200, pos.y + 34, merchantsPos.color, merchantsPos.sim);
   return merchantText;
+};
+
+// 识别摆摊购物栏位置
+export const checkShopingPos = async (bindDm: AutoT, bindWindowSize: '1600*900' | '1280*800') => {
+  const shoppingPos = SHOPPING_RANGE[bindWindowSize];
+  const shoppingText = await bindDm.findStrFastE(shoppingPos.x1, shoppingPos.y1, shoppingPos.x2, shoppingPos.y2, shoppingPos.string, shoppingPos.color, shoppingPos.sim);
+  return parseTextPos(shoppingText);
 };

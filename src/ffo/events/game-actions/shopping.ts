@@ -1,5 +1,5 @@
 import logger from '../../../utils/logger';
-import { checkMerchantInfo, checkMerchantPos } from '../../utils/ocr-check/base';
+import { checkMerchantInfo, checkMerchantPos, checkShopingPos } from '../../utils/ocr-check/base';
 import { Role } from '../rolyer';
 import { AutoFarmingAction } from './auto-farming';
 
@@ -35,7 +35,7 @@ export default class ShoppingTask {
   }
 
   // 检测到目标商品
-  checkTargetMerchantAndBuy = async (str?: string) => {
+  checkTargetMerchantAndBuy = async (shoppingPos: { x1: number; y1: number; x2: number; y2: number }, str?: string) => {
     // 点击购买
     const buy = async (pos: { x: number; y: number }) => {
       await this.role?.bindPlugin.moveToClick(pos.x + 159, pos.y + 17);
@@ -46,21 +46,21 @@ export default class ShoppingTask {
       await this.role?.bindPlugin.moveToClick(711, 495);
     };
     // 识别物品
-    const isMerchantPos = await checkMerchantPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', '肉片');
+    const isMerchantPos = await checkMerchantPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', '肉片', shoppingPos);
     if (!isMerchantPos) {
-      logger.info('[查询捡漏] 没有愿望果实');
+      logger.info('[查询捡漏] 没有需要的物品');
       return;
     }
 
     for (const [index, pos] of isMerchantPos.entries()) {
-      // if (index !== 2 && index !== 3) continue;
+      // if (index === 0) continue;
       // await this.role?.bindPlugin.delay(100);
       const merchantInfo = await checkMerchantInfo(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900', { x: pos.x, y: pos.y });
       await this.role?.bindPlugin.delay(100);
       const item = computed(merchantInfo);
       if (!item) continue;
-      logger.info(`[查询捡漏] 找到商品：${item.name}，路线：${item.route}，数量：${item.number}，价格：${item.money}`);
-      if (item.route === 3 && item.money === 0.000585) {
+      // logger.info(`[查询捡漏] 找到商品：${item.name}，路线：${item.route}，数量：${item.number}，价格：${item.money}`);
+      if (item.route === 3 && item.money === 0.000135) {
         await buy(pos);
       }
 
@@ -72,6 +72,16 @@ export default class ShoppingTask {
 
   // 启动任务
   async startShoppingTask() {
+    logger.info(`[查询捡漏] 启动任务：${this.taskName}`);
+    // 获取摆摊窗口坐标
+    const colsePos = await checkShopingPos(this.role?.bindPlugin, this.role?.bindWindowSize || '1600*900');
+    if (!colsePos) {
+      logger.info('[查询捡漏] 没有需要的物品');
+      return;
+    }
+    const shoppingPos = { x1: colsePos.x - 288, y1: colsePos.y + 47, x2: colsePos.x, y2: colsePos.y + 350 };
+    // 截屏
+    // this.role.bindDm.capturePng(shoppingPos.x1, shoppingPos.y1, shoppingPos.x2, shoppingPos.y2, `${`${TEST_PATH}/tttt3.png`}`);
     try {
       // 注册全局任务
       this.role.addGlobalStrategyTask([
@@ -85,7 +95,7 @@ export default class ShoppingTask {
             this.lastCheckTargetTs = Date.now();
             this.isCheckingTargetMerchant = true;
             try {
-              await this.checkTargetMerchantAndBuy();
+              await this.checkTargetMerchantAndBuy(shoppingPos);
             } finally {
               this.isCheckingTargetMerchant = false;
             }
